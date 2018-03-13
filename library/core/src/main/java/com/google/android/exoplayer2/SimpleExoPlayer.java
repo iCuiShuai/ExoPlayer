@@ -41,6 +41,7 @@ import com.google.android.exoplayer2.drm.DrmSessionManager;
 import com.google.android.exoplayer2.drm.FrameworkMediaCrypto;
 import com.google.android.exoplayer2.metadata.Metadata;
 import com.google.android.exoplayer2.metadata.MetadataOutput;
+import com.google.android.exoplayer2.seek.SeekPreprocessor;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.text.Cue;
@@ -510,6 +511,14 @@ public class SimpleExoPlayer extends BasePlayer
   }
 
   @Override
+  public void setSeekPreprocessor(SeekPreprocessor seekPreprocessor) {
+    ((ExoPlayerImpl)player).setSeekPreprocessor(seekPreprocessor);
+
+  }
+
+  /**
+   * Returns the video scaling mode.
+   */
   public @C.VideoScalingMode int getVideoScalingMode() {
     return videoScalingMode;
   }

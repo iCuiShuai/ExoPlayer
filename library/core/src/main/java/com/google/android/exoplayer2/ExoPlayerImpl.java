@@ -22,6 +22,8 @@ import android.os.Message;
 import android.util.Pair;
 import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.PlayerMessage.Target;
+
+import com.google.android.exoplayer2.seek.SeekPreprocessor;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.MediaSource.MediaPeriodId;
 import com.google.android.exoplayer2.source.TrackGroupArray;
@@ -82,6 +84,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
   private int maskingWindowIndex;
   private int maskingPeriodIndex;
   private long maskingWindowPositionMs;
+  private SeekPreprocessor seekPreprocessor;
 
   /**
    * Constructs an instance. Must be called from a thread that has an associated {@link Looper}.
@@ -160,6 +163,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
   @Nullable
   public TextComponent getTextComponent() {
     return null;
+  }
+
+  public void setSeekPreprocessor(SeekPreprocessor seekCallback) {
+    this.seekPreprocessor = seekCallback;
   }
 
   @Override
@@ -326,6 +333,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
   @Override
   public void seekTo(int windowIndex, long positionMs) {
+    positionMs = preSeek(windowIndex, positionMs);
+    if (positionMs == -1)
+      return;
+
+
     Timeline timeline = playbackInfo.timeline;
     if (windowIndex < 0 || (!timeline.isEmpty() && windowIndex >= timeline.getWindowCount())) {
       throw new IllegalSeekPositionException(timeline, windowIndex, positionMs);
@@ -360,6 +372,37 @@ import java.util.concurrent.CopyOnWriteArrayList;
     }
     internalPlayer.seekTo(timeline, windowIndex, C.msToUs(positionMs));
     notifyListeners(listener -> listener.onPositionDiscontinuity(DISCONTINUITY_REASON_SEEK));
+  }
+
+  private long preSeek(int windowIndex, long positionMs) {
+    if (seekPreprocessor == null)
+      return positionMs;
+
+    Timeline timeline = playbackInfo.timeline;
+    if (windowIndex < 0 || (!timeline.isEmpty() && windowIndex >= timeline.getWindowCount())) {
+      throw new IllegalSeekPositionException(timeline, windowIndex, positionMs);
+    }
+    if (isPlayingAd()) {
+      return -1;
+    }
+
+    if (timeline.isEmpty()) {
+      return positionMs;
+    }
+
+    timeline.getWindow(windowIndex, window);
+    long windowPositionUs = positionMs == C.TIME_UNSET ? window.getDefaultPositionUs()
+            : C.msToUs(positionMs);
+    int periodIndex = window.firstPeriodIndex;
+    long periodPositionUs = window.getPositionInFirstPeriodUs() + windowPositionUs;
+    long periodDurationUs = timeline.getPeriod(periodIndex, period).getDurationUs();
+    while (periodDurationUs != C.TIME_UNSET && periodPositionUs >= periodDurationUs
+            && periodIndex < window.lastPeriodIndex) {
+      periodPositionUs -= periodDurationUs;
+      periodDurationUs = timeline.getPeriod(++periodIndex, period).getDurationUs();
+    }
+
+    return seekPreprocessor.onSeekTo(playbackInfo.manifest, windowIndex, periodIndex, positionMs);
   }
 
   @Override
