@@ -510,7 +510,6 @@ public class SimpleExoPlayer extends BasePlayer
     }
   }
 
-  @Override
   public void setSeekPreprocessor(SeekPreprocessor seekPreprocessor) {
     ((ExoPlayerImpl)player).setSeekPreprocessor(seekPreprocessor);
 

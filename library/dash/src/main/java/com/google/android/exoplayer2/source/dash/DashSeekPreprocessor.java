@@ -65,10 +65,10 @@ public class DashSeekPreprocessor implements SeekPreprocessor<DashManifest> {
         long startUs = C.msToUs(period.startMs);
 
         long lastLess = -1;
-        int firstSegmentNum = index.getFirstSegmentNum();
-        int lastSegmentNum = firstSegmentNum + segmentCount - 1;
+        long firstSegmentNum = index.getFirstSegmentNum();
+        long lastSegmentNum = firstSegmentNum + segmentCount - 1;
 
-        for (int j = firstSegmentNum; j <= lastSegmentNum; j++) {
+        for (long j = firstSegmentNum; j <= lastSegmentNum; j++) {
             long startTimeUs = startUs + index.getTimeUs(j);
 
             if (startTimeUs == positionUs) {
