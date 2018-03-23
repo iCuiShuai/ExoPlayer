@@ -15,6 +15,9 @@
  */
 package com.google.android.exoplayer2;
 
+import android.os.Build;
+import android.os.SystemClock;
+
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.upstream.Allocator;
@@ -74,6 +77,7 @@ public class DynamicLoadControl implements LoadControl {
   private int targetBufferSize;
   private boolean isBuffering;
   private long bufferForPlaybackAfterRebufferUsMax;
+  private long lastElapsedTimeNanos;
 
   /**
    * Constructs a new instance, using the {@code DEFAULT_*} constants defined in this class.
@@ -254,6 +258,31 @@ public class DynamicLoadControl implements LoadControl {
             || bufferedDurationUs >= minBufferDurationUs
             || (!prioritizeTimeOverSizeThresholds
             && allocator.getTotalBytesAllocated() >= targetBufferSize);
+
+    if (!ret && bufferForPlaybackAfterRebufferUs < bufferForPlaybackAfterRebufferUsMax) {
+      long now = 0;
+
+      if (Build.VERSION.SDK_INT >= 17) {
+        now = SystemClock.elapsedRealtimeNanos();
+      }
+      long step = now - lastElapsedTimeNanos;
+      if (step < 1 || step > 1000 * 200) {
+        step = 1000 * 10;
+      }
+
+      bufferForPlaybackAfterRebufferUs += step;
+      if (bufferForPlaybackAfterRebufferUs > bufferForPlaybackAfterRebufferUsMax) {
+        bufferForPlaybackAfterRebufferUs = bufferForPlaybackAfterRebufferUsMax;
+      }
+
+//            Log.e("test", "shouldStartPlayback: " + (now - lastElapsedTimeNanos));
+      lastElapsedTimeNanos = now;
+    }
+
+    if (ret) {
+      bufferForPlaybackAfterRebufferUs = BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_US_MIN;
+    }
+
 
     if (!ret && bufferForPlaybackAfterRebufferUs < bufferForPlaybackAfterRebufferUsMax) {
       bufferForPlaybackAfterRebufferUs += 1000 * 10;
