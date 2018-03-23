@@ -73,7 +73,10 @@ def stringNonNull(name) {
 
 def readProperties(name) {
     Properties properties = new Properties()
-    properties.load(project.rootProject.file('local.properties').newDataInputStream())
+    def file = project.rootProject.file('local.properties')
+    if (!file.exists())
+        return ""
+    properties.load(file.newDataInputStream())
     return properties.getProperty(name)
 }
 
