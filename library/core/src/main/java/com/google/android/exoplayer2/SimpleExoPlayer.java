@@ -76,6 +76,8 @@ public class SimpleExoPlayer extends BasePlayer
         Player.TextComponent,
         Player.MetadataComponent {
 
+  private SeekPreprocessor seekPreprocessor;
+
   /** @deprecated Use {@link com.google.android.exoplayer2.video.VideoListener}. */
   @Deprecated
   public interface VideoListener extends com.google.android.exoplayer2.video.VideoListener {}
@@ -511,8 +513,13 @@ public class SimpleExoPlayer extends BasePlayer
   }
 
   public void setSeekPreprocessor(SeekPreprocessor seekPreprocessor) {
+    this.seekPreprocessor = seekPreprocessor;
     ((ExoPlayerImpl)player).setSeekPreprocessor(seekPreprocessor);
 
+  }
+
+  public SeekPreprocessor getSeekPreprocessor() {
+    return seekPreprocessor;
   }
 
   /**
