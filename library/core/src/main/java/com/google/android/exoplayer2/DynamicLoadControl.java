@@ -284,13 +284,13 @@ public class DynamicLoadControl implements LoadControl {
     }
 
 
-    if (!ret && bufferForPlaybackAfterRebufferUs < bufferForPlaybackAfterRebufferUsMax) {
-      bufferForPlaybackAfterRebufferUs += 1000 * 10;
-    }
-
-    if (ret) {
-      bufferForPlaybackAfterRebufferUs = BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_US_MIN;
-    }
+//    if (!ret && bufferForPlaybackAfterRebufferUs < bufferForPlaybackAfterRebufferUsMax) {
+//      bufferForPlaybackAfterRebufferUs += 1000 * 10;
+//    }
+//
+//    if (ret) {
+//      bufferForPlaybackAfterRebufferUs = BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_US_MIN;
+//    }
 
     return ret;
   }
