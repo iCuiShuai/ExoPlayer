@@ -98,6 +98,7 @@ public final class SingleSampleMediaChunk extends BaseMediaChunk {
     try {
       // Create and open the input.
       DataSpec loadDataSpec = dataSpec.subrange(nextLoadPosition);
+      loadDataSpec.referDurationUs = getDurationUs();
       long length = dataSource.open(loadDataSpec);
       if (length != C.LENGTH_UNSET) {
         length += nextLoadPosition;

@@ -121,6 +121,11 @@ public final class DataSpec {
   public final @Flags int flags;
 
   /**
+   * a refer value for segment duration
+   */
+  public long referDurationUs = -1L;
+
+  /**
    * Construct a data spec for the given uri and with {@link #key} set to null.
    *
    * @param uri {@link #uri}.
