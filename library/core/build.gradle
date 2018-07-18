@@ -65,7 +65,7 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:' + mockitoVersion
     testImplementation 'org.robolectric:robolectric:' + robolectricVersion
     testImplementation project(modulePrefix + 'testutils')
-    implementation 'com.zenjoy.code:logger:1.0.7'
+    implementation 'com.mxplay.code:logger:2.0.2'
 }
 
 ext {

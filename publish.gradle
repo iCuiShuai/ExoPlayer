@@ -3,7 +3,7 @@ apply plugin: 'maven-publish'
 /** example
  ext {
  publishDesc = 'AD lib for mx player.'
- publishGroupId = 'com.zenjoy.code'
+ publishGroupId = 'com.mxplay.code'
  publishArtifactId = 'adlibrary'
  publishVersion = '1.1.1'
  publishVersionCode = 111
@@ -12,8 +12,8 @@ apply plugin: 'maven-publish'
  publisherUserName = 'admin'
  publisherPassword = 'admin123'
  publishUrlSnapshot = 'http://10.7.0.7:8098/nexus/content/repositories/snapshots/'
- publishDependencies = [['com.zenjoy.code', 'aol-android-ad-sdk-wrapper', "${aolVersion}"]
- ,['com.zenjoy.code', 'aol-android-google-ad-mm-adapter-wrapper', "${aolVersion}"]]
+ publishDependencies = [['com.mxplay.code', 'aol-android-ad-sdk-wrapper', "${aolVersion}"]
+ ,['com.mxplay.code', 'aol-android-google-ad-mm-adapter-wrapper', "${aolVersion}"]]
  }
 
  */
