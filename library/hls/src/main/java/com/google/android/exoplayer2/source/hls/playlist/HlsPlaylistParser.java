@@ -61,6 +61,8 @@ import org.checkerframework.checker.nullness.qual.PolyNull;
  */
 public final class HlsPlaylistParser implements ParsingLoadable.Parser<HlsPlaylist> {
 
+  public static boolean HACK_FOR_TAG_PROGRAM_DATE_TIME = false;
+
   private static final String PLAYLIST_HEADER = "#EXTM3U";
 
   private static final String TAG_PREFIX = "#EXT";
@@ -775,6 +777,12 @@ public final class HlsPlaylistParser implements ParsingLoadable.Parser<HlsPlayli
         hasGapTag = false;
       }
     }
+
+    if (HACK_FOR_TAG_PROGRAM_DATE_TIME && playlistStartTimeUs == 0 && segments.size() > 0) {
+      Segment segment = segments.get(segments.size() - 1);
+      playlistStartTimeUs = System.currentTimeMillis() * 1000 - segment.relativeStartTimeUs;
+    }
+
     return new HlsMediaPlaylist(
         playlistType,
         baseUri,
