@@ -96,7 +96,8 @@ def getPublishArtifactId() {
 def getPublisherUserName() {
     def ret = ext.has('publisherUserName') ? ext.get('publisherUserName') : readProperties('publisherUserName')
     if (ret == null) {
-        new NullPointerException("publisherUserName is null").printStackTrace()
+        System.out.println("publisherUserName is null")
+//        new NullPointerException("publisherUserName is null").printStackTrace()
     }
     return ret
 }
@@ -105,7 +106,8 @@ def getPublisherPassword() {
     def ret = ext.has('publisherPassword') ? ext.get('publisherPassword') : readProperties('publisherPassword')
 
     if (ret == null) {
-        new NullPointerException("publisherPassword is null").printStackTrace()
+        System.out.println("publisherPassword is null")
+//        new NullPointerException("publisherPassword is null").printStackTrace()
     }
     return ret
 }
