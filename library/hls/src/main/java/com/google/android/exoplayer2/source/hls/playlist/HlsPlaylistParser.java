@@ -648,7 +648,11 @@ public final class HlsPlaylistParser implements ParsingLoadable.Parser<HlsPlayli
         segmentByteRangeOffset = 0;
         segmentByteRangeLength = C.LENGTH_UNSET;
       } else if (line.startsWith(TAG_TARGET_DURATION)) {
-        targetDurationUs = parseIntAttr(line, REGEX_TARGET_DURATION) * C.MICROS_PER_SECOND;
+        try {
+          targetDurationUs = parseIntAttr(line, REGEX_TARGET_DURATION) * C.MICROS_PER_SECOND;
+        } catch (NumberFormatException e) {
+          targetDurationUs = C.TIME_UNSET;
+        }
       } else if (line.startsWith(TAG_MEDIA_SEQUENCE)) {
         mediaSequence = parseLongAttr(line, REGEX_MEDIA_SEQUENCE);
         segmentMediaSequence = mediaSequence;
@@ -782,7 +786,7 @@ public final class HlsPlaylistParser implements ParsingLoadable.Parser<HlsPlayli
       Segment segment = segments.get(segments.size() - 1);
       playlistStartTimeUs = System.currentTimeMillis() * 1000 - segment.relativeStartTimeUs;
     }
-
+    targetDurationUs = checkTargetDurationUs(segments, targetDurationUs);
     return new HlsMediaPlaylist(
         playlistType,
         baseUri,
@@ -799,6 +803,21 @@ public final class HlsPlaylistParser implements ParsingLoadable.Parser<HlsPlayli
         /* hasProgramDateTime= */ playlistStartTimeUs != 0,
         playlistProtectionSchemes,
         segments);
+  }
+
+  private static long checkTargetDurationUs(List<Segment> segments, long targetDurationUs) {
+    if (targetDurationUs != C.TIME_UNSET || segments == null) {
+      return targetDurationUs;
+    }
+    for (Segment segment : segments) {
+      if (segment == null) {
+        continue;
+      }
+      if (segment.durationUs > targetDurationUs) {
+        targetDurationUs = segment.durationUs;
+      }
+    }
+    return targetDurationUs;
   }
 
   @C.SelectionFlags
