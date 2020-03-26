@@ -402,7 +402,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
       periodDurationUs = timeline.getPeriod(++periodIndex, period).getDurationUs();
     }
 
-    return seekPreprocessor.onSeekTo(playbackInfo.manifest, windowIndex, periodIndex, positionMs);
+    return seekPreprocessor.onSeekTo(window.manifest, windowIndex, periodIndex, positionMs);
   }
 
   @Override
