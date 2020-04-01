@@ -94,6 +94,8 @@ public abstract class TrackSelector {
      */
     void onTrackSelectionsInvalidated();
 
+    void onSelectedIndexUpdated(int rendererIndex, int groupIndex, int trackIndex);
+
   }
 
   @Nullable private InvalidationListener listener;
@@ -153,5 +155,11 @@ public abstract class TrackSelector {
    */
   protected final BandwidthMeter getBandwidthMeter() {
     return Assertions.checkNotNull(bandwidthMeter);
+  }
+
+  protected final void updateSelectedIndex(int rendererIndex, int groupIndex, int trackIndex) {
+    if (listener != null) {
+      listener.onSelectedIndexUpdated(rendererIndex, groupIndex, trackIndex);
+    }
   }
 }

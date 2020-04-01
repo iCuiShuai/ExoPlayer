@@ -72,7 +72,7 @@ public class DashSeekPreprocessor implements SeekPreprocessor<DashManifest> {
             long startTimeUs = startUs + index.getTimeUs(j);
 
             if (startTimeUs == positionUs) {
-                return positionUs;
+                return C.usToMs(positionUs);
             }
             if (startTimeUs < positionUs) {
                 lastLess = startTimeUs;

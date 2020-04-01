@@ -168,6 +168,11 @@ public class FakeMediaPeriod implements MediaPeriod {
   }
 
   @Override
+  public boolean selectPreferredTrack(int trackType, int trackIndex) {
+    return false;
+  }
+
+  @Override
   public void discardBuffer(long positionUs, boolean toKeyframe) {
     // Do nothing.
   }

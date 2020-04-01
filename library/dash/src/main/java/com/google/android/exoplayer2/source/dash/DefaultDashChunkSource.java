@@ -55,6 +55,8 @@ import com.google.android.exoplayer2.util.Util;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import android.util.Log;
+import com.google.android.exoplayer2.trackselection.MXHybridTrackSelection;
 
 /**
  * A default {@link DashChunkSource} implementation.
@@ -125,6 +127,10 @@ public class DefaultDashChunkSource implements DashChunkSource {
   private IOException fatalError;
   private boolean missingLastSegment;
   private long liveEdgeTimeUs;
+
+  private static final String TAG = "DashChunkSource";
+  private static final long DASH_SEAMLESS_SWITCH_THRESHOLD_US = 200000; //200ms
+  private int lastSelectedTrack = C.INDEX_UNSET;
 
   /**
    * @param manifestLoaderErrorThrower Throws errors affecting loading of manifests.
@@ -227,6 +233,12 @@ public class DefaultDashChunkSource implements DashChunkSource {
     this.trackSelection = trackSelection;
   }
 
+  public void setPreferredTrackIndex(int trackIndex) {
+    if (trackSelection instanceof MXHybridTrackSelection) {
+      ((MXHybridTrackSelection) trackSelection).setSelectedIndex(trackIndex);
+    }
+  }
+
   @Override
   public void maybeThrowError() throws IOException {
     if (fatalError != null) {
@@ -283,6 +295,7 @@ public class DefaultDashChunkSource implements DashChunkSource {
             getSegmentNum(
                 representationHolder,
                 previous,
+                false,
                 loadPositionUs,
                 firstAvailableSegmentNum,
                 lastAvailableSegmentNum);
@@ -301,6 +314,15 @@ public class DefaultDashChunkSource implements DashChunkSource {
 
     RepresentationHolder representationHolder =
         representationHolders[trackSelection.getSelectedIndex()];
+
+    boolean selectedTrackChanged = false;
+    if (lastSelectedTrack != trackSelection.getSelectedIndex() )
+    {
+      if (lastSelectedTrack != C.INDEX_UNSET){
+        selectedTrackChanged = true;
+      }
+      lastSelectedTrack = trackSelection.getSelectedIndex();
+    }
 
     if (representationHolder.extractorWrapper != null) {
       Representation selectedRepresentation = representationHolder.representation;
@@ -341,6 +363,7 @@ public class DefaultDashChunkSource implements DashChunkSource {
         getSegmentNum(
             representationHolder,
             previous,
+            selectedTrackChanged,
             loadPositionUs,
             firstAvailableSegmentNum,
             lastAvailableSegmentNum);
@@ -387,6 +410,13 @@ public class DefaultDashChunkSource implements DashChunkSource {
             segmentNum,
             maxSegmentCount,
             seekTimeUs);
+
+    if (selectedTrackChanged) {
+      long gap = out.chunk.startTimeUs - loadPositionUs;
+      if (Math.abs(gap) > DASH_SEAMLESS_SWITCH_THRESHOLD_US) {
+        Log.w(TAG, "WARNING:Stream gap(" + (gap / 1000) + "ms) is too large and it may cause video stutter.");
+      }
+    }
   }
 
   @Override
@@ -448,10 +478,11 @@ public class DefaultDashChunkSource implements DashChunkSource {
   private long getSegmentNum(
       RepresentationHolder representationHolder,
       @Nullable MediaChunk previousChunk,
+      boolean selectedTrackChanged,
       long loadPositionUs,
       long firstAvailableSegmentNum,
       long lastAvailableSegmentNum) {
-    return previousChunk != null
+    return previousChunk != null && !selectedTrackChanged
         ? previousChunk.getNextChunkIndex()
         : Util.constrainValue(
             representationHolder.getSegmentNum(loadPositionUs),

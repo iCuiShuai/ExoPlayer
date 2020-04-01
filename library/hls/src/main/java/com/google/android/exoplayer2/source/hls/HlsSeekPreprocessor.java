@@ -16,7 +16,7 @@ public class HlsSeekPreprocessor implements SeekPreprocessor<HlsManifest> {
             long startTimeUs = baseStartUs + segment.relativeStartTimeUs;
 
             if (startTimeUs == positionUs) {
-                return positionUs;
+                return C.usToMs(positionUs);
             }
             if (startTimeUs < positionUs) {
                 lastLess = startTimeUs;

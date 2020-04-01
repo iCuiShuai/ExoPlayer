@@ -45,6 +45,7 @@ import com.google.android.exoplayer2.trackselection.DefaultTrackSelector.Paramet
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector.SelectionOverride;
 import com.google.android.exoplayer2.trackselection.MappingTrackSelector.MappedTrackInfo;
 import com.google.android.exoplayer2.trackselection.TrackSelection;
+import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelectorResult;
 import com.google.android.exoplayer2.upstream.Allocator;
 import com.google.android.exoplayer2.upstream.BandwidthMeter;
@@ -507,7 +508,18 @@ public final class DownloadHelper {
         new DefaultTrackSelector(trackSelectorParameters, new DownloadTrackSelection.Factory());
     this.rendererCapabilities = rendererCapabilities;
     this.scratchSet = new SparseIntArray();
-    trackSelector.init(/* listener= */ () -> {}, new DummyBandwidthMeter());
+//    trackSelector.init(/* listener= */ () -> {}, new DummyBandwidthMeter());
+    trackSelector.init(new TrackSelector.InvalidationListener() {
+      @Override
+      public void onTrackSelectionsInvalidated() {
+
+      }
+
+      @Override
+      public void onSelectedIndexUpdated(int rendererIndex, int groupIndex, int trackIndex) {
+
+      }
+    }, new DummyBandwidthMeter());
     callbackHandler = new Handler(Util.getLooper());
     window = new Timeline.Window();
   }

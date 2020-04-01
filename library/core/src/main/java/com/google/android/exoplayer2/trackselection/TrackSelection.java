@@ -22,6 +22,8 @@ import com.google.android.exoplayer2.source.TrackGroup;
 import com.google.android.exoplayer2.source.chunk.MediaChunk;
 import com.google.android.exoplayer2.source.chunk.MediaChunkIterator;
 import com.google.android.exoplayer2.upstream.BandwidthMeter;
+
+import java.nio.charset.IllegalCharsetNameException;
 import java.util.List;
 import org.checkerframework.checker.nullness.compatqual.NullableType;
 
@@ -46,6 +48,12 @@ public interface TrackSelection {
     public final int reason;
     /** Optional data associated with this selection of tracks. */
     @Nullable public final Object data;
+    /** User preferred track index. */
+    public int preferredTrack;
+    /** Minimum video resolution. */
+    public int minVideoResolution;
+    /** Maximum video resolution. */
+    public int maxVideoResolution;
 
     /**
      * @param group The {@link TrackGroup}. Must not be null.
@@ -53,7 +61,7 @@ public interface TrackSelection {
      *     null or empty. May be in any order.
      */
     public Definition(TrackGroup group, int... tracks) {
-      this(group, tracks, C.SELECTION_REASON_UNKNOWN, /* data= */ null);
+      this(group, tracks, C.SELECTION_REASON_UNKNOWN, /* data= */ null, C.INDEX_UNSET, Integer.MIN_VALUE, Integer.MAX_VALUE);
     }
 
     /**
@@ -63,12 +71,27 @@ public interface TrackSelection {
      * @param data Optional data associated with this selection of tracks.
      */
     public Definition(TrackGroup group, int[] tracks, int reason, @Nullable Object data) {
+      this(group, tracks, reason, data, C.INDEX_UNSET, Integer.MIN_VALUE, Integer.MAX_VALUE);
+    }
+
+    /**
+     * @param group The {@link TrackGroup}. Must not be null.
+     * @param tracks The indices of the selected tracks within the {@link TrackGroup}. Must not be
+     * @param reason The track selection reason. One of the {@link C} SELECTION_REASON_ constants.
+     * @param data Optional data associated with this selection of tracks.
+     * @param data Preferred track index.
+     * @param data Maximum video resolution.
+     */
+    public Definition(TrackGroup group, int[] tracks, int reason, @Nullable Object data, int preferredTrack, int minVideoResolution, int maxVideoResolution) {
       this.group = group;
       this.tracks = tracks;
       this.reason = reason;
       this.data = data;
+      this.preferredTrack = preferredTrack;
+      this.minVideoResolution = minVideoResolution;
+      this.maxVideoResolution = maxVideoResolution;
     }
-  }
+}
 
   /**
    * Factory for {@link TrackSelection} instances.

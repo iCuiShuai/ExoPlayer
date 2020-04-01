@@ -125,8 +125,18 @@ public final class Track {
    */
   @Nullable
   public TrackEncryptionBox getSampleDescriptionEncryptionBox(int sampleDescriptionIndex) {
-    return sampleDescriptionEncryptionBoxes == null ? null
-        : sampleDescriptionEncryptionBoxes[sampleDescriptionIndex];
+    TrackEncryptionBox result = null;
+    if (sampleDescriptionEncryptionBoxes != null) {
+      /*
+       * Sample description index stored in traf may exceeds the range of
+       * stsd.In such case, simply return null and extractor could handle
+       * it ideally.
+       */
+      if (sampleDescriptionIndex >= 0 && sampleDescriptionIndex < sampleDescriptionEncryptionBoxes.length) {
+        result = sampleDescriptionEncryptionBoxes[sampleDescriptionIndex];
+      }
+    }
+    return result;
   }
 
   // incompatible types in argument.

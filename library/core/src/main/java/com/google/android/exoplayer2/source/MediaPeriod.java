@@ -139,6 +139,8 @@ public interface MediaPeriod extends SequenceableLoader {
       boolean[] streamResetFlags,
       long positionUs);
 
+  public boolean selectPreferredTrack(int trackType, int trackIndex);
+
   /**
    * Discards buffered media up to the specified position.
    *

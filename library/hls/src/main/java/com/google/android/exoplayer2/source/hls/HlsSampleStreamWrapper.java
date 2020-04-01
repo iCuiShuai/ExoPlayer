@@ -439,6 +439,12 @@ import org.checkerframework.checker.nullness.qual.RequiresNonNull;
     return seekRequired;
   }
 
+  public void selectPreferredTrack(int trackType, int trackIndex) {
+    if (chunkSource != null) {
+      chunkSource.setPreferredTrackIndex(trackIndex);
+    }
+  }
+
   public void discardBuffer(long positionUs, boolean toKeyframe) {
     if (!sampleQueuesBuilt || isPendingReset()) {
       return;
@@ -669,7 +675,7 @@ import org.checkerframework.checker.nullness.qual.RequiresNonNull;
     if (isMediaChunk(loadable)) {
       pendingResetPositionUs = C.TIME_UNSET;
       HlsMediaChunk mediaChunk = (HlsMediaChunk) loadable;
-      mediaChunk.init(this);
+      mediaChunk.init(this, sampleQueues);
       mediaChunks.add(mediaChunk);
       upstreamTrackFormat = mediaChunk.trackFormat;
     }
@@ -696,9 +702,61 @@ import org.checkerframework.checker.nullness.qual.RequiresNonNull;
 
   @Override
   public void reevaluateBuffer(long positionUs) {
-    // Do nothing.
+    if (loader.isLoading() || isPendingReset()) {
+      return;
+    }
+
+    int currentQueueSize = mediaChunks.size();
+    int preferredQueueSize = chunkSource.getPreferredQueueSize(positionUs, readOnlyMediaChunks);
+    if (currentQueueSize <= preferredQueueSize) {
+      return;
+    }
+
+    int newQueueSize = currentQueueSize;
+    for (int i = preferredQueueSize; i < currentQueueSize; i++) {
+      if (!haveReadFromMediaChunk(i)) {
+        newQueueSize = i;
+        break;
+      }
+    }
+    if (newQueueSize == currentQueueSize) {
+      return;
+    }
+
+    long endTimeUs = getLastMediaChunk().endTimeUs;
+    HlsMediaChunk firstRemovedChunk = discardUpstreamMediaChunksFromIndex(newQueueSize);
+    if (mediaChunks.isEmpty()) {
+      pendingResetPositionUs = lastSeekPositionUs;
+    }
+    loadingFinished = false;
+    eventDispatcher.upstreamDiscarded(primarySampleQueueType, firstRemovedChunk.startTimeUs, endTimeUs);
   }
 
+  private boolean haveReadFromMediaChunk(int mediaChunkIndex) {
+    HlsMediaChunk mediaChunk = mediaChunks.get(mediaChunkIndex);
+    for (int i = 0; i < sampleQueues.length; i++) {
+      if (sampleQueues[i].getReadIndex() > mediaChunk.getFirstSampleIndex(i)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Discard upstream media chunks from {@code chunkIndex} and corresponding samples from sample
+   * queues.
+   *
+   * @param chunkIndex The index of the first chunk to discard.
+   * @return The chunk at given index.
+   */
+  private HlsMediaChunk discardUpstreamMediaChunksFromIndex(int chunkIndex) {
+    HlsMediaChunk firstRemovedChunk = mediaChunks.get(chunkIndex);
+    Util.removeRange(mediaChunks, /* fromIndex= */ chunkIndex, /* toIndex= */ mediaChunks.size());
+    for (int i = 0; i < sampleQueues.length; i++) {
+      sampleQueues[i].discardUpstreamSamples(firstRemovedChunk.getFirstSampleIndex(i));
+    }
+    return firstRemovedChunk;
+  }
   // Loader.Callback implementation.
 
   @Override

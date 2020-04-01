@@ -27,6 +27,7 @@ import com.google.android.exoplayer2.extractor.PositionHolder;
 import com.google.android.exoplayer2.metadata.Metadata;
 import com.google.android.exoplayer2.metadata.id3.Id3Decoder;
 import com.google.android.exoplayer2.metadata.id3.PrivFrame;
+import com.google.android.exoplayer2.source.SampleQueue;
 import com.google.android.exoplayer2.source.chunk.MediaChunk;
 import com.google.android.exoplayer2.source.hls.playlist.HlsMediaPlaylist;
 import com.google.android.exoplayer2.upstream.DataSource;
@@ -221,6 +222,7 @@ import org.checkerframework.checker.nullness.qual.RequiresNonNull;
   private boolean initDataLoadRequired;
   private volatile boolean loadCanceled;
   private boolean loadCompleted;
+  private int[] firstSampleIndices;
 
   private HlsMediaChunk(
       HlsExtractorFactory extractorFactory,
@@ -282,9 +284,16 @@ import org.checkerframework.checker.nullness.qual.RequiresNonNull;
    *
    * @param output The output that will receive the loaded samples.
    */
-  public void init(HlsSampleStreamWrapper output) {
+  public void init(HlsSampleStreamWrapper output, SampleQueue[] sampleQueues) {
     this.output = output;
-    output.init(uid, shouldSpliceIn);
+    if (sampleQueues != null) {
+      this.firstSampleIndices = new int[sampleQueues.length];
+      for (int i = 0; i < sampleQueues.length; i++) {
+        if (sampleQueues[i] != null) {
+          this.firstSampleIndices[i] = sampleQueues[i].getWriteIndex();
+        }
+      }
+    }
   }
 
   @Override
@@ -516,4 +525,7 @@ import org.checkerframework.checker.nullness.qual.RequiresNonNull;
     return dataSource;
   }
 
+  public final int getFirstSampleIndex(int trackIndex) {
+    return firstSampleIndices[trackIndex];
+  }
 }

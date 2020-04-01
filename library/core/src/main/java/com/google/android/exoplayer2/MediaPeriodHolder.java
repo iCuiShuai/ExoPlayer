@@ -302,6 +302,10 @@ import org.checkerframework.checker.nullness.compatqual.NullableType;
     return positionUs;
   }
 
+  public void selectPreferredTrack(int rendererIndex, int trackIndex) {
+    mediaPeriod.selectPreferredTrack(rendererCapabilities[rendererIndex].getTrackType(), trackIndex);
+  }
+
   /** Releases the media period. No other method should be called after the release. */
   public void release() {
     disableTrackSelectionsInResult();

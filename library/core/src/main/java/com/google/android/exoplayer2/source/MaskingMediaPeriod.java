@@ -172,6 +172,11 @@ public final class MaskingMediaPeriod implements MediaPeriod, MediaPeriod.Callba
   }
 
   @Override
+  public boolean selectPreferredTrack(int trackType, int trackIndex) {
+    return false;
+  }
+
+  @Override
   public void discardBuffer(long positionUs, boolean toKeyframe) {
     castNonNull(mediaPeriod).discardBuffer(positionUs, toKeyframe);
   }

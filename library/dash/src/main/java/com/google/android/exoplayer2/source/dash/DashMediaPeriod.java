@@ -281,6 +281,22 @@ import org.checkerframework.checker.nullness.compatqual.NullableType;
   }
 
   @Override
+  public boolean selectPreferredTrack(int trackType, int trackIndex) {
+    boolean result = false;
+    for (int i = 0; i < sampleStreams.length; i++) {
+      ChunkSampleStream<DashChunkSource> stream = (ChunkSampleStream<DashChunkSource>) sampleStreams[i];
+      if (stream.primaryTrackType == trackType) {
+        DashChunkSource source = sampleStreams[i].getChunkSource();
+        if (source instanceof DefaultDashChunkSource) {
+          ((DefaultDashChunkSource)source).setPreferredTrackIndex(trackIndex);
+          result = true;
+        }
+      }
+    }
+    return result;
+  }
+
+  @Override
   public void discardBuffer(long positionUs, boolean toKeyframe) {
     for (ChunkSampleStream<DashChunkSource> sampleStream : sampleStreams) {
       sampleStream.discardBuffer(positionUs, toKeyframe);

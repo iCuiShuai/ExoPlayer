@@ -319,6 +319,11 @@ import org.checkerframework.checker.nullness.compatqual.NullableType;
   }
 
   @Override
+  public boolean selectPreferredTrack(int trackType, int trackIndex) {
+    return false;
+  }
+
+  @Override
   public void discardBuffer(long positionUs, boolean toKeyframe) {
     if (isPendingReset()) {
       return;

@@ -293,6 +293,20 @@ public final class MediaCodecInfo {
       // If we don't know any better, we assume that the profile and level are supported.
       return true;
     }
+
+    CodecProfileLevel[] capabilitiesArray = getProfileLevels();
+    if ( capabilitiesArray.length == 0 )
+    {
+      String[] parts = format.codecs.split( "\\." );
+      if ( parts[0].equals( "mp4a" ) )
+      {
+        if ( codecProfileAndLevel.first == CodecProfileLevel.AACObjectLC )
+        {
+          return true;
+        }
+      }
+    }
+
     int profile = codecProfileAndLevel.first;
     int level = codecProfileAndLevel.second;
     if (!isVideo && profile != CodecProfileLevel.AACObjectXHE) {

@@ -80,6 +80,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
   private static final int MSG_SEND_MESSAGE = 15;
   private static final int MSG_SEND_MESSAGE_TO_TARGET_THREAD = 16;
   private static final int MSG_PLAYBACK_PARAMETERS_CHANGED_INTERNAL = 17;
+  private static final int MSG_UPDATE_SELECTED_INDEX = 18;
 
   private static final int ACTIVE_INTERVAL_MS = 10;
   private static final int IDLE_INTERVAL_MS = 1000;
@@ -297,6 +298,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
     handler.sendEmptyMessage(MSG_TRACK_SELECTION_INVALIDATED);
   }
 
+  @Override
+  public void onSelectedIndexUpdated(int rendererIndex, int groupIndex, int trackIndex) {
+    handler.obtainMessage(MSG_UPDATE_SELECTED_INDEX, rendererIndex, groupIndex, trackIndex).sendToTarget();
+  }
+
   // DefaultMediaClock.PlaybackParameterListener implementation.
 
   @Override
@@ -362,6 +368,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
         case MSG_PLAYBACK_PARAMETERS_CHANGED_INTERNAL:
           handlePlaybackParameters(
               (PlaybackParameters) msg.obj, /* acknowledgeCommand= */ msg.arg1 != 0);
+          break;
+        case MSG_UPDATE_SELECTED_INDEX:
+          updateSelectedIndex(msg.arg1, msg.arg2, (int) msg.obj);
           break;
         case MSG_SEND_MESSAGE:
           sendMessageInternal((PlayerMessage) msg.obj);
@@ -1751,6 +1760,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
       if (renderer != null) {
         renderer.setOperatingRate(playbackParameters.speed);
       }
+    }
+  }
+
+  private void updateSelectedIndex(int rendererIndex, int groupIndex, int trackIndex)
+          throws ExoPlaybackException {
+    MediaPeriodHolder periodHolder = queue.getPlayingPeriod();
+    if (periodHolder == null || !periodHolder.prepared) {
+      // The reselection did not change any prepared periods.
+      return;
+    }
+
+    periodHolder.selectPreferredTrack(rendererIndex, trackIndex);
+
+    if (playbackInfo.playbackState != Player.STATE_ENDED) {
+      maybeContinueLoading();
+      updatePlaybackPositions();
+      handler.sendEmptyMessage(MSG_DO_SOME_WORK);
     }
   }
 

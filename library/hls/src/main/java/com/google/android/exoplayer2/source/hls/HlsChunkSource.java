@@ -30,6 +30,7 @@ import com.google.android.exoplayer2.source.chunk.MediaChunkIterator;
 import com.google.android.exoplayer2.source.hls.playlist.HlsMediaPlaylist;
 import com.google.android.exoplayer2.source.hls.playlist.HlsMediaPlaylist.Segment;
 import com.google.android.exoplayer2.source.hls.playlist.HlsPlaylistTracker;
+import com.google.android.exoplayer2.trackselection.MXHybridTrackSelection;
 import com.google.android.exoplayer2.trackselection.BaseTrackSelection;
 import com.google.android.exoplayer2.trackselection.TrackSelection;
 import com.google.android.exoplayer2.upstream.DataSource;
@@ -536,6 +537,19 @@ import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
       return null;
     }
     return UriUtil.resolveToUri(playlist.baseUri, segment.fullSegmentEncryptionKeyUri);
+  }
+
+  public void setPreferredTrackIndex(int trackIndex) {
+    if (trackSelection instanceof MXHybridTrackSelection) {
+      ((MXHybridTrackSelection) trackSelection).setSelectedIndex(trackIndex);
+    }
+  }
+
+  public int getPreferredQueueSize(long playbackPositionUs, List<? extends MediaChunk> queue) {
+    if (fatalError != null || trackSelection.length() < 2) {
+      return queue.size();
+    }
+    return trackSelection.evaluateQueueSize(playbackPositionUs, queue);
   }
 
   // Private classes.
