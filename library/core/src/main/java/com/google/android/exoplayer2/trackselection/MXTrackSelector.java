@@ -1226,7 +1226,7 @@ public class MXTrackSelector extends MappingTrackSelector {
       this.minVideoResolutionInAutoMode = in.readInt();
       this.maxVideoResolutionInAutoMode = in.readInt();
       this.preferredVideoResolution = in.readInt();
-      this.forceInvalidate = in.readBoolean();
+      this.forceInvalidate = Util.readBoolean(in);
       this.rendererIndex = in.readInt();
       this.groups = null;
       // Overrides
