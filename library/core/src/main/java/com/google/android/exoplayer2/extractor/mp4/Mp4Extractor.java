@@ -148,6 +148,16 @@ public final class Mp4Extractor implements Extractor, SeekMap {
     return Sniffer.sniffUnfragmented(input);
   }
 
+  public static boolean isMXVMP4WithPreVideo(ExtractorInput input)
+      throws IOException, InterruptedException {
+    return Sniffer.isMXVMP4WithPreVideo(input);
+  }
+
+  public static int getMXVMainContentOffset(ExtractorInput input)
+      throws IOException, InterruptedException {
+    return Sniffer.getMXVMainContentOffset(input);
+  }
+
   @Override
   public void init(ExtractorOutput output) {
     extractorOutput = output;

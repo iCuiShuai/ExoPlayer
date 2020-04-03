@@ -382,6 +382,36 @@ import java.util.List;
   @SuppressWarnings("ConstantCaseForConstants")
   public static final int TYPE_twos = 0x74776f73;
 
+  @SuppressWarnings("ConstantCaseForConstants")
+  public static final int TYPE_mxv = 0x6D787620;
+
+  @SuppressWarnings("ConstantCaseForConstants")
+  public static final int TYPE_pdin = 0x7064696E;
+
+  @SuppressWarnings("ConstantCaseForConstants")
+  public static final int TYPE_mfra = 0x6D667261;
+
+  @SuppressWarnings("ConstantCaseForConstants")
+  public static final int TYPE_free = 0x66726565;
+
+  @SuppressWarnings("ConstantCaseForConstants")
+  public static final int TYPE_skip = 0x736B6970;
+
+  @SuppressWarnings("ConstantCaseForConstants")
+  public static final int TYPE_junk = 0x6A756E6B;
+
+  @SuppressWarnings("ConstantCaseForConstants")
+  public static final int TYPE_wide = 0x77696465;
+
+  @SuppressWarnings("ConstantCaseForConstants")
+  public static final int TYPE_pnot = 0x706E6F74;
+
+  @SuppressWarnings("ConstantCaseForConstants")
+  public static final int TYPE_pict = 0x70696374;
+
+  @SuppressWarnings("ConstantCaseForConstants")
+  public static final int TYPE_meco = 0x6D65636F;
+
   public final int type;
 
   public Atom(int type) {

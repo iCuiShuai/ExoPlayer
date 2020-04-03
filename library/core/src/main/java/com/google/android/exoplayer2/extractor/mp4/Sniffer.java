@@ -174,6 +174,10 @@ import java.io.IOException;
         // Skip the atom.
         input.advancePeekPosition(atomDataSize);
       }
+
+      if(atomType == Atom.TYPE_mxv) {
+        return false;
+      }
     }
     return foundGoodFileType && fragmented == isFragmented;
   }
@@ -198,4 +202,120 @@ import java.io.IOException;
     // Prevent instantiation.
   }
 
+  public static boolean isMXVMP4WithPreVideo(ExtractorInput input)
+      throws IOException, InterruptedException {
+    long inputLength = input.getLength();
+    int bytesToSearch = (int) (inputLength == C.LENGTH_UNSET || inputLength > SEARCH_LENGTH
+        ? SEARCH_LENGTH : inputLength);
+
+    ParsableByteArray buffer = new ParsableByteArray(64);
+    int bytesSearched = 0;
+
+    while (bytesSearched < bytesToSearch) {
+      // Read an atom header.
+      int headerSize = Atom.HEADER_SIZE;
+      buffer.reset(headerSize);
+      input.peekFully(buffer.data, 0, headerSize);
+      long atomSize = buffer.readUnsignedInt();
+      int atomType = buffer.readInt();
+
+      if (atomSize == Atom.DEFINES_LARGE_SIZE) {
+        // Read the large atom size.
+        headerSize = Atom.LONG_HEADER_SIZE;
+        input.peekFully(buffer.data, Atom.HEADER_SIZE, Atom.LONG_HEADER_SIZE - Atom.HEADER_SIZE);
+        buffer.setLimit(Atom.LONG_HEADER_SIZE);
+        atomSize = buffer.readLong();
+      } else if (atomSize == Atom.EXTENDS_TO_END_SIZE) {
+        // The atom extends to the end of the file.
+        long fileEndPosition = input.getLength();
+        if (fileEndPosition != C.LENGTH_UNSET) {
+          atomSize = fileEndPosition - input.getPeekPosition() + headerSize;
+        }
+      }
+
+      if (inputLength != C.LENGTH_UNSET && bytesSearched + atomSize > inputLength) {
+        // The file is invalid because the atom extends past the end of the file.
+        return false;
+      }
+      if (atomSize < headerSize) {
+        // The file is invalid because the atom size is too small for its header.
+        return false;
+      }
+
+      if(atomType == Atom.TYPE_mxv) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  public static int getMXVMainContentOffset(ExtractorInput input)
+      throws IOException, InterruptedException {
+    int preVideoSize = 0;
+    long inputLength = input.getLength();
+
+    ParsableByteArray buffer = new ParsableByteArray(64);
+    boolean rootAtomEnd = false;
+
+    while (preVideoSize < inputLength && !rootAtomEnd) {
+      // Read an atom header.
+      int headerSize = Atom.HEADER_SIZE;
+      buffer.reset(headerSize);
+      input.peekFully(buffer.data, 0, headerSize);
+      long atomSize = buffer.readUnsignedInt();
+      int atomType = buffer.readInt();
+
+      if (atomSize == Atom.DEFINES_LARGE_SIZE) {
+        // Read the large atom size.
+        headerSize = Atom.LONG_HEADER_SIZE;
+        input.peekFully(buffer.data, Atom.HEADER_SIZE, Atom.LONG_HEADER_SIZE - Atom.HEADER_SIZE);
+        buffer.setLimit(Atom.LONG_HEADER_SIZE);
+        atomSize = buffer.readLong();
+      } else if (atomSize == Atom.EXTENDS_TO_END_SIZE) {
+        // The atom extends to the end of the file.
+        long fileEndPosition = input.getLength();
+        if (fileEndPosition != C.LENGTH_UNSET) {
+          atomSize = fileEndPosition - input.getPeekPosition() + headerSize;
+        }
+      }
+
+      if (inputLength != C.LENGTH_UNSET && preVideoSize + atomSize > inputLength) {
+        // The file is invalid because the atom extends past the end of the file.
+        return preVideoSize;
+      }
+      if (atomSize < headerSize) {
+        // The file is invalid because the atom size is too small for its header.
+        return preVideoSize;
+      }
+
+      int atomDataSize = (int) (atomSize - headerSize);
+
+      switch (atomType) {
+        case Atom.TYPE_mxv:
+        case Atom.TYPE_ftyp:
+        case Atom.TYPE_pdin:
+        case Atom.TYPE_moov:
+        case Atom.TYPE_moof:
+        case Atom.TYPE_mfra:
+        case Atom.TYPE_free:
+        case Atom.TYPE_skip:
+        case Atom.TYPE_junk:
+        case Atom.TYPE_wide:
+        case Atom.TYPE_pnot:
+        case Atom.TYPE_pict:
+        case Atom.TYPE_meta:
+        case Atom.TYPE_meco:
+        case Atom.TYPE_uuid:
+        case Atom.TYPE_mdat:
+          preVideoSize += atomSize;
+          input.advancePeekPosition(atomDataSize);
+          break;
+        default:
+          rootAtomEnd = true;
+          break;
+      }
+    }
+    return preVideoSize;
+  }
 }
