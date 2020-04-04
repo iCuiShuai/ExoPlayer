@@ -592,6 +592,67 @@
     ]
   },
   {
+    "name": "AV1 test Stream",
+    "samples": [
+      {
+        "name": "av1 mkv 480x270 Chimera-AV1-8bit-480x270-552kbps",
+        "uri": "/mnt/sdcard/av1/Chimera-AV1-8bit-480x270-552kbps.mp4"
+      },
+      {
+        "name": "av1 mkv 854x480 caminandes-1-llama-drama-av1-opus-480p",
+        "uri": "/mnt/sdcard/av1/caminandes-1-llama-drama-av1-opus-480p.webm"
+      },
+      {
+        "name": "av1 720P Chimera-AV1-8bit-1280x720-3363kbps",
+        "uri": "/mnt/sdcard/av1/Chimera-AV1-8bit-1280x720-3363kbps.mp4"
+      },
+      {
+        "name": "av1 mkv 1080p Chimera-AV1-8bit-1920x1080-6736kbps",
+        "uri": "/mnt/sdcard/av1/Chimera-AV1-8bit-1920x1080-6736kbps.mp4"
+      },
+      {
+        "name": "av1 mkv 480x270 Chimera-AV1-10bit-480x270-531kbps",
+        "uri": "/mnt/sdcard/av1/Chimera-AV1-10bit-480x270-531kbps.mp4"
+      },
+      {
+        "name": "av1 mkv 768x432 Chimera-AV1-10bit-768x432-1090kbps",
+        "uri": "/mnt/sdcard/av1/Chimera-AV1-10bit-768x432-1090kbps.mp4"
+      },
+      {
+        "name": "av1 720P Chimera-AV1-10bit-1280x720-2380kbps",
+        "uri": "/mnt/sdcard/av1/Chimera-AV1-10bit-1280x720-2380kbps.mp4"
+      },
+      {
+        "name": "av1 mkv 1080p Chimera-AV1-10bit-1920x1080-6191kbps",
+        "uri": "/mnt/sdcard/av1/Chimera-AV1-10bit-1920x1080-6191kbps.mp4"
+      },
+      {
+        "name": "av1 mpd mx online av1_main",
+        "uri": "https://j2apps.s.llnwi.net/video/ac3afd01684b0a447d021ed3432268ac/3/dash/av1_main.mpd"
+      },
+      {
+        "name": "av1 mp4 768x432 spbtv_sample_bipbop_av1_960x540_25fps",
+        "uri": "/mnt/sdcard/av1/spbtv_sample_bipbop_av1_960x540_25fps.mp4"
+      },
+      {
+        "name": "av1 mp4 960x540 audio aac",
+        "uri": "/mnt/sdcard/av1/av1test.mp4"
+      },
+      {
+        "name": "av1 mp4 video_720p audio aac",
+        "uri": "/mnt/sdcard/av1/video_720p.av1.mp4"
+      },
+      {
+        "name": "av1 mp4 video_1080p audio aac",
+        "uri": "/mnt/sdcard/av1/video_1080p.av1.mp4"
+      },
+      {
+        "name": "av1 mp4 768x432 Chimera-AV1-10bit-768x432-1090kbps",
+        "uri": "/mnt/sdcard/av1/Chimera-AV1-10bit-768x432-1090kbps.mp4"
+      }
+    ]
+  },
+  {
     "name": "Subtitles",
     "samples": [
       {
