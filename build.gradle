@@ -47,7 +47,7 @@ apply from: 'javadoc_combined.gradle'
 ext {
     buildNumber = System.getenv("BUILD_NUMBER") as Integer ?: 0
 
-    publishGroupId = 'com.zenjoy.code.exo'
+    publishGroupId = 'com.mxplay.code.exo'
     publishVersion = "2.11.3.${buildNumber}"
     publishVersionCode = 2113
 //    publishScript = 'https://raw.githubusercontent.com/ZenMX/mavenPublisher/master/publish.gradle'
