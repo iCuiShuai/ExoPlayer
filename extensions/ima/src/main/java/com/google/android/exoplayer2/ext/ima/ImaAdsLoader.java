@@ -345,6 +345,12 @@ public final class ImaAdsLoader
   private int podIndexOffset;
   private AdPlaybackState adPlaybackState;
 
+  private IAdsIntercept adsIntercept;
+
+  public void setAdsIntercept(IAdsIntercept adsIntercept) {
+    this.adsIntercept = adsIntercept;
+  }
+
   // Fields tracking IMA's state.
 
   /** The expected ad group index that IMA should load next. */
@@ -725,6 +731,9 @@ public final class ImaAdsLoader
 
   @Override
   public void onAdError(AdErrorEvent adErrorEvent) {
+    if (adsIntercept != null) {
+      adsIntercept.handleAdError(this, adDisplayContainer.getAdContainer(), adErrorEvent, getAdGroupIndex());
+    }
     AdError error = adErrorEvent.getError();
     if (DEBUG) {
       Log.d(TAG, "onAdError", error);
@@ -745,6 +754,10 @@ public final class ImaAdsLoader
       pendingAdLoadError = AdLoadException.createForAllAds(error);
     }
     maybeNotifyPendingAdLoadError();
+  }
+
+  private int getAdGroupIndex () {
+    return this.adGroupIndex == C.INDEX_UNSET ? expectedAdGroupIndex : this.adGroupIndex;
   }
 
   // ContentProgressProvider implementation.
@@ -847,6 +860,11 @@ public final class ImaAdsLoader
       int adIndexInAdGroup = getAdIndexInAdGroupToLoad(adGroupIndex);
       if (adIndexInAdGroup == C.INDEX_UNSET) {
         Log.w(TAG, "Unexpected loadAd in an ad group with no remaining unavailable ads");
+        return;
+      }
+      if (adsIntercept != null && adsIntercept.skipAd(adPlaybackState == null ? 0 : adPlaybackState.adGroupCount, adGroupIndex)) {
+        imaPausedContent = false;
+        resumeContentInternal();
         return;
       }
       adPlaybackState =
@@ -1169,7 +1187,11 @@ public final class ImaAdsLoader
         String message = "AdEvent: " + adData;
         Log.i(TAG, message);
         if ("adLoadError".equals(adData.get("type"))) {
-          handleAdGroupLoadError(new IOException(message));
+          Exception e = new IOException(message);
+          if (adsIntercept != null) {
+            adsIntercept.handleAdError(this, adDisplayContainer.getAdContainer(), e, getAdGroupIndex());
+          }
+          handleAdGroupLoadError(e);
         }
         break;
       case STARTED:
