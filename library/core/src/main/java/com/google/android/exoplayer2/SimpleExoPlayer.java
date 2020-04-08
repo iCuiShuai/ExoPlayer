@@ -382,7 +382,7 @@ public class SimpleExoPlayer extends BasePlayer
         renderersFactory,
         trackSelector,
         loadControl,
-        null,
+        DrmSessionManager.getDummyDrmSessionManager(),
         bandwidthMeter,
         analyticsCollector,
         clock,
