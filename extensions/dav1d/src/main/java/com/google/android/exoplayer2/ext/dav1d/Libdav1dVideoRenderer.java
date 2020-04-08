@@ -73,6 +73,10 @@ public class Libdav1dVideoRenderer extends SimpleDecoderVideoRendererDav1d {
 
   @Nullable private Dav1dDecoder decoder;
 
+  public static void nativeInit() {
+    Dav1dLibrary.nativeInit();
+  }
+
   /**
    * Creates a Libdav1dVideoRenderer.
    *

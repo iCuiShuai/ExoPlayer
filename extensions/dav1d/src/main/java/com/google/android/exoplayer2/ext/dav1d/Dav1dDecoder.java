@@ -37,6 +37,10 @@ import java.nio.ByteBuffer;
 
   @C.VideoOutputMode private volatile int outputMode;
 
+  public static void nativeInit() {
+      nativeClassInit();
+  }
+
   /**
    * Creates a Dav1dDecoder.
    *
@@ -203,6 +207,7 @@ import java.nio.ByteBuffer;
     }
   }
 
+  private static native void nativeClassInit();
   /**
    * Initializes a libdav1d decoder.
    *

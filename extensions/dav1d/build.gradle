@@ -57,10 +57,10 @@ android {
 // Configure the native build only if libdav1d is present, to avoid gradle sync
 // failures if libdav1d hasn't been checked out according to the README and CMake
 // isn't installed.
-if (project.file('src/main/jni/libdav1d.so').exists()) {
-    android.externalNativeBuild.cmake.path = 'src/main/jni/CMakeLists.txt'
-    android.externalNativeBuild.cmake.version = '3.7.1+'
-}
+//if (project.file('src/main/jniLibs').exists()) {
+//    android.externalNativeBuild.cmake.path = 'src/main/jni/CMakeLists.txt'
+//    android.externalNativeBuild.cmake.version = '3.7.1+'
+//}
 
 dependencies {
     implementation project(modulePrefix + 'library-core')

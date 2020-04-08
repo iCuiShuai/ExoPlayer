@@ -21,6 +21,8 @@ import com.google.android.exoplayer2.util.LibraryLoader;
 /** Configures and queries the underlying native library. */
 public final class Dav1dLibrary {
 
+  private static boolean isAvailable = false;
+
   static {
     ExoPlayerLibraryInfo.registerModule("goog.exo.dav1d");
   }
@@ -30,7 +32,16 @@ public final class Dav1dLibrary {
   private Dav1dLibrary() {}
 
   /** Returns whether the underlying library is available, loading it if necessary. */
+  public static boolean nativeInit() {
+    if(!isAvailable) {
+      isAvailable = true;
+      Dav1dDecoder.nativeInit();
+    }
+
+    return isAvailable;
+  }
+
   public static boolean isAvailable() {
-    return LOADER.isAvailable();
+    return isAvailable;
   }
 }
