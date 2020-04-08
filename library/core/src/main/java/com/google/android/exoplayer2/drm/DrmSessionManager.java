@@ -26,9 +26,8 @@ import com.google.android.exoplayer2.drm.DrmInitData.SchemeData;
 public interface DrmSessionManager<T extends ExoMediaCrypto> {
 
   /** Returns {@link #DUMMY}. */
-  @SuppressWarnings("unchecked")
-  static <T extends ExoMediaCrypto> DrmSessionManager<T> getDummyDrmSessionManager() {
-    return (DrmSessionManager<T>) DUMMY;
+  static DrmSessionManager<ExoMediaCrypto> getDummyDrmSessionManager() {
+    return DUMMY;
   }
 
   /** {@link DrmSessionManager} that supports no DRM schemes. */
