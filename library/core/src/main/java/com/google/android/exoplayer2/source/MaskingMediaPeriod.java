@@ -173,7 +173,7 @@ public final class MaskingMediaPeriod implements MediaPeriod, MediaPeriod.Callba
 
   @Override
   public boolean selectPreferredTrack(int trackType, int trackIndex) {
-    return false;
+    return castNonNull(mediaPeriod).selectPreferredTrack(trackType, trackIndex);
   }
 
   @Override

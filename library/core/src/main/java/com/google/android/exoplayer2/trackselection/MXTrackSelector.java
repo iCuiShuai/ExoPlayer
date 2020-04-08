@@ -1888,40 +1888,28 @@ public class MXTrackSelector extends MappingTrackSelector {
       TrackGroupArray rendererTrackGroups = mappedTrackInfo.getTrackGroups(i);
       if (params.hasSelectionOverride(i, rendererTrackGroups)) {
         SelectionOverride override = params.getSelectionOverride(i, rendererTrackGroups);
-        if (override == null) {
-          definitions[i] = null;
-        } else if (override.length == 1) {
-          if (mappedTrackInfo.getRendererType(i) == C.TRACK_TYPE_VIDEO) {
+        if (mappedTrackInfo.getRendererType(i) == C.TRACK_TYPE_VIDEO) {
+          TrackSelection.@NullableType Definition definition = definitions[i];
+          if (definition != null && override != null) {
             definitions[i] = new TrackSelection.Definition(
-                            rendererTrackGroups.get(override.groupIndex),
-                            override.tracks,
-                            override.reason,
-                            override.data,
-                            params.preferredVideoResolution,
-                            params.minVideoResolutionInAutoMode,
-                            params.maxVideoResolutionInAutoMode);
-          } else {
-            definitions[i] = new TrackSelection.Definition(
-                              rendererTrackGroups.get(override.groupIndex),
-                              override.tracks,
-                              override.reason,
-                              override.data);
+                    definition.group,
+                    definition.tracks,
+                    override.reason,
+                    override.data,
+                    /*preferredTrack*/ override.tracks[0],
+                    /*minVideoResolution*/ params.minVideoResolutionInAutoMode,
+                    /*maxVideoResolution*/ params.maxVideoResolutionInAutoMode);
           }
         } else {
-          definitions[i] = new TrackSelection.Definition(
-                  rendererTrackGroups.get(override.groupIndex),
-                  override.tracks,
-                  override.reason,
-                  override.data);
+          definitions[i] =
+                  override == null
+                          ? null
+                          : new TrackSelection.Definition(
+                          rendererTrackGroups.get(override.groupIndex),
+                          override.tracks,
+                          override.reason,
+                          override.data);
         }
-//        definitions[i] =
-//            override == null
-//                ? null
-//                : new TrackSelection.Definition(
-//                    rendererTrackGroups.get(override.groupIndex),
-//                    override.tracks,
-//                    override.reason,
-//                    override.data);
       }
     }
 
