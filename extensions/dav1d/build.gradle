@@ -71,3 +71,5 @@ ext {
     javadocTitle = 'DAV1D extension'
 }
 apply from: '../../javadoc_library.gradle'
+
+apply from: '../../publish.gradle'
