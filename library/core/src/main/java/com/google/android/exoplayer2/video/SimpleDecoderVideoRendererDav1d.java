@@ -605,6 +605,9 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
         // The output has been removed. We leave the outputMode of the underlying decoder unchanged
         // in anticipation that a subsequent output will likely be of the same type.
         outputMode = C.VIDEO_OUTPUT_MODE_NONE;
+        if (decoder != null) {
+          setDecoderOutputMode(outputMode);
+        }
         onOutputRemoved();
       }
     } else if (surface != null) {

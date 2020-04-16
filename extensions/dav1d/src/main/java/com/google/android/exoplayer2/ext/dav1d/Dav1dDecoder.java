@@ -79,6 +79,9 @@ import java.nio.ByteBuffer;
    */
   public void setOutputMode(@C.VideoOutputMode int outputMode) {
     this.outputMode = outputMode;
+    if (outputMode == C.VIDEO_OUTPUT_MODE_NONE) {
+      dav1dSetSurface(dav1dDecoderContext, null);
+    }
   }
 
   @Override
@@ -208,6 +211,7 @@ import java.nio.ByteBuffer;
   }
 
   private static native void nativeClassInit();
+
   /**
    * Initializes a libdav1d decoder.
    *
@@ -244,6 +248,15 @@ import java.nio.ByteBuffer;
    */
   private native int dav1dGetFrame(
       long context, VideoDecoderOutputBuffer outputBuffer, boolean decodeOnly);
+
+  /**
+   * Initializes a libdav1d decoder.
+   *
+   * @param context Decoder context.
+   * @param surface Output surface.
+   * @return {@link #DAV1D_OK} if successful, {@link #DAV1D_ERROR} if an error occured.
+   */
+  private static native int dav1dSetSurface(long context, Surface surface);
 
   /**
    * Renders the frame to the surface. Used with {@link C#VIDEO_OUTPUT_MODE_SURFACE_YUV} only.

@@ -383,14 +383,18 @@ struct JniContext {
     }
     if (native_window) {
       ANativeWindow_release(native_window);
+      native_window = NULL;
     }
     native_window_width = 0;
     native_window_height = 0;
-    native_window = ANativeWindow_fromSurface(env, new_surface);
-    if (native_window == nullptr) {
-      jni_status_code = kJniStatusANativeWindowError;
-      surface = nullptr;
-      return false;
+
+    if(new_surface) {
+      native_window = ANativeWindow_fromSurface(env, new_surface);
+      if (native_window == nullptr) {
+        jni_status_code = kJniStatusANativeWindowError;
+        surface = nullptr;
+        return false;
+      }
     }
     surface = new_surface;
     return true;
@@ -896,6 +900,16 @@ DECODER_FUNC(jint, dav1dGetFrame, jlong jContext, jobject jOutputBuffer,
   return kStatusOk;
 }
 
+DECODER_FUNC(jint, dav1dSetSurface, jlong jContext, jobject jSurface) {
+  JniContext* const context = reinterpret_cast<JniContext*>(jContext);
+  if(!context) {
+      return kStatusError;
+  }
+
+  context->MaybeAcquireNativeWindow(env, jSurface);
+
+  return kStatusOk;
+  }
 DECODER_FUNC(jint, dav1dRenderFrame, jlong jContext, jobject jSurface,
              jobject jOutputBuffer) {
   JniContext* const context = reinterpret_cast<JniContext*>(jContext);
