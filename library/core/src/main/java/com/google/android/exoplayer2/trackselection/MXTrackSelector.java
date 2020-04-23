@@ -20,7 +20,6 @@ import android.graphics.Point;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
 import android.util.SparseBooleanArray;
@@ -159,7 +158,6 @@ import org.checkerframework.checker.nullness.compatqual.NullableType;
  */
 public class MXTrackSelector extends MappingTrackSelector {
 
-  private static final String TAG = "MXTrackSelector";
   /**
    * A builder for {@link Parameters}. See the {@link Parameters} documentation for explanations of
    * the parameters that can be configured using this builder.
@@ -2983,9 +2981,7 @@ public class MXTrackSelector extends MappingTrackSelector {
       }
       if (Util.areEqual(this.language, other.language)) {
         // Only compare bit rates of tracks with the same or unknown language.
-        int result = resultSign * compareInts(this.bitrate, other.bitrate);
-        Log.i(TAG, "bitrate=" + (result >= 0 ? this.bitrate : other.bitrate));
-        return result;
+        return resultSign * compareInts(this.bitrate, other.bitrate);
       }
       return 0;
     }
