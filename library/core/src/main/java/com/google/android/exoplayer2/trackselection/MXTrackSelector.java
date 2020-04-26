@@ -2094,8 +2094,13 @@ public class MXTrackSelector extends MappingTrackSelector {
     if (definition == null) {
       definition = selectFixedVideoTrack(groups, formatSupports, params);
     }
-    definition.minVideoResolution = params.minVideoResolutionInAutoMode;
-    definition.maxVideoResolution = params.maxVideoResolutionInAutoMode;
+
+    // Apply video resolution limitation
+    if (definition != null) {
+      definition.minVideoResolution = params.minVideoResolutionInAutoMode;
+      definition.maxVideoResolution = params.maxVideoResolutionInAutoMode;
+    }
+
     return definition;
   }
 
