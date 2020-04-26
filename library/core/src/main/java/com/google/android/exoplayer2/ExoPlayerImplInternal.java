@@ -31,6 +31,7 @@ import com.google.android.exoplayer2.source.MediaSource.MediaPeriodId;
 import com.google.android.exoplayer2.source.MediaSource.MediaSourceCaller;
 import com.google.android.exoplayer2.source.SampleStream;
 import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.trackselection.MXHybridTrackSelection;
 import com.google.android.exoplayer2.trackselection.TrackSelection;
 import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelectorResult;
@@ -81,6 +82,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
   private static final int MSG_SEND_MESSAGE_TO_TARGET_THREAD = 16;
   private static final int MSG_PLAYBACK_PARAMETERS_CHANGED_INTERNAL = 17;
   private static final int MSG_UPDATE_SELECTED_INDEX = 18;
+  private static final int MSG_MAX_VIDEO_RESOLUTION_IN_AUTO_MODE_CHANGED = 19;
 
   private static final int ACTIVE_INTERVAL_MS = 10;
   private static final int IDLE_INTERVAL_MS = 1000;
@@ -303,6 +305,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
     handler.obtainMessage(MSG_UPDATE_SELECTED_INDEX, rendererIndex, groupIndex, trackIndex).sendToTarget();
   }
 
+  @Override
+  public void onMaxVideoResolutionInAutoModeChanged(int maxVideoResolutionInAutoMode){
+    handler.obtainMessage(MSG_MAX_VIDEO_RESOLUTION_IN_AUTO_MODE_CHANGED, maxVideoResolutionInAutoMode).sendToTarget();
+  }
+
   // DefaultMediaClock.PlaybackParameterListener implementation.
 
   @Override
@@ -371,6 +378,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
           break;
         case MSG_UPDATE_SELECTED_INDEX:
           updateSelectedIndex(msg.arg1, msg.arg2, (int) msg.obj);
+          break;
+        case MSG_MAX_VIDEO_RESOLUTION_IN_AUTO_MODE_CHANGED:
+          updateMaxVideoResolutionInAutoMode((int) msg.obj);
           break;
         case MSG_SEND_MESSAGE:
           sendMessageInternal((PlayerMessage) msg.obj);
@@ -1777,6 +1787,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
       maybeContinueLoading();
       updatePlaybackPositions();
       handler.sendEmptyMessage(MSG_DO_SOME_WORK);
+    }
+  }
+
+  private void updateMaxVideoResolutionInAutoMode(int maxVideoResolutionInAutoMode) {
+    MediaPeriodHolder periodHolder = queue.getPlayingPeriod();
+    while (periodHolder != null) {
+      TrackSelection[] trackSelections = periodHolder.getTrackSelectorResult().selections.getAll();
+      for (TrackSelection trackSelection : trackSelections) {
+        /*
+         * TODO:1.Need find a graceful way to handle adaptive stream switch seamless and gracefully.
+         * 2.Improve the performance
+         */
+        if (trackSelection instanceof MXHybridTrackSelection) {
+          ((MXHybridTrackSelection)trackSelection).setMaxVideoResolutionInAutoMode(maxVideoResolutionInAutoMode);
+        }
+      }
+      periodHolder = periodHolder.getNext();
     }
   }
 

@@ -95,7 +95,7 @@ public abstract class TrackSelector {
     void onTrackSelectionsInvalidated();
 
     void onSelectedIndexUpdated(int rendererIndex, int groupIndex, int trackIndex);
-
+    void onMaxVideoResolutionInAutoModeChanged(int maxVideoResolutionInAutoMode);
   }
 
   @Nullable private InvalidationListener listener;
@@ -160,6 +160,12 @@ public abstract class TrackSelector {
   protected final void updateSelectedIndex(int rendererIndex, int groupIndex, int trackIndex) {
     if (listener != null) {
       listener.onSelectedIndexUpdated(rendererIndex, groupIndex, trackIndex);
+    }
+  }
+
+  protected final  void updateMaxVideoResolutionInAutoMode(int maxVideoResolutionInAutoMode) {
+    if (listener != null) {
+      listener.onMaxVideoResolutionInAutoModeChanged(maxVideoResolutionInAutoMode);
     }
   }
 }

@@ -825,4 +825,14 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
       isFastSwitchRequested = false;
     }
   }
+
+  public void setMinVideoResolutionInAutoMode(int minVideoResolution)
+  {
+    minVideoResolutionInAutoMode = minVideoResolution;
+  }
+
+  public void setMaxVideoResolutionInAutoMode(int maxVideoResolution)
+  {
+    maxVideoResolutionInAutoMode = maxVideoResolution;
+  }
 }

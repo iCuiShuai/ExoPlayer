@@ -1685,7 +1685,7 @@ public class MXTrackSelector extends MappingTrackSelector {
    */
   public void setParameters(Parameters parameters) {
     Assertions.checkNotNull(parameters);
-    if (!parametersReference.getAndSet(parameters).equals(parameters)) {
+    if (!parametersReference.get().equals(parameters)) {
       if (parameters.forceInvalidate) {
         invalidate();
         ParametersBuilder builder = parameters.buildUpon();
@@ -1703,6 +1703,12 @@ public class MXTrackSelector extends MappingTrackSelector {
         } else {
           updateSelectedIndex(parameters.rendererIndex, C.INDEX_UNSET, C.INDEX_UNSET);
         }
+        ParametersBuilder builder = parameters.buildUpon();
+        builder.rendererIndex = C.INDEX_UNSET;
+        parametersReference.set(builder.build());
+      } else if (parameters.maxVideoResolutionInAutoMode != parametersReference.get().maxVideoResolutionInAutoMode) {
+        updateMaxVideoResolutionInAutoMode(parameters.maxVideoResolutionInAutoMode);
+        parametersReference.set(parameters);
       }
     }
   }

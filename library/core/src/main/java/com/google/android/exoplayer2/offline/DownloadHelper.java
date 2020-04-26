@@ -519,6 +519,11 @@ public final class DownloadHelper {
       public void onSelectedIndexUpdated(int rendererIndex, int groupIndex, int trackIndex) {
 
       }
+
+      @Override
+      public void onMaxVideoResolutionInAutoModeChanged(int maxVideoResolutionInAutoMode){
+      }
+
     }, new DummyBandwidthMeter());
     callbackHandler = new Handler(Util.getLooper());
     window = new Timeline.Window();
