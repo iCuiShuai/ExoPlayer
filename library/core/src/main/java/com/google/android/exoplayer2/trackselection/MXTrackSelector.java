@@ -190,6 +190,7 @@ public class MXTrackSelector extends MappingTrackSelector {
     //MX Custom
     private int minVideoResolutionInAutoMode;
     private int maxVideoResolutionInAutoMode;
+    private boolean maxVideoResolutionInAutoModeChanged;
     private int preferredVideoResolution;
     private boolean forceInvalidate;
     private int rendererIndex;
@@ -626,6 +627,7 @@ public class MXTrackSelector extends MappingTrackSelector {
     }
 
     public ParametersBuilder setMaxVideoResolutionInAutoMode(int maxVideoResolutionInAutoMode) {
+      maxVideoResolutionInAutoModeChanged = this.maxVideoResolutionInAutoMode != maxVideoResolutionInAutoMode;
       this.maxVideoResolutionInAutoMode = maxVideoResolutionInAutoMode;
       return this;
     }
@@ -843,6 +845,7 @@ public class MXTrackSelector extends MappingTrackSelector {
           // MX Custom
           minVideoResolutionInAutoMode,
           maxVideoResolutionInAutoMode,
+          maxVideoResolutionInAutoModeChanged,
           preferredVideoResolution,
           forceInvalidate,
           rendererIndex,
@@ -878,6 +881,7 @@ public class MXTrackSelector extends MappingTrackSelector {
       // MX Custom
       minVideoResolutionInAutoMode = Integer.MIN_VALUE;
       maxVideoResolutionInAutoMode = Integer.MAX_VALUE;
+      maxVideoResolutionInAutoModeChanged = false;
       preferredVideoResolution = Format.NO_VALUE;
       forceInvalidate = false;
       rendererIndex = C.INDEX_UNSET;
@@ -1086,6 +1090,11 @@ public class MXTrackSelector extends MappingTrackSelector {
     public final int maxVideoResolutionInAutoMode;
 
     /**
+     * Whether maximum allowed video resolution in auto mode changed or not.
+     */
+    public final boolean maxVideoResolutionInAutoModeChanged;
+
+    /**
      * The preferred video resolution..The default value is {@link Format#NO_VALUE} (i.e. no
      * constraint).
      */
@@ -1144,6 +1153,7 @@ public class MXTrackSelector extends MappingTrackSelector {
         // MX Custom
         int minVideoResolutionInAutoMode,
         int maxVideoResolutionInAutoMode,
+        boolean maxVideoResolutionInAutoModeChanged,
         int preferredVideoResolution,
         boolean forceInvalidate,
         int rendererIndex,
@@ -1183,6 +1193,7 @@ public class MXTrackSelector extends MappingTrackSelector {
       //MX Custom
       this.minVideoResolutionInAutoMode = minVideoResolutionInAutoMode;
       this.maxVideoResolutionInAutoMode = maxVideoResolutionInAutoMode;
+      this.maxVideoResolutionInAutoModeChanged = maxVideoResolutionInAutoModeChanged;
       this.preferredVideoResolution = preferredVideoResolution;
       this.forceInvalidate = forceInvalidate;
       this.rendererIndex = rendererIndex;
@@ -1225,6 +1236,7 @@ public class MXTrackSelector extends MappingTrackSelector {
       //MX Custom
       this.minVideoResolutionInAutoMode = in.readInt();
       this.maxVideoResolutionInAutoMode = in.readInt();
+      this.maxVideoResolutionInAutoModeChanged = Util.readBoolean(in);
       this.preferredVideoResolution = in.readInt();
       this.forceInvalidate = Util.readBoolean(in);
       this.rendererIndex = in.readInt();
@@ -1317,6 +1329,7 @@ public class MXTrackSelector extends MappingTrackSelector {
           // MX Custom
           && minVideoResolutionInAutoMode == other.minVideoResolutionInAutoMode
           && maxVideoResolutionInAutoMode == other.maxVideoResolutionInAutoMode
+          && maxVideoResolutionInAutoModeChanged == other.maxVideoResolutionInAutoModeChanged
           && preferredVideoResolution == other.preferredVideoResolution
           && forceInvalidate == other.forceInvalidate
           && rendererIndex == other.rendererIndex
@@ -1354,6 +1367,7 @@ public class MXTrackSelector extends MappingTrackSelector {
       // MX Custom
       result = 31 * result + minVideoResolutionInAutoMode;
       result = 31 * result + maxVideoResolutionInAutoMode;
+      result = 31 * result + (maxVideoResolutionInAutoModeChanged ? 1 : 0);
       result = 31 * result + preferredVideoResolution;
       result = 31 * result + (forceInvalidate ? 1 : 0);
       result = 31 * result + rendererIndex;
@@ -1395,8 +1409,9 @@ public class MXTrackSelector extends MappingTrackSelector {
       Util.writeBoolean(dest, exceedRendererCapabilitiesIfNecessary);
       dest.writeInt(tunnelingAudioSessionId);
       // MX Custom
-      dest.writeInt(maxVideoResolutionInAutoMode);
       dest.writeInt(minVideoResolutionInAutoMode);
+      dest.writeInt(maxVideoResolutionInAutoMode);
+      Util.writeBoolean(dest, maxVideoResolutionInAutoModeChanged);
       dest.writeInt(preferredVideoResolution);
       Util.writeBoolean(dest, forceInvalidate);
       dest.writeInt(rendererIndex);
@@ -1685,30 +1700,41 @@ public class MXTrackSelector extends MappingTrackSelector {
    */
   public void setParameters(Parameters parameters) {
     Assertions.checkNotNull(parameters);
-    if (!parametersReference.get().equals(parameters)) {
+    if (!parametersReference.getAndSet(parameters).equals(parameters)) {
       if (parameters.forceInvalidate) {
         invalidate();
         ParametersBuilder builder = parameters.buildUpon();
         builder.forceInvalidate = false;
         parametersReference.set(builder.build());
-      } else if (parameters.rendererIndex != C.INDEX_UNSET) {
-        Map<TrackGroupArray, SelectionOverride> overrides = parameters.selectionOverrides.get(parameters.rendererIndex);
-        if (overrides != null) {
-          SelectionOverride override = overrides.get(parameters.groups);
-          if (override != null) {
-            updateSelectedIndex(parameters.rendererIndex, override.groupIndex, override.tracks[0]);
+      } else {
+        /*
+         * Check corresponding SelectionOverride of renderer specified by rendererIndex.
+         * If exists, apply selected track or clear current selection.
+         */
+        if (parameters.rendererIndex != C.INDEX_UNSET) {
+          Map<TrackGroupArray, SelectionOverride> overrides = parameters.selectionOverrides.get(parameters.rendererIndex);
+          if (overrides != null) {
+            SelectionOverride override = overrides.get(parameters.groups);
+            if (override != null) {
+              updateSelectedIndex(parameters.rendererIndex, override.groupIndex, override.tracks[0]);
+            } else {
+              updateSelectedIndex(parameters.rendererIndex, C.INDEX_UNSET, C.INDEX_UNSET);
+            }
           } else {
             updateSelectedIndex(parameters.rendererIndex, C.INDEX_UNSET, C.INDEX_UNSET);
           }
-        } else {
-          updateSelectedIndex(parameters.rendererIndex, C.INDEX_UNSET, C.INDEX_UNSET);
         }
-        ParametersBuilder builder = parameters.buildUpon();
-        builder.rendererIndex = C.INDEX_UNSET;
-        parametersReference.set(builder.build());
-      } else if (parameters.maxVideoResolutionInAutoMode != parametersReference.get().maxVideoResolutionInAutoMode) {
-        updateMaxVideoResolutionInAutoMode(parameters.maxVideoResolutionInAutoMode);
-        parametersReference.set(parameters);
+
+        /*
+         * If maximum video resolution in auto mode changed, notify track selection listener.
+         */
+        if (parameters.maxVideoResolutionInAutoModeChanged) {
+          updateMaxVideoResolutionInAutoMode(parameters.maxVideoResolutionInAutoMode);
+
+          ParametersBuilder builder = parameters.buildUpon();
+          builder.maxVideoResolutionInAutoModeChanged = false;
+          parametersReference.set(builder.build());
+        }
       }
     }
   }
