@@ -134,11 +134,6 @@ public final class ClippingMediaPeriod implements MediaPeriod, MediaPeriod.Callb
   }
 
   @Override
-  public boolean selectPreferredTrack(int trackType, int trackIndex) {
-    return mediaPeriod.selectPreferredTrack(trackType, trackIndex);
-  }
-
-  @Override
   public void discardBuffer(long positionUs, boolean toKeyframe) {
     mediaPeriod.discardBuffer(positionUs, toKeyframe);
   }

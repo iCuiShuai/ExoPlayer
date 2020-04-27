@@ -40,6 +40,7 @@ import com.google.android.exoplayer2.util.Assertions;
 import com.google.android.exoplayer2.util.Clock;
 import com.google.android.exoplayer2.util.HandlerWrapper;
 import com.google.android.exoplayer2.util.Log;
+import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.TraceUtil;
 import com.google.android.exoplayer2.util.Util;
 import java.io.IOException;
@@ -1775,18 +1776,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
   private void updateSelectedIndex(int rendererIndex, int groupIndex, int trackIndex)
           throws ExoPlaybackException {
+    int targetTrackType = rendererCapabilities[rendererIndex].getTrackType();
     MediaPeriodHolder periodHolder = queue.getPlayingPeriod();
-    if (periodHolder == null || !periodHolder.prepared) {
-      // The reselection did not change any prepared periods.
-      return;
-    }
-
-    periodHolder.selectPreferredTrack(rendererIndex, trackIndex);
-
-    if (playbackInfo.playbackState != Player.STATE_ENDED) {
-      maybeContinueLoading();
-      updatePlaybackPositions();
-      handler.sendEmptyMessage(MSG_DO_SOME_WORK);
+    while (periodHolder != null) {
+      TrackSelection[] trackSelections = periodHolder.getTrackSelectorResult().selections.getAll();
+        for (TrackSelection trackSelection : trackSelections) {
+        if (trackSelection != null && trackSelection.length() > 0) {
+          int trackType = MimeTypes.getTrackType(trackSelection.getFormat(0).sampleMimeType);
+          if (trackType == targetTrackType) {
+            if (trackSelection instanceof MXHybridTrackSelection) {
+              ((MXHybridTrackSelection)trackSelection).setSelectedIndex(trackIndex);
+            }
+          }
+        }
+      }
+      periodHolder = periodHolder.getNext();
     }
   }
 

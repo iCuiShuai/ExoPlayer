@@ -2127,7 +2127,11 @@ public class MXTrackSelector extends MappingTrackSelector {
       definition = selectFixedVideoTrack(groups, formatSupports, params);
     }
 
-    // Apply video resolution limitation
+    /*
+     * Apply video resolution limitation only when corresponding definition exists.
+     * Because renderer corresponding definition may doesn't exist due some reasons.
+     * For example capabilities and so on.
+     */
     if (definition != null) {
       definition.minVideoResolution = params.minVideoResolutionInAutoMode;
       definition.maxVideoResolution = params.maxVideoResolutionInAutoMode;

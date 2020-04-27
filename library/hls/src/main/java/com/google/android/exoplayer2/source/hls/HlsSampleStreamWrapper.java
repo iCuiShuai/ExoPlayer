@@ -439,12 +439,6 @@ import org.checkerframework.checker.nullness.qual.RequiresNonNull;
     return seekRequired;
   }
 
-  public void selectPreferredTrack(int trackType, int trackIndex) {
-    if (chunkSource != null) {
-      chunkSource.setPreferredTrackIndex(trackIndex);
-    }
-  }
-
   public void discardBuffer(long positionUs, boolean toKeyframe) {
     if (!sampleQueuesBuilt || isPendingReset()) {
       return;

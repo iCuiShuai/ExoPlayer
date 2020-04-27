@@ -340,16 +340,6 @@ public final class HlsMediaPeriod implements MediaPeriod, HlsSampleStreamWrapper
   }
 
   @Override
-  public boolean selectPreferredTrack(int trackType, int trackIndex) {
-    for (HlsSampleStreamWrapper sampleStreamWrapper : enabledSampleStreamWrappers) {
-      if (sampleStreamWrapper != null) {
-        sampleStreamWrapper.selectPreferredTrack(trackType, trackIndex);
-      }
-    }
-    return true;
-  }
-
-  @Override
   public void discardBuffer(long positionUs, boolean toKeyframe) {
     for (HlsSampleStreamWrapper sampleStreamWrapper : enabledSampleStreamWrappers) {
       sampleStreamWrapper.discardBuffer(positionUs, toKeyframe);
