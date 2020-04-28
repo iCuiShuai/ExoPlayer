@@ -1853,61 +1853,64 @@ public class MXTrackSelector extends MappingTrackSelector {
       if (mappedTrackInfo.getRendererType(i) == C.TRACK_TYPE_VIDEO) {
         if (params.preferredVideoResolution != Format.NO_VALUE) {
           TrackGroupArray rendererTrackGroups = mappedTrackInfo.getTrackGroups(i);
-          if (!params.hasSelectionOverride(i, rendererTrackGroups)) {
-            int preferredIndex;
+          if (rendererTrackGroups.length > 0) {
+            if (!params.hasSelectionOverride(i, rendererTrackGroups)) {
+              FormatEntry preferredEntry;
 
-            List<FormatEntry> formatEntries = new ArrayList<>(6);
-            for (int j = 0; j < rendererTrackGroups.length; ++j) {
-              TrackGroup group = rendererTrackGroups.get(j);
+              List<FormatEntry> formatEntries = new ArrayList<>(6);
+              for (int j = 0; j < rendererTrackGroups.length; ++j) {
+                TrackGroup group = rendererTrackGroups.get(j);
 
-
-              for (int index = 0; index < group.length; ++index) {
-                if (mappedTrackInfo.getTrackSupport(i, j, index)
-                        == RendererCapabilities.FORMAT_HANDLED) {
-                  formatEntries.add(FormatEntry.create(group.getFormat(index), j, index));
-                }
-              }
-            }
-            if (formatEntries.size() > 0) {
-              Collections.sort(formatEntries);
-
-              List<FormatEntry> temp = new ArrayList<>();
-              for (int index = 0; index < formatEntries.size(); ++index) {
-                FormatEntry entry = formatEntries.get(index);
-                if (params.preferredVideoResolution == entry.getFormat().height) {
-                  temp.add(entry);
-                }
-              }
-
-              //Find the best matched index
-              if (temp.size() > 0) {
-                preferredIndex = temp.get(temp.size() / 2).getTrackIndex();
-              } else {
-                //The best matched index doesn't exist.So we need to find suboptimum index.
-                int height = formatEntries.get(0).getFormat().height;
-                for (int index = 1; index < formatEntries.size(); ++index) {
-                  FormatEntry entry = formatEntries.get(index);
-                  if (Math.abs(entry.getFormat().height - params.preferredVideoResolution) < Math.abs(height - params.preferredVideoResolution)) {
-                    height = entry.getFormat().height;
+                for (int index = 0; index < group.length; ++index) {
+                  if (mappedTrackInfo.getTrackSupport(i, j, index)
+                          == RendererCapabilities.FORMAT_HANDLED) {
+                    formatEntries.add(FormatEntry.create(group.getFormat(index), j, index));
                   }
                 }
+              }
+              if (formatEntries.size() > 0) {
+                Collections.sort(formatEntries);
 
+                List<FormatEntry> temp = new ArrayList<>();
                 for (int index = 0; index < formatEntries.size(); ++index) {
                   FormatEntry entry = formatEntries.get(index);
-                  if (height == entry.getFormat().height) {
+                  if (params.preferredVideoResolution == entry.getFormat().height) {
                     temp.add(entry);
                   }
                 }
-                preferredIndex = temp.get(temp.size() / 2).getTrackIndex();
+
+                //Find the best matched index
+                if (temp.size() > 0) {
+                  preferredEntry = temp.get(temp.size() / 2);
+                } else {
+                  //The best matched index doesn't exist.So we need to find suboptimum index.
+                  int height = formatEntries.get(0).getFormat().height;
+                  for (int index = 1; index < formatEntries.size(); ++index) {
+                    FormatEntry entry = formatEntries.get(index);
+                    if (Math.abs(entry.getFormat().height - params.preferredVideoResolution) < Math.abs(height - params.preferredVideoResolution)) {
+                      height = entry.getFormat().height;
+                    }
+                  }
+
+                  for (int index = 0; index < formatEntries.size(); ++index) {
+                    FormatEntry entry = formatEntries.get(index);
+                    if (height == entry.getFormat().height) {
+                      temp.add(entry);
+                    }
+                  }
+                  preferredEntry = temp.get(temp.size() / 2);
+                }
+                if (preferredEntry != null) {
+                  ParametersBuilder builder = params.buildUpon();
+                  builder.setSelectionOverride(i, rendererTrackGroups, new MXTrackSelector.SelectionOverride(preferredEntry.getGroupIndex(), preferredEntry.getTrackIndex()));
+                  parametersReference.set( builder.build() );
+                  params = parametersReference.get();
+                }
               }
-              ParametersBuilder builder = params.buildUpon();
-              builder.setSelectionOverride(i, rendererTrackGroups, new MXTrackSelector.SelectionOverride(i, preferredIndex));
-              parametersReference.set( builder.build() );
-              params = parametersReference.get();
             }
+            break;
           }
         }
-        break;
       }
     }
 
@@ -1920,7 +1923,7 @@ public class MXTrackSelector extends MappingTrackSelector {
       TrackGroupArray rendererTrackGroups = mappedTrackInfo.getTrackGroups(i);
       if (params.hasSelectionOverride(i, rendererTrackGroups)) {
         SelectionOverride override = params.getSelectionOverride(i, rendererTrackGroups);
-        if (mappedTrackInfo.getRendererType(i) == C.TRACK_TYPE_VIDEO) {
+        if (mappedTrackInfo.getRendererType(i) == C.TRACK_TYPE_VIDEO && rendererTrackGroups.length > 0) {
           TrackSelection.@NullableType Definition definition = definitions[i];
           if (definition != null && override != null) {
             definitions[i] = new TrackSelection.Definition(
