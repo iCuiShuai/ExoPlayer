@@ -320,7 +320,7 @@ public final class ImaAdsLoader
   private final boolean focusSkipButtonWhenAvailable;
   private final int mediaBitrate;
   @Nullable private final Set<UiElement> adUiElements;
-  @Nullable private final AdEventListener adEventListener;
+  @Nullable private AdEventListener adEventListener;
   private final ImaFactory imaFactory;
   private final Timeline.Period period;
   private final List<VideoAdPlayerCallback> adCallbacks;
@@ -667,6 +667,7 @@ public final class ImaAdsLoader
     pendingAdLoadError = null;
     adPlaybackState = AdPlaybackState.NONE;
     updateAdPlaybackState();
+    adEventListener = null;
   }
 
   @Override
