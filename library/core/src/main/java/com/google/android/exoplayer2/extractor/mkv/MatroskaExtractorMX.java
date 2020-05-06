@@ -15,11 +15,11 @@
  */
 package com.google.android.exoplayer2.extractor.mkv;
 
+import android.util.Pair;
+import android.util.SparseArray;
 import androidx.annotation.CallSuper;
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
-import android.util.Pair;
-import android.util.SparseArray;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.ParserException;
@@ -147,7 +147,7 @@ public class MatroskaExtractorMX implements Extractor {
   private static final int ID_CLUSTER = 0x1E52C584;
   private static final int ID_TIME_CODE = 0xF6;
   private static final int ID_SIMPLE_BLOCK = 0xB2;
-  private static final int ID_BLOCK_GROUP = 0xB1;
+  private static final int ID_BLOCK_GROUP = 0xBF;
   private static final int ID_BLOCK = 0xB0;
   private static final int ID_BLOCK_DURATION = 0xAA;
   private static final int ID_REFERENCE_BLOCK = 0x8A;
@@ -184,7 +184,7 @@ public class MatroskaExtractorMX implements Extractor {
   private static final int ID_CONTENT_ENCRYPTION_ALGORITHM = 0x56D0;
   private static final int ID_CONTENT_ENCRYPTION_KEY_ID = 0x56D1;
   private static final int ID_CONTENT_ENCRYPTION_AES_SETTINGS = 0x56D6;
-  private static final int ID_CONTENT_ENCRYPTION_AES_SETTINGS_CIPHER_MODE = 0x47E8;
+  private static final int ID_CONTENT_ENCRYPTION_AES_SETTINGS_CIPHER_MODE = 0x56F7;
   private static final int ID_CUES = 0x1B62CA7A;
   private static final int ID_CUE_POINT = 0xCA;
   private static final int ID_CUE_TIME = 0xC2;
@@ -1241,10 +1241,10 @@ public class MatroskaExtractorMX implements Extractor {
   private void writeSampleData(ExtractorInput input, Track track, int size)
       throws IOException, InterruptedException {
     if (CODEC_ID_SUBRIP.equals(track.codecId)) {
-      writeSubtitleSampleData(input, SUBRIP_PREFIX, size);
+      writeSubtitleSampleData(input, track, SUBRIP_PREFIX, size);
       return;
     } else if (CODEC_ID_ASS.equals(track.codecId)) {
-      writeSubtitleSampleData(input, SSA_PREFIX, size);
+      writeSubtitleSampleData(input, track, SSA_PREFIX, size);
       return;
     }
 
@@ -1341,7 +1341,7 @@ public class MatroskaExtractorMX implements Extractor {
     }
   }
 
-  private void writeSubtitleSampleData(ExtractorInput input, byte[] samplePrefix, int size)
+  private void writeSubtitleSampleData(ExtractorInput input, Track track, byte[] samplePrefix, int size)
       throws IOException, InterruptedException {
     int sizeWithPrefix = samplePrefix.length + size;
     if (subtitleSample.capacity() < sizeWithPrefix) {
@@ -1351,7 +1351,19 @@ public class MatroskaExtractorMX implements Extractor {
     } else {
       System.arraycopy(samplePrefix, 0, subtitleSample.data, 0, samplePrefix.length);
     }
+    if (track.hasContentEncryption) {
+      byte [] srcBuffer = new byte[size];
+      input.readFully(srcBuffer, 0, size);
+      try {
+        byte [] dstByte = SnifferMX.decrypt(srcBuffer, track.cryptoData.encryptionKey);
+        System.arraycopy(dstByte, 0, subtitleSample.data, samplePrefix.length, size);
+      } catch (Exception e) {
+        throw new ParserException("Decrypt failed!");
+      }
+    }else {
     input.readFully(subtitleSample.data, samplePrefix.length, size);
+    }
+
     subtitleSample.reset(sizeWithPrefix);
     // Defer writing the data to the track output. We need to modify the sample data by setting
     // the correct end timecode, which we might not have yet.
