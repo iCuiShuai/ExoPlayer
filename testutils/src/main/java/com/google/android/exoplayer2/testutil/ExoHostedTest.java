@@ -32,6 +32,7 @@ import com.google.android.exoplayer2.audio.DefaultAudioSink;
 import com.google.android.exoplayer2.decoder.DecoderCounters;
 import com.google.android.exoplayer2.drm.DrmSessionManager;
 import com.google.android.exoplayer2.drm.FrameworkMediaCrypto;
+import com.google.android.exoplayer2.drm.SessionUtil;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.testutil.HostActivity.HostedTest;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
@@ -230,7 +231,7 @@ public abstract class ExoHostedTest implements AnalyticsListener, HostedTest {
 
   protected DrmSessionManager<FrameworkMediaCrypto> buildDrmSessionManager(String userAgent) {
     // Do nothing. Interested subclasses may override.
-    return DrmSessionManager.getDummyDrmSessionManager();
+    return SessionUtil.getDummyDrmSessionManager();
   }
 
   protected DefaultTrackSelector buildTrackSelector(HostActivity host) {

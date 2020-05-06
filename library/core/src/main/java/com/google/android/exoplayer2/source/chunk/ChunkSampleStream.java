@@ -23,6 +23,7 @@ import com.google.android.exoplayer2.SeekParameters;
 import com.google.android.exoplayer2.decoder.DecoderInputBuffer;
 import com.google.android.exoplayer2.drm.DrmSession;
 import com.google.android.exoplayer2.drm.DrmSessionManager;
+import com.google.android.exoplayer2.drm.SessionUtil;
 import com.google.android.exoplayer2.source.MediaSourceEventListener.EventDispatcher;
 import com.google.android.exoplayer2.source.SampleQueue;
 import com.google.android.exoplayer2.source.SampleStream;
@@ -136,7 +137,7 @@ public class ChunkSampleStream<T extends ChunkSource> implements SampleStream, S
 
     for (int i = 0; i < embeddedTrackCount; i++) {
       SampleQueue sampleQueue =
-          new SampleQueue(allocator, DrmSessionManager.getDummyDrmSessionManager());
+          new SampleQueue(allocator, SessionUtil.getDummyDrmSessionManager());
       embeddedSampleQueues[i] = sampleQueue;
       sampleQueues[i + 1] = sampleQueue;
       trackTypes[i + 1] = embeddedTrackTypes[i];

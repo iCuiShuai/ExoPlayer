@@ -32,6 +32,7 @@ import com.google.android.exoplayer2.drm.DrmSessionManager;
 import com.google.android.exoplayer2.drm.ExoMediaCrypto;
 import com.google.android.exoplayer2.drm.FrameworkMediaDrm;
 import com.google.android.exoplayer2.drm.HttpMediaDrmCallback;
+import com.google.android.exoplayer2.drm.SessionUtil;
 import com.google.android.exoplayer2.ext.cast.CastPlayer;
 import com.google.android.exoplayer2.ext.cast.DefaultMediaItemConverter;
 import com.google.android.exoplayer2.ext.cast.MediaItem;
@@ -407,7 +408,7 @@ import java.util.Map;
     }
 
     DrmSessionManager<ExoMediaCrypto> drmSessionManager =
-        DrmSessionManager.getDummyDrmSessionManager();
+        SessionUtil.getDummyDrmSessionManager();
     MediaItem.DrmConfiguration drmConfiguration = item.drmConfiguration;
     if (drmConfiguration != null && Util.SDK_INT >= 18) {
       String licenseServerUrl =

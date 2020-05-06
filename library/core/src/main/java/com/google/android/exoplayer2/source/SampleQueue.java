@@ -26,6 +26,7 @@ import com.google.android.exoplayer2.decoder.DecoderInputBuffer;
 import com.google.android.exoplayer2.drm.DrmInitData;
 import com.google.android.exoplayer2.drm.DrmSession;
 import com.google.android.exoplayer2.drm.DrmSessionManager;
+import com.google.android.exoplayer2.drm.SessionUtil;
 import com.google.android.exoplayer2.extractor.ExtractorInput;
 import com.google.android.exoplayer2.extractor.TrackOutput;
 import com.google.android.exoplayer2.upstream.Allocator;
@@ -772,7 +773,7 @@ public class SampleQueue implements TrackOutput {
     boolean isFirstFormat = downstreamFormat == null;
     DrmInitData oldDrmInitData = isFirstFormat ? null : downstreamFormat.drmInitData;
     downstreamFormat = newFormat;
-    if (drmSessionManager == DrmSessionManager.DUMMY) {
+    if (drmSessionManager == SessionUtil.DUMMY) {
       // Avoid attempting to acquire a session using the dummy DRM session manager. It's likely that
       // the media source creation has not yet been migrated and the renderer can acquire the
       // session for the read DRM init data.
@@ -809,7 +810,7 @@ public class SampleQueue implements TrackOutput {
    * @return Whether it's possible to read the next sample.
    */
   private boolean mayReadSample(int relativeReadIndex) {
-    if (drmSessionManager == DrmSessionManager.DUMMY) {
+    if (drmSessionManager == SessionUtil.DUMMY) {
       // TODO: Remove once renderers are migrated [Internal ref: b/122519809].
       // For protected content it's likely that the DrmSessionManager is still being injected into
       // the renderers. We assume that the renderers will be able to acquire a DrmSession if needed.

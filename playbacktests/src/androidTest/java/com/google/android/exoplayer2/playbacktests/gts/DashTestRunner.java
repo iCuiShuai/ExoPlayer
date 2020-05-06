@@ -33,6 +33,7 @@ import com.google.android.exoplayer2.drm.FrameworkMediaCrypto;
 import com.google.android.exoplayer2.drm.FrameworkMediaDrm;
 import com.google.android.exoplayer2.drm.HttpMediaDrmCallback;
 import com.google.android.exoplayer2.drm.MediaDrmCallback;
+import com.google.android.exoplayer2.drm.SessionUtil;
 import com.google.android.exoplayer2.drm.UnsupportedDrmException;
 import com.google.android.exoplayer2.mediacodec.MediaCodecUtil;
 import com.google.android.exoplayer2.source.MediaSource;
@@ -259,7 +260,7 @@ import java.util.List;
     protected DrmSessionManager<FrameworkMediaCrypto> buildDrmSessionManager(
         final String userAgent) {
       if (widevineLicenseUrl == null) {
-        return DrmSessionManager.getDummyDrmSessionManager();
+        return SessionUtil.getDummyDrmSessionManager();
       }
       try {
         MediaDrmCallback drmCallback = new HttpMediaDrmCallback(widevineLicenseUrl,
