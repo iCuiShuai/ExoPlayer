@@ -43,6 +43,7 @@ import com.google.android.exoplayer2.util.Assertions;
 import com.google.android.exoplayer2.util.EventLogger;
 import com.google.android.exoplayer2.util.GlUtil;
 import com.google.android.exoplayer2.util.Util;
+import com.google.android.exoplayer2.drm.SessionUtil;
 import java.util.UUID;
 
 /**
@@ -151,7 +152,7 @@ public final class MainActivity extends Activity {
               .setUuidAndExoMediaDrmProvider(drmSchemeUuid, FrameworkMediaDrm.DEFAULT_PROVIDER)
               .build(drmCallback);
     } else {
-      drmSessionManager = DrmSessionManager.getDummyDrmSessionManager();
+      drmSessionManager = SessionUtil.getDummyDrmSessionManager();
     }
 
     DataSource.Factory dataSourceFactory =
