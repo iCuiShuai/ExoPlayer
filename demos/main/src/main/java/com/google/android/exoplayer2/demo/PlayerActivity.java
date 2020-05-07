@@ -46,7 +46,6 @@ import com.google.android.exoplayer2.drm.ExoMediaCrypto;
 import com.google.android.exoplayer2.drm.FrameworkMediaDrm;
 import com.google.android.exoplayer2.drm.HttpMediaDrmCallback;
 import com.google.android.exoplayer2.drm.MediaDrmCallback;
-import com.google.android.exoplayer2.drm.SessionUtil;
 import com.google.android.exoplayer2.mediacodec.MediaCodecRenderer.DecoderInitializationException;
 import com.google.android.exoplayer2.mediacodec.MediaCodecUtil.DecoderQueryException;
 import com.google.android.exoplayer2.offline.DownloadHelper;
@@ -481,7 +480,7 @@ public class PlayerActivity extends AppCompatActivity
     int errorStringId = R.string.error_drm_unknown;
     DrmSessionManager<ExoMediaCrypto> drmSessionManager = null;
     if (drmInfo == null) {
-      drmSessionManager = SessionUtil.getDummyDrmSessionManager();
+      drmSessionManager = DrmSessionManager.getDummyDrmSessionManager();
     } else if (Util.SDK_INT < 18) {
       errorStringId = R.string.error_drm_unsupported_before_api_18;
     } else if (!MediaDrm.isCryptoSchemeSupported(drmInfo.drmScheme)) {
@@ -623,7 +622,7 @@ public class PlayerActivity extends AppCompatActivity
           new MediaSourceFactory() {
 
             private DrmSessionManager<?> drmSessionManager =
-                SessionUtil.getDummyDrmSessionManager();
+                DrmSessionManager.getDummyDrmSessionManager();
 
             @Override
             public MediaSourceFactory setDrmSessionManager(DrmSessionManager<?> drmSessionManager) {

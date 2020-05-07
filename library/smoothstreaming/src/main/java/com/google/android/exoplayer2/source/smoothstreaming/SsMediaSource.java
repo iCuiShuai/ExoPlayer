@@ -24,7 +24,6 @@ import com.google.android.exoplayer2.ExoPlayerLibraryInfo;
 import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.drm.DrmSession;
 import com.google.android.exoplayer2.drm.DrmSessionManager;
-import com.google.android.exoplayer2.drm.SessionUtil;
 import com.google.android.exoplayer2.offline.FilteringManifestParser;
 import com.google.android.exoplayer2.offline.StreamKey;
 import com.google.android.exoplayer2.source.BaseMediaSource;
@@ -102,7 +101,7 @@ public final class SsMediaSource extends BaseMediaSource
         @Nullable DataSource.Factory manifestDataSourceFactory) {
       this.chunkSourceFactory = Assertions.checkNotNull(chunkSourceFactory);
       this.manifestDataSourceFactory = manifestDataSourceFactory;
-      drmSessionManager = SessionUtil.getDummyDrmSessionManager();
+      drmSessionManager = DrmSessionManager.getDummyDrmSessionManager();
       loadErrorHandlingPolicy = new DefaultLoadErrorHandlingPolicy();
       livePresentationDelayMs = DEFAULT_LIVE_PRESENTATION_DELAY_MS;
       compositeSequenceableLoaderFactory = new DefaultCompositeSequenceableLoaderFactory();
@@ -265,7 +264,7 @@ public final class SsMediaSource extends BaseMediaSource
 
     /**
      * Sets the {@link DrmSessionManager} to use for acquiring {@link DrmSession DrmSessions}. The
-     * default value is {@link SessionUtil#DUMMY}.
+     * default value is {@link DrmSessionManager#DUMMY}.
      *
      * @param drmSessionManager The {@link DrmSessionManager}.
      * @return This factory, for convenience.
@@ -406,7 +405,7 @@ public final class SsMediaSource extends BaseMediaSource
         /* manifestParser= */ null,
         chunkSourceFactory,
         new DefaultCompositeSequenceableLoaderFactory(),
-        SessionUtil.getDummyDrmSessionManager(),
+        DrmSessionManager.getDummyDrmSessionManager(),
         new DefaultLoadErrorHandlingPolicy(minLoadableRetryCount),
         DEFAULT_LIVE_PRESENTATION_DELAY_MS,
         /* tag= */ null);
@@ -507,7 +506,7 @@ public final class SsMediaSource extends BaseMediaSource
         manifestParser,
         chunkSourceFactory,
         new DefaultCompositeSequenceableLoaderFactory(),
-        SessionUtil.getDummyDrmSessionManager(),
+        DrmSessionManager.getDummyDrmSessionManager(),
         new DefaultLoadErrorHandlingPolicy(minLoadableRetryCount),
         livePresentationDelayMs,
         /* tag= */ null);

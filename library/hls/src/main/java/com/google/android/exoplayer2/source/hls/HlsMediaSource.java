@@ -25,7 +25,6 @@ import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayerLibraryInfo;
 import com.google.android.exoplayer2.drm.DrmSession;
 import com.google.android.exoplayer2.drm.DrmSessionManager;
-import com.google.android.exoplayer2.drm.SessionUtil;
 import com.google.android.exoplayer2.extractor.Extractor;
 import com.google.android.exoplayer2.offline.StreamKey;
 import com.google.android.exoplayer2.source.BaseMediaSource;
@@ -125,7 +124,7 @@ public final class HlsMediaSource extends BaseMediaSource
       playlistParserFactory = new DefaultHlsPlaylistParserFactory();
       playlistTrackerFactory = DefaultHlsPlaylistTracker.FACTORY;
       extractorFactory = HlsExtractorFactory.DEFAULT;
-      drmSessionManager = SessionUtil.getDummyDrmSessionManager();
+      drmSessionManager = DrmSessionManager.getDummyDrmSessionManager();
       loadErrorHandlingPolicy = new DefaultLoadErrorHandlingPolicy();
       compositeSequenceableLoaderFactory = new DefaultCompositeSequenceableLoaderFactory();
       metadataType = METADATA_TYPE_ID3;
@@ -315,7 +314,7 @@ public final class HlsMediaSource extends BaseMediaSource
 
     /**
      * Sets the {@link DrmSessionManager} to use for acquiring {@link DrmSession DrmSessions}. The
-     * default value is {@link SessionUtil#DUMMY}.
+     * default value is {@link DrmSessionManager#DUMMY}.
      *
      * @param drmSessionManager The {@link DrmSessionManager}.
      * @return This factory, for convenience.

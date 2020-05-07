@@ -29,7 +29,6 @@ import com.google.android.exoplayer2.RenderersFactory;
 import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.drm.DrmSessionManager;
 import com.google.android.exoplayer2.drm.FrameworkMediaCrypto;
-import com.google.android.exoplayer2.drm.SessionUtil;
 import com.google.android.exoplayer2.source.MediaPeriod;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.MediaSource.MediaPeriodId;
@@ -422,7 +421,7 @@ public final class DownloadHelper {
   public static MediaSource createMediaSource(
       DownloadRequest downloadRequest, DataSource.Factory dataSourceFactory) {
     return createMediaSource(
-        downloadRequest, dataSourceFactory, SessionUtil.getDummyDrmSessionManager());
+        downloadRequest, dataSourceFactory, DrmSessionManager.getDummyDrmSessionManager());
   }
 
   /**
