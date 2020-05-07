@@ -31,7 +31,7 @@ public interface DrmSessionManager<T extends ExoMediaCrypto> {
   }
 
   /** {@link DrmSessionManager} that supports no DRM schemes. */
-  static DrmSessionManager<ExoMediaCrypto> DUMMY =
+  DrmSessionManager<ExoMediaCrypto> DUMMY =
       new DrmSessionManager<ExoMediaCrypto>() {
 
         @Override
