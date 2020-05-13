@@ -777,7 +777,7 @@ public final class ImaAdsLoader
       adPlaybackState = new AdPlaybackState();
       updateAdPlaybackState();
       if (adTracker != null) {
-        adTracker.trackEvent(IVideoAdTracker.EVENT_VIDEO_AD_PLAY_FAILED, IVideoAdTracker.buildFailedParams(adGroupIndex, startRequestTime, error));
+        adTracker.trackEvent(IVideoAdTracker.EVENT_VIDEO_AD_PLAY_FAILED, IVideoAdTracker.buildFailedParams(adGroupIndex, startRequestTime, error, getAdGroupCount()));
       }
     } else if (isAdGroupLoadError(error)) {
       try {
@@ -1004,7 +1004,7 @@ public final class ImaAdsLoader
     if (lastPlayAdGroupIndex != getAdGroupIndex()) {
       lastPlayAdGroupIndex = getAdGroupIndex();
       if (adTracker != null) {
-        adTracker.trackEvent(IVideoAdTracker.EVENT_VIDEO_AD_PLAY_SUCCESS, IVideoAdTracker.buildSuccessParams(adLoadedTime, startRequestTime, startLoadMediaTime, adGroupIndex));
+        adTracker.trackEvent(IVideoAdTracker.EVENT_VIDEO_AD_PLAY_SUCCESS, IVideoAdTracker.buildSuccessParams(adLoadedTime, startRequestTime, startLoadMediaTime, adGroupIndex, getAdGroupCount()));
       }
     }
   }
@@ -1351,7 +1351,7 @@ public final class ImaAdsLoader
       return;
     }
     if (adTracker != null) {
-      adTracker.trackEvent(IVideoAdTracker.EVENT_VIDEO_AD_PLAY_FAILED, IVideoAdTracker.buildFailedParams(adGroupIndex, startRequestTime, error));
+      adTracker.trackEvent(IVideoAdTracker.EVENT_VIDEO_AD_PLAY_FAILED, IVideoAdTracker.buildFailedParams(adGroupIndex, startRequestTime, error, getAdGroupCount()));
     }
     AdPlaybackState.AdGroup adGroup = adPlaybackState.adGroups[adGroupIndex];
     if (adGroup.count == C.LENGTH_UNSET) {
@@ -1410,8 +1410,12 @@ public final class ImaAdsLoader
     adPlaybackState = adPlaybackState.withAdLoadError(adGroupIndex, adIndexInAdGroup);
     updateAdPlaybackState();
     if (adTracker != null) {
-      adTracker.trackEvent(IVideoAdTracker.EVENT_VIDEO_AD_PLAY_FAILED, IVideoAdTracker.buildFailedParams(adGroupIndex, adIndexInAdGroup, startRequestTime, exception));
+      adTracker.trackEvent(IVideoAdTracker.EVENT_VIDEO_AD_PLAY_FAILED, IVideoAdTracker.buildFailedParams(adGroupIndex, adIndexInAdGroup, startRequestTime, exception, getAdGroupCount()));
     }
+  }
+
+  private int getAdGroupCount() {
+    return adsManager != null && adsManager.getAdCuePoints() != null ? adsManager.getAdCuePoints().size() : -1;
   }
 
   private void checkForContentComplete() {
