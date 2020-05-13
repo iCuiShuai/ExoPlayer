@@ -73,6 +73,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * {@link AdsLoader} using the IMA SDK. All methods must be called on the main thread.
@@ -97,6 +98,17 @@ public final class ImaAdsLoader
   static {
     ExoPlayerLibraryInfo.registerModule("goog.exo.ima");
   }
+
+  private IVideoAdTracker adTracker;
+  private long preloadDuration = MAXIMUM_PRELOAD_DURATION_MS;
+  private long adLoadedTime;
+  private long startLoadMediaTime;
+  private long startRequestTime = 0;
+  private int lastAdGroupIndex = -1;
+  private int lastRealStartTime = -1;
+  private int lastPlayAdGroupIndex = -1;
+  private int lastLoadMediaAdGroupIndex = -1;
+  private int lastStartRequestAdGroupIndex = -1;
 
   /** Builder for {@link ImaAdsLoader}. */
   public static final class Builder {
@@ -351,6 +363,16 @@ public final class ImaAdsLoader
     this.adsIntercept = adsIntercept;
   }
 
+  public void setAdTracker(IVideoAdTracker adTracker) {
+    this.adTracker = adTracker;
+  }
+
+  public void setPreloadDuration(long preloadDurationMs) {
+    if (preloadDurationMs < 0) {
+      return;
+    }
+    this.preloadDuration = preloadDurationMs;
+  }
   // Fields tracking IMA's state.
 
   /** The expected ad group index that IMA should load next. */
@@ -557,6 +579,7 @@ public final class ImaAdsLoader
     request.setContentProgressProvider(this);
     request.setUserRequestContext(pendingAdRequestContext);
     adsLoader.requestAds(request);
+    updateStartRequestTime(false);
   }
 
   // AdsLoader implementation.
@@ -601,6 +624,7 @@ public final class ImaAdsLoader
     if (player == null) {
       return;
     }
+    updateStartRequestTime(false);
     this.eventListener = eventListener;
     lastVolumePercentage = 0;
     lastAdProgress = null;
@@ -625,6 +649,14 @@ public final class ImaAdsLoader
     } else {
       // Ads haven't loaded yet, so request them.
       requestAds(adViewGroup);
+    }
+  }
+
+  private void updateStartRequestTime(boolean force) {
+    int adGroupIndex = getAdGroupIndex();
+    if (lastStartRequestAdGroupIndex != adGroupIndex && (adGroupIndex != C.INDEX_UNSET || force)) {
+      lastStartRequestAdGroupIndex = getAdGroupIndex();
+      startRequestTime = System.currentTimeMillis();
     }
   }
 
@@ -744,6 +776,9 @@ public final class ImaAdsLoader
       pendingAdRequestContext = null;
       adPlaybackState = new AdPlaybackState();
       updateAdPlaybackState();
+      if (adTracker != null) {
+        adTracker.trackEvent(IVideoAdTracker.EVENT_VIDEO_AD_PLAY_FAILED, IVideoAdTracker.buildFailedParams(adGroupIndex, startRequestTime, error));
+      }
     } else if (isAdGroupLoadError(error)) {
       try {
         handleAdGroupLoadError(error);
@@ -770,7 +805,7 @@ public final class ImaAdsLoader
     }
     boolean hasContentDuration = contentDurationMs != C.TIME_UNSET;
     long contentPositionMs;
-    if (pendingContentPositionMs != C.TIME_UNSET) {
+    if (pendingContentPositionMs != C.TIME_UNSET && !sentPendingContentPositionMs) {
       sentPendingContentPositionMs = true;
       contentPositionMs = pendingContentPositionMs;
       expectedAdGroupIndex =
@@ -793,7 +828,7 @@ public final class ImaAdsLoader
         if (nextAdGroupTimeMs == C.TIME_END_OF_SOURCE) {
           nextAdGroupTimeMs = contentDurationMs;
         }
-        if (nextAdGroupTimeMs - contentPositionMs < MAXIMUM_PRELOAD_DURATION_MS) {
+        if (nextAdGroupTimeMs - contentPositionMs < preloadDuration) {
           expectedAdGroupIndex = nextAdGroupIndex;
         }
       }
@@ -801,7 +836,38 @@ public final class ImaAdsLoader
       return VideoProgressUpdate.VIDEO_TIME_NOT_READY;
     }
     long contentDurationMs = hasContentDuration ? this.contentDurationMs : IMA_DURATION_UNSET;
+    tryUpdateStartRequestTime(contentPositionMs, contentDurationMs);
     return new VideoProgressUpdate(contentPositionMs, contentDurationMs);
+  }
+
+  private void tryUpdateStartRequestTime(long contentPositionMs, long contentDurationMs) {
+    if (contentPositionMs < 0 || contentDurationMs < 0) {
+      return;
+    }
+    if (adsManager == null) {
+      return;
+    }
+    List<Float> cuePoints = adsManager.getAdCuePoints();
+    if (cuePoints == null || cuePoints.isEmpty()) {
+      return;
+    }
+    long contentPosition = TimeUnit.MILLISECONDS.toSeconds(contentPositionMs);
+    for (Float startTime : cuePoints) {
+      if (TimeUnit.MILLISECONDS.toSeconds(contentPositionMs) > startTime) {
+        continue;
+      }
+      int realStartTime;
+      if (startTime == -1.0) {
+        realStartTime = (int) (contentPosition - 4);
+      } else {
+        realStartTime = (int) (startTime - 4);
+      }
+      if (realStartTime == contentPosition && lastRealStartTime != realStartTime) {
+        lastRealStartTime = realStartTime;
+        updateStartRequestTime(true);
+        return;
+      }
+    }
   }
 
   // VideoAdPlayer implementation.
@@ -849,6 +915,10 @@ public final class ImaAdsLoader
       if (adsManager == null) {
         Log.w(TAG, "Ignoring loadAd after release");
         return;
+      }
+      if (lastLoadMediaAdGroupIndex != getAdGroupIndex()) {
+        lastLoadMediaAdGroupIndex = getAdGroupIndex();
+        startLoadMediaTime = System.currentTimeMillis();
       }
       if (adGroupIndex == C.INDEX_UNSET) {
         Log.w(
@@ -930,6 +1000,12 @@ public final class ImaAdsLoader
       Log.w(TAG, "Unexpected playAd while detached");
     } else if (!player.getPlayWhenReady()) {
       adsManager.pause();
+    }
+    if (lastPlayAdGroupIndex != getAdGroupIndex()) {
+      lastPlayAdGroupIndex = getAdGroupIndex();
+      if (adTracker != null) {
+        adTracker.trackEvent(IVideoAdTracker.EVENT_VIDEO_AD_PLAY_SUCCESS, IVideoAdTracker.buildSuccessParams(adLoadedTime, startRequestTime, startLoadMediaTime, adGroupIndex));
+      }
     }
   }
 
@@ -1139,6 +1215,10 @@ public final class ImaAdsLoader
             podIndex == -1 ? (adPlaybackState.adGroupCount - 1) : (podIndex + podIndexOffset);
         int adPosition = adPodInfo.getAdPosition();
         int adCount = adPodInfo.getTotalAds();
+        if (lastAdGroupIndex != getAdGroupIndex()) {
+          lastAdGroupIndex = getAdGroupIndex();
+          adLoadedTime = System.currentTimeMillis();
+        }
         adsManager.start();
         if (DEBUG) {
           Log.d(TAG, "Loaded ad " + adPosition + " of " + adCount + " in group " + adGroupIndex);
@@ -1270,6 +1350,9 @@ public final class ImaAdsLoader
       // Drop the error, as we don't know which ad group it relates to.
       return;
     }
+    if (adTracker != null) {
+      adTracker.trackEvent(IVideoAdTracker.EVENT_VIDEO_AD_PLAY_FAILED, IVideoAdTracker.buildFailedParams(adGroupIndex, startRequestTime, error));
+    }
     AdPlaybackState.AdGroup adGroup = adPlaybackState.adGroups[adGroupIndex];
     if (adGroup.count == C.LENGTH_UNSET) {
       adPlaybackState =
@@ -1326,6 +1409,9 @@ public final class ImaAdsLoader
     }
     adPlaybackState = adPlaybackState.withAdLoadError(adGroupIndex, adIndexInAdGroup);
     updateAdPlaybackState();
+    if (adTracker != null) {
+      adTracker.trackEvent(IVideoAdTracker.EVENT_VIDEO_AD_PLAY_FAILED, IVideoAdTracker.buildFailedParams(adGroupIndex, adIndexInAdGroup, startRequestTime, exception));
+    }
   }
 
   private void checkForContentComplete() {
