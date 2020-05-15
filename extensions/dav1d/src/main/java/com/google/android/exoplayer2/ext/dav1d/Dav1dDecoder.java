@@ -35,6 +35,10 @@ import java.nio.ByteBuffer;
 
   private final long dav1dDecoderContext;
 
+  //maybe for some unknown issue of proguard, jni code can't find VideoDecoderOutputBuffer's method in android 6.0 and android 7.0,
+  //we call VideoDecoderOutputBuffer's method first to avoid compiler optimization
+  private static boolean callVideoDecoderOutputBufferMethod = Boolean.parseBoolean("false");
+
   @C.VideoOutputMode private volatile int outputMode;
 
   public static void nativeInit() {
@@ -59,6 +63,16 @@ import java.nio.ByteBuffer;
     if (!Dav1dLibrary.isAvailable()) {
       throw new Dav1dDecoderException("Failed to load decoder native library.");
     }
+
+    //call VideoDecoderOutputBuffer's method first to avoid compiler optimization
+    if(callVideoDecoderOutputBufferMethod) {
+      VideoDecoderOutputBuffer outputBuffer = new VideoDecoderOutputBuffer(null);
+
+      outputBuffer.init(0, C.VIDEO_OUTPUT_MODE_NONE, null);
+      outputBuffer.initForYuvFrame(-1, -1, -1, -1, 0);
+      outputBuffer.initForPrivateFrame(0, 0);
+    }
+
     dav1dDecoderContext = dav1dInit(threads);
     if (dav1dDecoderContext == DAV1D_ERROR || dav1dCheckError(dav1dDecoderContext) == DAV1D_ERROR) {
       throw new Dav1dDecoderException(
