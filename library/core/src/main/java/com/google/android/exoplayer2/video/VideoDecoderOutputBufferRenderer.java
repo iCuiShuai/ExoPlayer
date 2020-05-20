@@ -15,7 +15,7 @@
  */
 package com.google.android.exoplayer2.video;
 
-/** Renders the {@link VideoDecoderOutputBuffer}. */
+/** Renders the {@link VideoDecoderOutputBufferMX}. */
 public interface VideoDecoderOutputBufferRenderer {
 
   /**
@@ -23,5 +23,5 @@ public interface VideoDecoderOutputBufferRenderer {
    *
    * @param outputBuffer The output buffer to be rendered.
    */
-  void setOutputBuffer(VideoDecoderOutputBuffer outputBuffer);
+  void setOutputBuffer(VideoDecoderOutputBufferMX outputBuffer);
 }

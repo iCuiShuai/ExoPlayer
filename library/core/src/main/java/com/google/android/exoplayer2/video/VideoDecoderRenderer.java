@@ -86,7 +86,7 @@ import javax.microedition.khronos.opengles.GL10;
       GlUtil.createBuffer(new float[] {-1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f});
   private final GLSurfaceView surfaceView;
   private final int[] yuvTextures = new int[3];
-  private final AtomicReference<VideoDecoderOutputBuffer> pendingOutputBufferReference;
+  private final AtomicReference<VideoDecoderOutputBufferMX> pendingOutputBufferReference;
 
   // Kept in field rather than a local variable in order not to get garbage collected before
   // glDrawArrays uses it.
@@ -99,7 +99,7 @@ import javax.microedition.khronos.opengles.GL10;
   private int[] previousStrides;
 
   @Nullable
-  private VideoDecoderOutputBuffer renderedOutputBuffer; // Accessed only from the GL thread.
+  private VideoDecoderOutputBufferMX renderedOutputBuffer; // Accessed only from the GL thread.
 
   public VideoDecoderRenderer(GLSurfaceView surfaceView) {
     this.surfaceView = surfaceView;
@@ -140,7 +140,7 @@ import javax.microedition.khronos.opengles.GL10;
 
   @Override
   public void onDrawFrame(GL10 unused) {
-    VideoDecoderOutputBuffer pendingOutputBuffer = pendingOutputBufferReference.getAndSet(null);
+    VideoDecoderOutputBufferMX pendingOutputBuffer = pendingOutputBufferReference.getAndSet(null);
     if (pendingOutputBuffer == null && renderedOutputBuffer == null) {
       // There is no output buffer to render at the moment.
       return;
@@ -151,17 +151,17 @@ import javax.microedition.khronos.opengles.GL10;
       }
       renderedOutputBuffer = pendingOutputBuffer;
     }
-    VideoDecoderOutputBuffer outputBuffer = renderedOutputBuffer;
+    VideoDecoderOutputBufferMX outputBuffer = renderedOutputBuffer;
     // Set color matrix. Assume BT709 if the color space is unknown.
     float[] colorConversion = kColorConversion709;
     switch (outputBuffer.colorspace) {
-      case VideoDecoderOutputBuffer.COLORSPACE_BT601:
+      case VideoDecoderOutputBufferMX.COLORSPACE_BT601:
         colorConversion = kColorConversion601;
         break;
-      case VideoDecoderOutputBuffer.COLORSPACE_BT2020:
+      case VideoDecoderOutputBufferMX.COLORSPACE_BT2020:
         colorConversion = kColorConversion2020;
         break;
-      case VideoDecoderOutputBuffer.COLORSPACE_BT709:
+      case VideoDecoderOutputBufferMX.COLORSPACE_BT709:
       default:
         break; // Do nothing
     }
@@ -213,8 +213,8 @@ import javax.microedition.khronos.opengles.GL10;
   }
 
   @Override
-  public void setOutputBuffer(VideoDecoderOutputBuffer outputBuffer) {
-    VideoDecoderOutputBuffer oldPendingOutputBuffer =
+  public void setOutputBuffer(VideoDecoderOutputBufferMX outputBuffer) {
+    VideoDecoderOutputBufferMX oldPendingOutputBuffer =
         pendingOutputBufferReference.getAndSet(outputBuffer);
     if (oldPendingOutputBuffer != null) {
       // The old pending output buffer will never be used for rendering, so release it now.

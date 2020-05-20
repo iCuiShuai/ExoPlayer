@@ -35,7 +35,7 @@ import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.video.SimpleDecoderVideoRendererDav1d;
 import com.google.android.exoplayer2.video.VideoDecoderException;
 import com.google.android.exoplayer2.video.VideoDecoderInputBuffer;
-import com.google.android.exoplayer2.video.VideoDecoderOutputBuffer;
+import com.google.android.exoplayer2.video.VideoDecoderOutputBufferMX;
 import com.google.android.exoplayer2.video.VideoDecoderOutputBufferRenderer;
 import com.google.android.exoplayer2.video.VideoRendererEventListener;
 
@@ -154,7 +154,7 @@ public class Libdav1dVideoRenderer extends SimpleDecoderVideoRendererDav1d {
   @Override
   protected SimpleDecoderDav1d<
           VideoDecoderInputBuffer,
-          ? extends VideoDecoderOutputBuffer,
+          ? extends VideoDecoderOutputBufferMX,
           ? extends VideoDecoderException>
       createDecoder(Format format, @Nullable ExoMediaCrypto mediaCrypto)
           throws VideoDecoderException {
@@ -169,7 +169,7 @@ public class Libdav1dVideoRenderer extends SimpleDecoderVideoRendererDav1d {
   }
 
   @Override
-  protected void renderOutputBufferToSurface(VideoDecoderOutputBuffer outputBuffer, Surface surface)
+  protected void renderOutputBufferToSurface(VideoDecoderOutputBufferMX outputBuffer, Surface surface)
       throws Dav1dDecoderException {
     if (decoder == null) {
       throw new Dav1dDecoderException(
