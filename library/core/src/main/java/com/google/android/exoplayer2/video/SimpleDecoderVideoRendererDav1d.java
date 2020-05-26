@@ -82,11 +82,11 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
   private Format outputFormat;
   private SimpleDecoderDav1d<
           VideoDecoderInputBuffer,
-          ? extends VideoDecoderOutputBufferMX,
+          ? extends VideoDecoderOutputBuffer,
           ? extends VideoDecoderException>
       decoder;
   private VideoDecoderInputBuffer inputBuffer;
-  private VideoDecoderOutputBufferMX outputBuffer;
+  private VideoDecoderOutputBuffer outputBuffer;
   @Nullable private Surface surface;
   @Nullable private VideoDecoderOutputBufferRenderer outputBufferRenderer;
   @C.VideoOutputMode private int outputMode;
@@ -457,7 +457,7 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
    *
    * @param outputBuffer The output buffer to skip.
    */
-  protected void skipOutputBuffer(VideoDecoderOutputBufferMX outputBuffer) {
+  protected void skipOutputBuffer(VideoDecoderOutputBuffer outputBuffer) {
     decoderCounters.skippedOutputBufferCount++;
     outputBuffer.release();
   }
@@ -467,7 +467,7 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
    *
    * @param outputBuffer The output buffer to drop.
    */
-  protected void dropOutputBuffer(VideoDecoderOutputBufferMX outputBuffer) {
+  protected void dropOutputBuffer(VideoDecoderOutputBuffer outputBuffer) {
     updateDroppedBufferCounters(1);
     outputBuffer.release();
   }
@@ -534,7 +534,7 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
    */
   protected abstract SimpleDecoderDav1d<
           VideoDecoderInputBuffer,
-          ? extends VideoDecoderOutputBufferMX,
+          ? extends VideoDecoderOutputBuffer,
           ? extends VideoDecoderException>
       createDecoder(Format format, @Nullable ExoMediaCrypto mediaCrypto)
           throws VideoDecoderException;
@@ -543,15 +543,15 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
    * Renders the specified output buffer.
    *
    * <p>The implementation of this method takes ownership of the output buffer and is responsible
-   * for calling {@link VideoDecoderOutputBufferMX#release()} either immediately or in the future.
+   * for calling {@link VideoDecoderOutputBuffer#release()} either immediately or in the future.
    *
-   * @param outputBuffer {@link VideoDecoderOutputBufferMX} to render.
+   * @param outputBuffer {@link VideoDecoderOutputBuffer} to render.
    * @param presentationTimeUs Presentation time in microseconds.
    * @param outputFormat Output {@link Format}.
    * @throws VideoDecoderException If an error occurs when rendering the output buffer.
    */
   protected void renderOutputBuffer(
-      VideoDecoderOutputBufferMX outputBuffer, long presentationTimeUs, Format outputFormat)
+      VideoDecoderOutputBuffer outputBuffer, long presentationTimeUs, Format outputFormat)
       throws VideoDecoderException {
     lastRenderTimeUs = C.msToUs(SystemClock.elapsedRealtime() * 1000);
     int bufferMode = outputBuffer.mode;
@@ -576,14 +576,14 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
    * Renders the specified output buffer to the passed surface.
    *
    * <p>The implementation of this method takes ownership of the output buffer and is responsible
-   * for calling {@link VideoDecoderOutputBufferMX#release()} either immediately or in the future.
+   * for calling {@link VideoDecoderOutputBuffer#release()} either immediately or in the future.
    *
-   * @param outputBuffer {@link VideoDecoderOutputBufferMX} to render.
+   * @param outputBuffer {@link VideoDecoderOutputBuffer} to render.
    * @param surface Output {@link Surface}.
    * @throws VideoDecoderException If an error occurs when rendering the output buffer.
    */
   protected abstract void renderOutputBufferToSurface(
-      VideoDecoderOutputBufferMX outputBuffer, Surface surface) throws VideoDecoderException;
+      VideoDecoderOutputBuffer outputBuffer, Surface surface) throws VideoDecoderException;
 
   /**
    * Sets output surface.

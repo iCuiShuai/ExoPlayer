@@ -21,7 +21,7 @@ import com.google.android.exoplayer2.decoder.OutputBuffer;
 import java.nio.ByteBuffer;
 
 /** Video decoder output buffer containing video frame data. */
-public class VideoDecoderOutputBufferMX extends OutputBuffer {
+public class VideoDecoderOutputBuffer extends OutputBuffer {
 
   /** Buffer owner. */
   public interface Owner {
@@ -31,7 +31,7 @@ public class VideoDecoderOutputBufferMX extends OutputBuffer {
      *
      * @param outputBuffer Output buffer.
      */
-    void releaseOutputBuffer(VideoDecoderOutputBufferMX outputBuffer);
+    void releaseOutputBuffer(VideoDecoderOutputBuffer outputBuffer);
   }
 
   // LINT.IfChange
@@ -75,7 +75,7 @@ public class VideoDecoderOutputBufferMX extends OutputBuffer {
    *
    * @param owner Buffer owner.
    */
-  public VideoDecoderOutputBufferMX(Owner owner) {
+  public VideoDecoderOutputBuffer(Owner owner) {
     this.owner = owner;
   }
 

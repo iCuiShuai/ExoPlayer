@@ -21,12 +21,12 @@ import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.decoder.SimpleDecoderDav1d;
 import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.video.VideoDecoderInputBuffer;
-import com.google.android.exoplayer2.video.VideoDecoderOutputBufferMX;
+import com.google.android.exoplayer2.video.VideoDecoderOutputBuffer;
 import java.nio.ByteBuffer;
 
 /** Dav1d decoder. */
 /* package */ final class Dav1dDecoder
-    extends SimpleDecoderDav1d<VideoDecoderInputBuffer, VideoDecoderOutputBufferMX, Dav1dDecoderException> {
+    extends SimpleDecoderDav1d<VideoDecoderInputBuffer, VideoDecoderOutputBuffer, Dav1dDecoderException> {
 
   // LINT.IfChange
 
@@ -58,14 +58,14 @@ import java.nio.ByteBuffer;
       throws Dav1dDecoderException {
     super(
         new VideoDecoderInputBuffer[numInputBuffers],
-        new VideoDecoderOutputBufferMX[numOutputBuffers]);
+        new VideoDecoderOutputBuffer[numOutputBuffers]);
     if (!Dav1dLibrary.isAvailable()) {
       throw new Dav1dDecoderException("Failed to load decoder native library.");
     }
 
     //call VideoDecoderOutputBuffer's method first to avoid compiler optimization
     if(callVideoDecoderOutputBufferMethod) {
-      VideoDecoderOutputBufferMX outputBuffer = new VideoDecoderOutputBufferMX(null);
+      VideoDecoderOutputBuffer outputBuffer = new VideoDecoderOutputBuffer(null);
 
       outputBuffer.init(0, C.VIDEO_OUTPUT_MODE_NONE, null);
       outputBuffer.initForYuvFrame(-1, -1, -1, -1, 0);
@@ -103,8 +103,8 @@ import java.nio.ByteBuffer;
   }
 
   @Override
-  protected VideoDecoderOutputBufferMX createOutputBuffer() {
-    return new VideoDecoderOutputBufferMX(this::releaseOutputBuffer);
+  protected VideoDecoderOutputBuffer createOutputBuffer() {
+    return new VideoDecoderOutputBuffer(this::releaseOutputBuffer);
   }
 
   @Nullable
@@ -116,7 +116,7 @@ import java.nio.ByteBuffer;
   @Nullable
   @Override
   protected Dav1dDecoderException decode(
-      VideoDecoderInputBuffer inputBuffer, VideoDecoderOutputBufferMX outputBuffer, boolean reset) {
+      VideoDecoderInputBuffer inputBuffer, VideoDecoderOutputBuffer outputBuffer, boolean reset) {
     ByteBuffer inputData = Util.castNonNull(inputBuffer.data);
     int inputSize = inputData.limit();
     long costTime = System.currentTimeMillis();
@@ -165,7 +165,7 @@ import java.nio.ByteBuffer;
 
   @Nullable
   @Override
-  protected int decodeGetFrame(VideoDecoderOutputBufferMX outputBuffer, boolean decodeOnly, boolean flush) {
+  protected int decodeGetFrame(VideoDecoderOutputBuffer outputBuffer, boolean decodeOnly, boolean flush) {
     long costTime = System.currentTimeMillis();
     outputBuffer.init(-1, outputMode, /* supplementalData= */ null);
     // We need to dequeue the decoded frame from the decoder even when the input data is
@@ -194,7 +194,7 @@ import java.nio.ByteBuffer;
   }
 
   @Override
-  protected void releaseOutputBuffer(VideoDecoderOutputBufferMX buffer) {
+  protected void releaseOutputBuffer(VideoDecoderOutputBuffer buffer) {
     // Decode only frames do not acquire a reference on the internal decoder buffer and thus do not
     // require a call to dav1dReleaseFrame.
     if (buffer.mode == C.VIDEO_OUTPUT_MODE_SURFACE_YUV && !buffer.isDecodeOnly()) {
@@ -212,7 +212,7 @@ import java.nio.ByteBuffer;
    * @throws Dav1dDecoderException Thrown if called with invalid output mode or frame rendering
    *     fails.
    */
-  public void renderToSurface(VideoDecoderOutputBufferMX outputBuffer, Surface surface)
+  public void renderToSurface(VideoDecoderOutputBuffer outputBuffer, Surface surface)
       throws Dav1dDecoderException {
     if (outputBuffer.mode != C.VIDEO_OUTPUT_MODE_SURFACE_YUV) {
       throw new Dav1dDecoderException("Invalid output mode.");
@@ -260,7 +260,7 @@ import java.nio.ByteBuffer;
    *     is decode-only, {@link #DAV1D_ERROR} if an error occurred.
    */
   private native int dav1dGetFrame(
-      long context, VideoDecoderOutputBufferMX outputBuffer, boolean decodeOnly);
+      long context, VideoDecoderOutputBuffer outputBuffer, boolean decodeOnly);
 
   /**
    * Initializes a libdav1d decoder.
@@ -280,7 +280,7 @@ import java.nio.ByteBuffer;
    * @return {@link #DAV1D_OK} if successful, {@link #DAV1D_ERROR} if an error occured.
    */
   private native int dav1dRenderFrame(
-      long context, Surface surface, VideoDecoderOutputBufferMX outputBuffer);
+      long context, Surface surface, VideoDecoderOutputBuffer outputBuffer);
 
   /**
    * Releases the frame. Used with {@link C#VIDEO_OUTPUT_MODE_SURFACE_YUV} only.
@@ -288,7 +288,7 @@ import java.nio.ByteBuffer;
    * @param context Decoder context.
    * @param outputBuffer Output buffer.
    */
-  private native void dav1dReleaseFrame(long context, VideoDecoderOutputBufferMX outputBuffer);
+  private native void dav1dReleaseFrame(long context, VideoDecoderOutputBuffer outputBuffer);
 
   /**
    * Returns a human-readable string describing the last error encountered in the given context.

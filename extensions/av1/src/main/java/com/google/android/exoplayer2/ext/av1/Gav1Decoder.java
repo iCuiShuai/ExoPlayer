@@ -21,12 +21,12 @@ import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.decoder.SimpleDecoder;
 import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.video.VideoDecoderInputBuffer;
-import com.google.android.exoplayer2.video.VideoDecoderOutputBufferMX;
+import com.google.android.exoplayer2.video.VideoDecoderOutputBuffer;
 import java.nio.ByteBuffer;
 
 /** Gav1 decoder. */
 /* package */ final class Gav1Decoder
-    extends SimpleDecoder<VideoDecoderInputBuffer, VideoDecoderOutputBufferMX, Gav1DecoderException> {
+    extends SimpleDecoder<VideoDecoderInputBuffer, VideoDecoderOutputBuffer, Gav1DecoderException> {
 
   // LINT.IfChange
   private static final int GAV1_ERROR = 0;
@@ -52,7 +52,7 @@ import java.nio.ByteBuffer;
       throws Gav1DecoderException {
     super(
         new VideoDecoderInputBuffer[numInputBuffers],
-        new VideoDecoderOutputBufferMX[numOutputBuffers]);
+        new VideoDecoderOutputBuffer[numOutputBuffers]);
     if (!Gav1Library.isAvailable()) {
       throw new Gav1DecoderException("Failed to load decoder native library.");
     }
@@ -84,14 +84,14 @@ import java.nio.ByteBuffer;
   }
 
   @Override
-  protected VideoDecoderOutputBufferMX createOutputBuffer() {
-    return new VideoDecoderOutputBufferMX(this::releaseOutputBuffer);
+  protected VideoDecoderOutputBuffer createOutputBuffer() {
+    return new VideoDecoderOutputBuffer(this::releaseOutputBuffer);
   }
 
   @Nullable
   @Override
   protected Gav1DecoderException decode(
-      VideoDecoderInputBuffer inputBuffer, VideoDecoderOutputBufferMX outputBuffer, boolean reset) {
+      VideoDecoderInputBuffer inputBuffer, VideoDecoderOutputBuffer outputBuffer, boolean reset) {
     ByteBuffer inputData = Util.castNonNull(inputBuffer.data);
     int inputSize = inputData.limit();
     if (gav1Decode(gav1DecoderContext, inputData, inputSize) == GAV1_ERROR) {
@@ -132,7 +132,7 @@ import java.nio.ByteBuffer;
   }
 
   @Override
-  protected void releaseOutputBuffer(VideoDecoderOutputBufferMX buffer) {
+  protected void releaseOutputBuffer(VideoDecoderOutputBuffer buffer) {
     // Decode only frames do not acquire a reference on the internal decoder buffer and thus do not
     // require a call to gav1ReleaseFrame.
     if (buffer.mode == C.VIDEO_OUTPUT_MODE_SURFACE_YUV && !buffer.isDecodeOnly()) {
@@ -150,7 +150,7 @@ import java.nio.ByteBuffer;
    * @throws Gav1DecoderException Thrown if called with invalid output mode or frame rendering
    *     fails.
    */
-  public void renderToSurface(VideoDecoderOutputBufferMX outputBuffer, Surface surface)
+  public void renderToSurface(VideoDecoderOutputBuffer outputBuffer, Surface surface)
       throws Gav1DecoderException {
     if (outputBuffer.mode != C.VIDEO_OUTPUT_MODE_SURFACE_YUV) {
       throw new Gav1DecoderException("Invalid output mode.");
@@ -195,7 +195,7 @@ import java.nio.ByteBuffer;
    *     is decode-only, {@link #GAV1_ERROR} if an error occurred.
    */
   private native int gav1GetFrame(
-      long context, VideoDecoderOutputBufferMX outputBuffer, boolean decodeOnly);
+      long context, VideoDecoderOutputBuffer outputBuffer, boolean decodeOnly);
 
   /**
    * Renders the frame to the surface. Used with {@link C#VIDEO_OUTPUT_MODE_SURFACE_YUV} only.
@@ -206,7 +206,7 @@ import java.nio.ByteBuffer;
    * @return {@link #GAV1_OK} if successful, {@link #GAV1_ERROR} if an error occured.
    */
   private native int gav1RenderFrame(
-      long context, Surface surface, VideoDecoderOutputBufferMX outputBuffer);
+      long context, Surface surface, VideoDecoderOutputBuffer outputBuffer);
 
   /**
    * Releases the frame. Used with {@link C#VIDEO_OUTPUT_MODE_SURFACE_YUV} only.
@@ -214,7 +214,7 @@ import java.nio.ByteBuffer;
    * @param context Decoder context.
    * @param outputBuffer Output buffer.
    */
-  private native void gav1ReleaseFrame(long context, VideoDecoderOutputBufferMX outputBuffer);
+  private native void gav1ReleaseFrame(long context, VideoDecoderOutputBuffer outputBuffer);
 
   /**
    * Returns a human-readable string describing the last error encountered in the given context.

@@ -35,7 +35,7 @@ import com.google.android.exoplayer2.util.TraceUtil;
 import com.google.android.exoplayer2.video.SimpleDecoderVideoRenderer;
 import com.google.android.exoplayer2.video.VideoDecoderException;
 import com.google.android.exoplayer2.video.VideoDecoderInputBuffer;
-import com.google.android.exoplayer2.video.VideoDecoderOutputBufferMX;
+import com.google.android.exoplayer2.video.VideoDecoderOutputBuffer;
 import com.google.android.exoplayer2.video.VideoDecoderOutputBufferRenderer;
 import com.google.android.exoplayer2.video.VideoFrameMetadataListener;
 import com.google.android.exoplayer2.video.VideoRendererEventListener;
@@ -244,7 +244,7 @@ public class LibvpxVideoRenderer extends SimpleDecoderVideoRenderer {
   @Override
   protected SimpleDecoder<
           VideoDecoderInputBuffer,
-          ? extends VideoDecoderOutputBufferMX,
+          ? extends VideoDecoderOutputBuffer,
           ? extends VideoDecoderException>
       createDecoder(Format format, @Nullable ExoMediaCrypto mediaCrypto)
           throws VideoDecoderException {
@@ -261,7 +261,7 @@ public class LibvpxVideoRenderer extends SimpleDecoderVideoRenderer {
 
   @Override
   protected void renderOutputBuffer(
-      VideoDecoderOutputBufferMX outputBuffer, long presentationTimeUs, Format outputFormat)
+      VideoDecoderOutputBuffer outputBuffer, long presentationTimeUs, Format outputFormat)
       throws VideoDecoderException {
     if (frameMetadataListener != null) {
       frameMetadataListener.onVideoFrameAboutToBeRendered(
@@ -271,7 +271,7 @@ public class LibvpxVideoRenderer extends SimpleDecoderVideoRenderer {
   }
 
   @Override
-  protected void renderOutputBufferToSurface(VideoDecoderOutputBufferMX outputBuffer, Surface surface)
+  protected void renderOutputBufferToSurface(VideoDecoderOutputBuffer outputBuffer, Surface surface)
       throws VpxDecoderException {
     if (decoder == null) {
       throw new VpxDecoderException(
