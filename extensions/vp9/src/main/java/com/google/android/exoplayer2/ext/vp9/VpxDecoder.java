@@ -25,12 +25,12 @@ import com.google.android.exoplayer2.drm.ExoMediaCrypto;
 import com.google.android.exoplayer2.util.Assertions;
 import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.video.VideoDecoderInputBuffer;
-import com.google.android.exoplayer2.video.VideoDecoderOutputBuffer;
+import com.google.android.exoplayer2.video.VideoDecoderOutputBufferMX;
 import java.nio.ByteBuffer;
 
 /** Vpx decoder. */
 /* package */ final class VpxDecoder
-    extends SimpleDecoder<VideoDecoderInputBuffer, VideoDecoderOutputBuffer, VpxDecoderException> {
+    extends SimpleDecoder<VideoDecoderInputBuffer, VideoDecoderOutputBufferMX, VpxDecoderException> {
 
   // These constants should match the codes returned from vpxDecode and vpxSecureDecode functions in
   // https://github.com/google/ExoPlayer/blob/release-v2/extensions/vp9/src/main/jni/vpx_jni.cc.
@@ -65,7 +65,7 @@ import java.nio.ByteBuffer;
       throws VpxDecoderException {
     super(
         new VideoDecoderInputBuffer[numInputBuffers],
-        new VideoDecoderOutputBuffer[numOutputBuffers]);
+        new VideoDecoderOutputBufferMX[numOutputBuffers]);
     if (!VpxLibrary.isAvailable()) {
       throw new VpxDecoderException("Failed to load decoder native libraries.");
     }
@@ -101,12 +101,12 @@ import java.nio.ByteBuffer;
   }
 
   @Override
-  protected VideoDecoderOutputBuffer createOutputBuffer() {
-    return new VideoDecoderOutputBuffer(this::releaseOutputBuffer);
+  protected VideoDecoderOutputBufferMX createOutputBuffer() {
+    return new VideoDecoderOutputBufferMX(this::releaseOutputBuffer);
   }
 
   @Override
-  protected void releaseOutputBuffer(VideoDecoderOutputBuffer buffer) {
+  protected void releaseOutputBuffer(VideoDecoderOutputBufferMX buffer) {
     // Decode only frames do not acquire a reference on the internal decoder buffer and thus do not
     // require a call to vpxReleaseFrame.
     if (outputMode == C.VIDEO_OUTPUT_MODE_SURFACE_YUV && !buffer.isDecodeOnly()) {
@@ -123,7 +123,7 @@ import java.nio.ByteBuffer;
   @Override
   @Nullable
   protected VpxDecoderException decode(
-      VideoDecoderInputBuffer inputBuffer, VideoDecoderOutputBuffer outputBuffer, boolean reset) {
+      VideoDecoderInputBuffer inputBuffer, VideoDecoderOutputBufferMX outputBuffer, boolean reset) {
     if (reset && lastSupplementalData != null) {
       // Don't propagate supplemental data across calls to flush the decoder.
       lastSupplementalData.clear();
@@ -183,7 +183,7 @@ import java.nio.ByteBuffer;
   }
 
   /** Renders the outputBuffer to the surface. Used with OUTPUT_MODE_SURFACE_YUV only. */
-  public void renderToSurface(VideoDecoderOutputBuffer outputBuffer, Surface surface)
+  public void renderToSurface(VideoDecoderOutputBufferMX outputBuffer, Surface surface)
       throws VpxDecoderException {
     int getFrameResult = vpxRenderFrame(vpxDecContext, surface, outputBuffer);
     if (getFrameResult == -1) {
@@ -209,20 +209,20 @@ import java.nio.ByteBuffer;
       int[] numBytesOfClearData,
       int[] numBytesOfEncryptedData);
 
-  private native int vpxGetFrame(long context, VideoDecoderOutputBuffer outputBuffer);
+  private native int vpxGetFrame(long context, VideoDecoderOutputBufferMX outputBuffer);
 
   /**
    * Renders the frame to the surface. Used with OUTPUT_MODE_SURFACE_YUV only. Must only be called
    * if {@link #vpxInit} was called with {@code enableBufferManager = true}.
    */
   private native int vpxRenderFrame(
-      long context, Surface surface, VideoDecoderOutputBuffer outputBuffer);
+      long context, Surface surface, VideoDecoderOutputBufferMX outputBuffer);
 
   /**
    * Releases the frame. Used with OUTPUT_MODE_SURFACE_YUV only. Must only be called if {@link
    * #vpxInit} was called with {@code enableBufferManager = true}.
    */
-  private native int vpxReleaseFrame(long context, VideoDecoderOutputBuffer outputBuffer);
+  private native int vpxReleaseFrame(long context, VideoDecoderOutputBufferMX outputBuffer);
 
   private native int vpxGetErrorCode(long context);
   private native String vpxGetErrorMessage(long context);
