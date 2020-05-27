@@ -320,4 +320,50 @@ public final class ParsableBitArray {
         && (byteOffset < byteLimit || (byteOffset == byteLimit && bitOffset == 0)));
   }
 
+  /**
+   * Reads a long value encoded by uleb128 for av1 bitstream
+   *
+   * @throws NumberFormatException if there is a problem with decoding
+   * @return Decoded long value
+   */
+  public long readUleb128() {
+    long val = 0;
+    int more;
+    int i = 0;
+
+    do {
+      more = readBits(1);
+      int bits = readBits(7);
+      if (i <= 3 || (i == 4 && bits < (1 << 4)))
+        val |= bits << (i * 7);
+      else if (bits != 0) {
+        return -1;
+      }
+      if (more != 0 && ++i == 8) {
+        return -1;
+      }
+    } while (more != 0);
+
+    return val;
+  }
+
+  /**
+   * Reads an unsigned Exp-Golomb-coded format integer.
+   *
+   * @return The value of the parsed Exp-Golomb-coded integer.
+   */
+  public long readUnsignedVLCInt() {
+    return readVLCNum();
+  }
+
+  private long readVLCNum() {
+    int leadingZeros = 0;
+    while (!readBit()) {
+      leadingZeros++;
+      if(leadingZeros == 32)
+        return 0xFFFFFFFF;
+    }
+    return (1L << leadingZeros) - 1 + (leadingZeros > 0 ? readBits(leadingZeros) : 0);
+  }
+
 }

@@ -174,6 +174,8 @@ public final class DefaultTsPayloadReaderFactory implements TsPayloadReader.Fact
       case TsExtractor.TS_STREAM_TYPE_DVBSUBS:
         return new PesReader(
             new DvbSubtitleReader(esInfo.dvbSubtitleInfos));
+      case TsExtractor.TS_STREAM_TYPE_AV1:
+        return new PesReader(new AV1Reader(buildSeiReader(esInfo), isSet(FLAG_ALLOW_NON_IDR_KEYFRAMES), true));
       default:
         return null;
     }

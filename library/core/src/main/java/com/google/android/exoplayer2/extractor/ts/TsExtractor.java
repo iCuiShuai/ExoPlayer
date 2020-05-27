@@ -94,6 +94,7 @@ public final class TsExtractor implements Extractor {
   public static final int TS_STREAM_TYPE_ID3 = 0x15;
   public static final int TS_STREAM_TYPE_SPLICE_INFO = 0x86;
   public static final int TS_STREAM_TYPE_DVBSUBS = 0x59;
+  public static final int TS_STREAM_TYPE_AV1 = 0xD2;
 
   public static final int TS_PACKET_SIZE = 188;
   public static final int TS_SYNC_BYTE = 0x47; // First byte of each TS packet.
