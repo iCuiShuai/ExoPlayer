@@ -237,7 +237,7 @@ public final class AV1Reader implements ElementaryStreamReader {
     if (!hasOutputFormat || sampleReader.needsSpsPps()) {
       sequenceHeader.appendToObuUnit(dataArray, offset, limit);
     }
-    sampleReader.appendToObuUnit(dataArray, offset, limit, completeObuData);
+    sampleReader.appendToObuUnit(dataArray, offset, limit, completeObuData, hasOutputFormat);
   }
 
   private void endObuUnit(long position, int offset, int discardPadding, long pesTimeUs) {
@@ -371,8 +371,8 @@ public final class AV1Reader implements ElementaryStreamReader {
       if ((allowNonIdrKeyframes && frameHeader.isIntraNonKeyFrame())
           || (detectAccessUnits && (obuUnitType == AV1UnitUtil.OBUType.OBU_FRAME
               || obuUnitType == AV1UnitUtil.OBUType.OBU_FRAME_HDR
-              || obuUnitType == AV1UnitUtil.OBUType.OBU_REDUNDANT_FRAME_HDR)
-              || obuUnitType == AV1UnitUtil.OBUType.OBU_TILE_GRP)) {
+              || obuUnitType == AV1UnitUtil.OBUType.OBU_REDUNDANT_FRAME_HDR
+              || obuUnitType == AV1UnitUtil.OBUType.OBU_TILE_GRP))) {
         // Store the previous header and prepare to populate the new one.
         FrameHeaderData newFrameHeader = previousFrameHeader;
         previousFrameHeader = frameHeader;
@@ -500,8 +500,8 @@ public final class AV1Reader implements ElementaryStreamReader {
      * @param offset The offset of the data in {@code data}.
      * @param limit The limit (exclusive) of the data in {@code data}.
      */
-    public void appendToObuUnit(byte[] data, int offset, int limit, boolean completeObuData) {
-      if (!isFilling) {
+    public void appendToObuUnit(byte[] data, int offset, int limit, boolean completeObuData, boolean hasOutputFormat) {
+      if (!isFilling || !hasOutputFormat) {
         return;
       }
       int readLength = limit - offset;
