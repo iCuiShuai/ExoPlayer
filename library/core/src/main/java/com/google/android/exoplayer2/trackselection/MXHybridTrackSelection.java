@@ -28,6 +28,8 @@ import com.google.android.exoplayer2.util.Clock;
 import com.google.android.exoplayer2.util.Util;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+
 import org.checkerframework.checker.nullness.compatqual.NullableType;
 
 /**
@@ -314,6 +316,7 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
   private boolean isFastSwitchRequested;
   private int minVideoResolutionInAutoMode;
   private int maxVideoResolutionInAutoMode;
+  private final Random random;
 
   /**
    * @param group The {@link TrackGroup}.
@@ -436,6 +439,8 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
       isSelectedIndexRequestedByUser = false;
     }
     isFastSwitchRequested = false;
+    random = new Random();
+    selectedIndex = random.nextInt(length);
   }
 
   /**
@@ -482,7 +487,8 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
      * track if user has already specified one.
      */
     if (!isSelectedIndexRequestedByUser) {
-      selectedIndex = determineIdealSelectedIndex(nowMs);
+//      selectedIndex = determineIdealSelectedIndex(nowMs);
+      selectedIndex = random.nextInt(length);
     }
     if (selectedIndex == currentSelectedIndex) {
       return;

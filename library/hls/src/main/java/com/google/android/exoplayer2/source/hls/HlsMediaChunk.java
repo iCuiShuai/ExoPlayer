@@ -286,6 +286,7 @@ import org.checkerframework.checker.nullness.qual.RequiresNonNull;
    */
   public void init(HlsSampleStreamWrapper output, SampleQueue[] sampleQueues) {
     this.output = output;
+    output.init(uid, shouldSpliceIn);
     if (sampleQueues != null) {
       this.firstSampleIndices = new int[sampleQueues.length];
       for (int i = 0; i < sampleQueues.length; i++) {
