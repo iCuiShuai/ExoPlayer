@@ -1778,6 +1778,7 @@ public class MediaCodecVideoRenderer extends MediaCodecRenderer {
             case "XT1663":
             case "Z12_PRO":
             case "Z80":
+            case "nikel":
               deviceNeedsSetOutputSurfaceWorkaround = true;
               break;
             default:
