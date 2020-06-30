@@ -419,7 +419,7 @@ public final class AV1UnitUtil {
 
     data.readBits(1); // dummy bit
 
-    float pixelWidthHeightRatio = maxHeight == 0 ? -1 : (float)maxWidth / (float)maxHeight;
+    float pixelWidthHeightRatio = 1.0f;
     int levelIdc = operatingPoints[0].majorLevel *10 + operatingPoints[0].minorLevel;
 
     return new SequenceHeader(

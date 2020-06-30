@@ -103,10 +103,12 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
   private boolean waitingForKeys;
   private boolean waitingForFirstSampleInFormat;
 
+  private float currentPixelWidthHeightRatio;
   private boolean inputStreamEnded;
   private boolean outputStreamEnded;
   private int reportedWidth;
   private int reportedHeight;
+  private float reportedPixelWidthHeightRatio;
 
   private long droppedFrameAccumulationStartTimeMs;
   private int droppedFrames;
@@ -153,6 +155,7 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
     eventDispatcher = new EventDispatcher(eventHandler, eventListener);
     decoderReinitializationState = REINITIALIZATION_STATE_NONE;
     outputMode = C.VIDEO_OUTPUT_MODE_NONE;
+    currentPixelWidthHeightRatio = Format.NO_VALUE;
   }
 
   // BaseRenderer implementation.
@@ -378,6 +381,7 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
           getUpdatedSourceDrmSession(inputFormat, newFormat, drmSessionManager, sourceDrmSession);
     }
     inputFormat = newFormat;
+    currentPixelWidthHeightRatio = newFormat.pixelWidthHeightRatio;
 
     if (sourceDrmSession != decoderDrmSession) {
       if (decoderReceivedBuffers) {
@@ -935,14 +939,16 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
   private void clearReportedVideoSize() {
     reportedWidth = Format.NO_VALUE;
     reportedHeight = Format.NO_VALUE;
+    reportedPixelWidthHeightRatio = Format.NO_VALUE;
   }
 
   private void maybeNotifyVideoSizeChanged(int width, int height) {
-    if (reportedWidth != width || reportedHeight != height) {
+    if (reportedWidth != width || reportedHeight != height || reportedPixelWidthHeightRatio != currentPixelWidthHeightRatio) {
       reportedWidth = width;
       reportedHeight = height;
+      reportedPixelWidthHeightRatio = currentPixelWidthHeightRatio;
       eventDispatcher.videoSizeChanged(
-          width, height, /* unappliedRotationDegrees= */ 0, /* pixelWidthHeightRatio= */ 1);
+          width, height, /* unappliedRotationDegrees= */ 0, /* pixelWidthHeightRatio= */ currentPixelWidthHeightRatio);
     }
   }
 
@@ -952,7 +958,7 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
           reportedWidth,
           reportedHeight,
           /* unappliedRotationDegrees= */ 0,
-          /* pixelWidthHeightRatio= */ 1);
+          /* pixelWidthHeightRatio= */ reportedPixelWidthHeightRatio);
     }
   }
 
