@@ -765,7 +765,8 @@ public final class ImaAdsLoader
   @Override
   public void onAdError(AdErrorEvent adErrorEvent) {
     if (adsIntercept != null) {
-      adsIntercept.handleAdError(this, adDisplayContainer.getAdContainer(), adErrorEvent, getAdGroupIndex());
+      int adGroupIndex = getAdGroupIndex();
+      adsIntercept.handleAdError(this, adDisplayContainer.getAdContainer(), adErrorEvent, adGroupIndex, getAdPositionInSec(adGroupIndex));
     }
     AdError error = adErrorEvent.getError();
     if (DEBUG) {
@@ -790,6 +791,20 @@ public final class ImaAdsLoader
       pendingAdLoadError = AdLoadException.createForAllAds(error);
     }
     maybeNotifyPendingAdLoadError();
+  }
+
+  private long getAdPositionInSec(int adGroupIndex) {
+    if(getAdGroupCount() > 0){
+      long[] adGroupTimesUs = getAdGroupTimesUs(adsManager.getAdCuePoints());
+      if(adGroupIndex >= 0 && adGroupIndex < adGroupTimesUs.length){
+        long adGroupTime = adGroupTimesUs[adGroupIndex];
+        if(adGroupTime == C.TIME_END_OF_SOURCE){
+            return adGroupTime;
+        }
+        return adGroupTime/C.MICROS_PER_SECOND;
+      }
+    }
+    return -1;
   }
 
   private int getAdGroupIndex () {
@@ -1270,7 +1285,8 @@ public final class ImaAdsLoader
         if ("adLoadError".equals(adData.get("type"))) {
           Exception e = new IOException(message);
           if (adsIntercept != null) {
-            adsIntercept.handleAdError(this, adDisplayContainer.getAdContainer(), e, getAdGroupIndex());
+            int adGroupIndex = getAdGroupIndex();
+            adsIntercept.handleAdError(this, adDisplayContainer.getAdContainer(), e, adGroupIndex, getAdPositionInSec(adGroupIndex));
           }
           handleAdGroupLoadError(e);
         }
