@@ -582,6 +582,35 @@ public final class ImaAdsLoader
     updateStartRequestTime(false);
   }
 
+  public void requestOfflineAds(String adsResponse) {
+    if (adDisplayContainer == null || adDisplayContainer.getAdContainer() == null || adsResponse == null) {
+      return;
+    }
+    pendingAdRequestContext = null;
+    adPlaybackState = null;
+
+    if (adsManager != null) {
+      adsManager.removeAdErrorListener(this);
+      adsManager.removeAdEventListener(this);
+      if (adEventListener != null) {
+        adsManager.removeAdEventListener(adEventListener);
+      }
+      adsManager.destroy();
+      adsManager = null;
+    }
+    adDisplayContainer.setAdContainer(adDisplayContainer.getAdContainer());
+    pendingAdRequestContext = new Object();
+    AdsRequest request = imaFactory.createAdsRequest();
+    request.setAdsResponse(adsResponse);
+    if (vastLoadTimeoutMs != TIMEOUT_UNSET) {
+      request.setVastLoadTimeout(vastLoadTimeoutMs);
+    }
+    request.setContentProgressProvider(this);
+    request.setUserRequestContext(pendingAdRequestContext);
+    adsLoader.requestAds(request);
+    updateStartRequestTime(false);
+  }
+
   // AdsLoader implementation.
 
   @Override
@@ -764,19 +793,22 @@ public final class ImaAdsLoader
 
   @Override
   public void onAdError(AdErrorEvent adErrorEvent) {
+    boolean isHandled = false;
     if (adsIntercept != null) {
       int adGroupIndex = getAdGroupIndex();
-      adsIntercept.handleAdError(this, adDisplayContainer.getAdContainer(), adErrorEvent, adGroupIndex, getAdPositionInSec(adGroupIndex));
+      isHandled = adsIntercept.handleAdError(this, adDisplayContainer.getAdContainer(), adErrorEvent, adGroupIndex, getAdPositionInSec(adGroupIndex));
     }
     AdError error = adErrorEvent.getError();
     if (DEBUG) {
       Log.d(TAG, "onAdError", error);
     }
     if (adsManager == null) {
-      // No ads were loaded, so allow playback to start without any ads.
-      pendingAdRequestContext = null;
-      adPlaybackState = new AdPlaybackState();
-      updateAdPlaybackState();
+      if (adsIntercept == null || adsIntercept.resumePlaybackOnRequestsAdError() || !isHandled){
+        // No ads were loaded, so allow playback to start without any ads.
+        pendingAdRequestContext = null;
+        adPlaybackState = new AdPlaybackState();
+        updateAdPlaybackState();
+      }
       if (adTracker != null) {
         adTracker.trackEvent(IVideoAdTracker.EVENT_VIDEO_AD_PLAY_FAILED, IVideoAdTracker.buildFailedParams(adGroupIndex, startRequestTime, error, getAdGroupCount()));
       }

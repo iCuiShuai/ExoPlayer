@@ -12,4 +12,8 @@ public interface IAdsIntercept {
     boolean handlePlayerError(Throwable throwable);
 
     void release();
+
+    default boolean resumePlaybackOnRequestsAdError() {
+        return true;
+    }
 }
