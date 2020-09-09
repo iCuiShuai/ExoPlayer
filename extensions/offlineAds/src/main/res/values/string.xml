@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="ad_progress">Ad &#8226; %d of %d (%s)</string>
+  <string name="ad_progress_without_group">Ad &#8226; %s</string>
+
+</resources>
