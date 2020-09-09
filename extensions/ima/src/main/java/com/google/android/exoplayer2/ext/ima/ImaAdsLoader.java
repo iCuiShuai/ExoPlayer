@@ -358,9 +358,14 @@ public final class ImaAdsLoader
   private AdPlaybackState adPlaybackState;
 
   private IAdsIntercept adsIntercept;
+  private ImaCustomUiController imaAdViewController;
 
   public void setAdsIntercept(IAdsIntercept adsIntercept) {
     this.adsIntercept = adsIntercept;
+  }
+
+  public void setImaCustomUiController(ImaCustomUiController imaAdViewController) {
+    this.imaAdViewController = imaAdViewController;
   }
 
   public void setAdTracker(IVideoAdTracker adTracker) {
@@ -514,6 +519,7 @@ public final class ImaAdsLoader
     adGroupIndex = C.INDEX_UNSET;
     contentDurationMs = C.TIME_UNSET;
     timeline = Timeline.EMPTY;
+    imaAdViewController  = new DefaultImaCustomUiController();
   }
 
   /**
@@ -590,13 +596,7 @@ public final class ImaAdsLoader
     adPlaybackState = null;
 
     if (adsManager != null) {
-      adsManager.removeAdErrorListener(this);
-      adsManager.removeAdEventListener(this);
-      if (adEventListener != null) {
-        adsManager.removeAdEventListener(adEventListener);
-      }
-      adsManager.destroy();
-      adsManager = null;
+      releaseAdManager();
     }
     adDisplayContainer.setAdContainer(adDisplayContainer.getAdContainer());
     pendingAdRequestContext = new Object();
@@ -609,6 +609,17 @@ public final class ImaAdsLoader
     request.setUserRequestContext(pendingAdRequestContext);
     adsLoader.requestAds(request);
     updateStartRequestTime(false);
+  }
+
+  private void releaseAdManager() {
+    adsManager.removeAdErrorListener(this);
+    adsManager.removeAdEventListener(this);
+    if (adEventListener != null) {
+      adsManager.removeAdEventListener(adEventListener);
+    }
+    adsManager.destroy();
+    adsManager = null;
+    imaAdViewController.releaseAdManager();
   }
 
   // AdsLoader implementation.
@@ -713,13 +724,7 @@ public final class ImaAdsLoader
   public void release() {
     pendingAdRequestContext = null;
     if (adsManager != null) {
-      adsManager.removeAdErrorListener(this);
-      adsManager.removeAdEventListener(this);
-      if (adEventListener != null) {
-        adsManager.removeAdEventListener(adEventListener);
-      }
-      adsManager.destroy();
-      adsManager = null;
+      releaseAdManager();
     }
     adsLoader.removeAdsLoadedListener(/* adsLoadedListener= */ this);
     adsLoader.removeAdErrorListener(/* adErrorListener= */ this);
@@ -754,6 +759,7 @@ public final class ImaAdsLoader
     }
     pendingAdRequestContext = null;
     this.adsManager = adsManager;
+    imaAdViewController.setAdsManager(this.adsManager);
     adsManager.addAdErrorListener(this);
     adsManager.addAdEventListener(this);
     if (adEventListener != null) {
@@ -1207,6 +1213,7 @@ public final class ImaAdsLoader
     if (adUiElements != null) {
       adsRenderingSettings.setUiElements(adUiElements);
     }
+    adsRenderingSettings.setDisableUi(imaAdViewController.isCustomUiSupported());
 
     // Skip ads based on the start position as required.
     long[] adGroupTimesUs = getAdGroupTimesUs(adsManager.getAdCuePoints());
