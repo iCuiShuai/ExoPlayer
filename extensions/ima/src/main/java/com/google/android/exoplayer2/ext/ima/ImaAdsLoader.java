@@ -17,6 +17,7 @@ package com.google.android.exoplayer2.ext.ima;
 
 import android.content.Context;
 import android.net.Uri;
+import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.view.View;
@@ -359,6 +360,7 @@ public final class ImaAdsLoader
 
   private IAdsIntercept adsIntercept;
   private ImaCustomUiController imaAdViewController;
+  private @Nullable Handler timeOutHandler = null;
 
   public void setAdsIntercept(IAdsIntercept adsIntercept) {
     this.adsIntercept = adsIntercept;
@@ -584,29 +586,12 @@ public final class ImaAdsLoader
     }
     request.setContentProgressProvider(this);
     request.setUserRequestContext(pendingAdRequestContext);
-    adsLoader.requestAds(request);
-    updateStartRequestTime(false);
-  }
-
-  public void requestOfflineAds(String adsResponse) {
-    if (adDisplayContainer == null || adDisplayContainer.getAdContainer() == null || adsResponse == null) {
-      return;
+    if (timeOutHandler == null && adsIntercept != null && adsIntercept.getVastLoadMaxTimeout() > IAdsIntercept.VAST_LOAD_NO_TIMEOUT) {
+      timeOutHandler = new Handler(Looper.getMainLooper());
+      timeOutHandler.postDelayed(() -> {
+        onAdError(new AdsLoadRequestTimeoutEvent(pendingAdRequestContext));
+      }, adsIntercept.getVastLoadMaxTimeout());
     }
-    pendingAdRequestContext = null;
-    adPlaybackState = null;
-
-    if (adsManager != null) {
-      releaseAdManager();
-    }
-    adDisplayContainer.setAdContainer(adDisplayContainer.getAdContainer());
-    pendingAdRequestContext = new Object();
-    AdsRequest request = imaFactory.createAdsRequest();
-    request.setAdsResponse(adsResponse);
-    if (vastLoadTimeoutMs != TIMEOUT_UNSET) {
-      request.setVastLoadTimeout(vastLoadTimeoutMs);
-    }
-    request.setContentProgressProvider(this);
-    request.setUserRequestContext(pendingAdRequestContext);
     adsLoader.requestAds(request);
     updateStartRequestTime(false);
   }
@@ -734,6 +719,13 @@ public final class ImaAdsLoader
     adPlaybackState = AdPlaybackState.NONE;
     updateAdPlaybackState();
     adEventListener = null;
+    removeTimeoutCallback();
+  }
+
+  private void removeTimeoutCallback() {
+    if (timeOutHandler != null){
+      timeOutHandler.removeCallbacksAndMessages(null);
+    }
   }
 
   @Override
@@ -752,6 +744,7 @@ public final class ImaAdsLoader
 
   @Override
   public void onAdsManagerLoaded(AdsManagerLoadedEvent adsManagerLoadedEvent) {
+    removeTimeoutCallback();
     AdsManager adsManager = adsManagerLoadedEvent.getAdsManager();
     if (!Util.areEqual(pendingAdRequestContext, adsManagerLoadedEvent.getUserRequestContext())) {
       adsManager.destroy();
@@ -799,6 +792,7 @@ public final class ImaAdsLoader
 
   @Override
   public void onAdError(AdErrorEvent adErrorEvent) {
+    removeTimeoutCallback();
     boolean isHandled = false;
     if (adsIntercept != null) {
       int adGroupIndex = getAdGroupIndex();
