@@ -7,7 +7,6 @@ import android.os.SystemClock;
 import android.view.ViewGroup;
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayerLibraryInfo;
@@ -46,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public final class OmaAdNewController
+public final class OmaAdLoader
     implements Player.EventListener,
     AdsLoader,
     VideoAdPlayer,
@@ -70,52 +69,45 @@ public final class OmaAdNewController
   private int lastLoadMediaAdGroupIndex = -1;
   private int lastStartRequestAdGroupIndex = -1;
 
-  /** Builder for {@link OmaAdNewController}. */
+  /** Builder for {@link OmaAdLoader}. */
   public static final class Builder {
 
     private final Context context;
 
 
     @Nullable private AdEvent.AdEventListener adEventListener;
-    private ImaFactory imaFactory;
+    private OmaFactory omaFactory;
 
     /**
-     * Creates a new builder for {@link OmaAdNewController}.
+     * Creates a new builder for {@link OmaAdLoader}.
      *
      * @param context The context;
      */
     public Builder(Context context) {
       this.context = Assertions.checkNotNull(context);
-      imaFactory = new DefaultImaFactory();
+      omaFactory = new DefaultOmaFactory();
     }
 
-
-
-    @VisibleForTesting
-      /* package */ Builder setImaFactory(ImaFactory imaFactory) {
-      this.imaFactory = Assertions.checkNotNull(imaFactory);
-      return this;
-    }
 
 
 
     /**
-     * Returns a new {@link OmaAdNewController} with the specified sideloaded ads response.
+     * Returns a new {@link OmaAdLoader} with the specified sideloaded ads response.
      *
      * @param adsResponse The sideloaded VAST, VMAP, or ad rules response to be used instead of
      *     making a request via an ad tag URL.
-     * @return The new {@link OmaAdNewController}.
+     * @return The new {@link OmaAdLoader}.
      */
-    public OmaAdNewController buildForAdsResponse(String adsResponse) {
-      return new OmaAdNewController(
+    public OmaAdLoader buildForAdsResponse(String adsResponse) {
+      return new OmaAdLoader(
           context,
           adsResponse,
           adEventListener,
-          imaFactory);
+          omaFactory);
     }
   }
 
-  private static final boolean DEBUG = false;
+  private static final boolean DEBUG = true;
   private static final String TAG = "OmaAdsLoader";
 
   /** The value used in {@link VideoProgressUpdate}s to indicate an unset duration. */
@@ -151,7 +143,7 @@ public final class OmaAdNewController
 
   @Nullable private final String adsResponse;
   @Nullable private AdEvent.AdEventListener adEventListener;
-  private final ImaFactory imaFactory;
+  private final OmaFactory omaFactory;
   private final Timeline.Period period;
   private final List<VideoAdPlayerCallback> adCallbacks;
   private final AdDisplayContainer adDisplayContainer;
@@ -230,20 +222,20 @@ public final class OmaAdNewController
 
 
 
-  private OmaAdNewController(
+  private OmaAdLoader(
       Context context,
       @Nullable String adsResponse,
       @Nullable AdEvent.AdEventListener adEventListener,
-      ImaFactory imaFactory) {
+      OmaFactory omaFactory) {
     Assertions.checkArgument(adsResponse != null);
     this.adsResponse = adsResponse;
     this.adEventListener = adEventListener;
-    this.imaFactory = imaFactory;
+    this.omaFactory = omaFactory;
     period = new Timeline.Period();
     adCallbacks = new ArrayList<>(/* initialCapacity= */ 1);
-    adDisplayContainer = imaFactory.createAdDisplayContainer();
+    adDisplayContainer = omaFactory.createAdDisplayContainer();
     adDisplayContainer.setPlayer(/* videoAdPlayer= */ this);
-    adsLoader = imaFactory.createAdsLoader(context, adDisplayContainer);
+    adsLoader = omaFactory.createAdsLoader(context, adDisplayContainer);
     adsLoader.addAdErrorListener(/* adErrorListener= */ this);
     adsLoader.addAdsLoadedListener(/* adsLoadedListener= */ this);
     fakeContentProgressElapsedRealtimeMs = C.TIME_UNSET;
@@ -292,7 +284,7 @@ public final class OmaAdNewController
     }
     adDisplayContainer.setAdContainer(adViewGroup);
     pendingAdRequestContext = new Object();
-    AdsRequest  request = imaFactory.createAdsRequest();
+    AdsRequest  request = omaFactory.createAdsRequest();
     request.setAdsResponse(adsResponse);
     request.setContentProgressProvider(this);
     request.setUserRequestContext(pendingAdRequestContext);
@@ -1222,7 +1214,7 @@ public final class OmaAdNewController
   }
 
   /** Factory for objects provided by the IMA SDK. */
-  interface ImaFactory {
+  interface OmaFactory {
 
     AdDisplayContainer createAdDisplayContainer();
 
@@ -1232,7 +1224,7 @@ public final class OmaAdNewController
         Context context, AdDisplayContainer adDisplayContainer);
   }
 
-  private static final class DefaultImaFactory implements ImaFactory {
+  private static final class DefaultOmaFactory implements OmaFactory {
 
     @Override
     public AdDisplayContainer createAdDisplayContainer() {

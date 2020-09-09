@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <item name="adCounter" type="id"/>
+  <item name="learnMoreButton" type="id"/>
+  <item name="skipButton" type="id"/>
+  <item name="customUi" type="id"/>
 
 </resources>

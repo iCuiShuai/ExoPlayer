@@ -93,6 +93,11 @@ public class AdLoaderImpl extends
     try {
       VMAPModel vmapModel = new VMAPProcessor().process(adsRequest.getAdsResponse());
       List<AdGroup> adGroups = new Mapper().toAdGroups(vmapModel.getAdBreaks());
+      if (adGroups.isEmpty()){
+        return new AdLoaderResponse(new AdErrorEvent(new AdError(AdError.AdErrorType.LOAD,
+                AdError.AdErrorCode.VAST_EMPTY_RESPONSE,"Empty vast response"),
+                adsRequest.getUserRequestContext()));
+      }
       AdsManagerImpl adsManager = new AdsManagerImpl(context, adDisplayContainer, adGroups, adsRequest.getContentProgressProvider(), adsRequest.getUserRequestContext());
       return new AdLoaderResponse(
           new AdsManagerLoadedEvent(adsManager, adsRequest.getUserRequestContext()));

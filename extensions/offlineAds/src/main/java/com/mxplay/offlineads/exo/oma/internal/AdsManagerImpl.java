@@ -3,9 +3,14 @@ package com.mxplay.offlineads.exo.oma.internal;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.SpannableString;
+import android.text.Spanned;
 import android.text.TextUtils;
+import android.text.style.ForegroundColorSpan;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 import ccom.mxplay.offlineads.exo.R;
 import com.google.android.exoplayer2.C;
@@ -17,6 +22,7 @@ import com.mxplay.offlineads.exo.oma.AdErrorEvent;
 import com.mxplay.offlineads.exo.oma.AdEvent;
 import com.mxplay.offlineads.exo.oma.AdEventImpl;
 import com.mxplay.offlineads.exo.oma.AdGroup;
+import com.mxplay.offlineads.exo.oma.AdPodInfo;
 import com.mxplay.offlineads.exo.oma.AdProgressInfo;
 import com.mxplay.offlineads.exo.oma.AdsManager;
 import com.mxplay.offlineads.exo.oma.AdsRenderingSettings;
@@ -67,6 +73,7 @@ public class AdsManagerImpl implements AdsManager {
     this.context = context;
     this.adDisplayContainer = adDisplayContainer;
     this.adDisplayContainer.getPlayer().addCallback(videoAdPlayerCallback);
+    ViewGroup adContainer = this.adDisplayContainer.getAdContainer();
     this.ads = ads;
     this.userRequestContext = userRequestContext;
     initCuePoints();
@@ -312,24 +319,30 @@ public class AdsManagerImpl implements AdsManager {
     ViewGroup adContainer = adDisplayContainer.getAdContainer();
     Ad playingAd = currentAd;
     if (playingAd != null && adProgress != VideoProgressUpdate.VIDEO_TIME_NOT_READY){
-      adContainer.setVisibility(View.VISIBLE);
       TextView adProgressText = adContainer.findViewById(R.id.adCounter);
-      // Handle ad counter.
-      String adProgressStr = DateTimeUtils.formatTime((adProgress.getDuration() - adProgress.getCurrentTime()));
-      String adUiString;
-      if (playingAd.getAdPodInfo().getTotalAds() > 1){
-        adUiString = context.getString(R.string.ad_progress, playingAd.getAdPodInfo().getAdPosition(),
-            playingAd.getAdPodInfo().getTotalAds(), adProgressStr);
-      }else {
-        adUiString = context.getString(R.string.ad_progress_without_group, adProgressStr);
-      }
-
-      adProgressText.setText(adUiString);
+      adContainer.setVisibility(View.VISIBLE);
+      adProgressText.setText(formatAdProgress(currentAd.getAdPodInfo(), adProgress));
       setAdState(playingAd, AdEvent.AdEventType.AD_PROGRESS);
       onEvent(new AdEventImpl(AdEvent.AdEventType.AD_PROGRESS, playingAd, new HashMap<>()));
     }else {
       adContainer.setVisibility(View.GONE);
     }
+  }
+
+  private SpannableString formatAdProgress(AdPodInfo podInfo , VideoProgressUpdate  update){
+    String adProgress = DateTimeUtils.formatTime(update.getDuration() - update.getCurrentTime());
+    String progress;
+    if (podInfo.getTotalAds() > 1){
+      progress = context.getString(R.string.txt_ad_progress, podInfo.getAdPosition(),
+              podInfo.getTotalAds(), adProgress);
+    }else {
+      progress = context.getString(R.string.txt_ad_progress_without_group, adProgress);
+    }
+    String prefix = context.getString(R.string.ad_prefix);
+    String dot = context.getString(R.string.dot_unicode_char);
+    SpannableString spannableString = new SpannableString(prefix+dot+progress);
+    spannableString.setSpan(new ForegroundColorSpan(context.getResources().getColor(R.color.dot_color)), prefix.length(), prefix.length()+ dot.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE );
+    return spannableString;
   }
 
   private void scheduleImmediate(){

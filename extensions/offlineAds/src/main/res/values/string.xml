@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="ad_progress">Ad &#8226; %d of %d (%s)</string>
-  <string name="ad_progress_without_group">Ad &#8226; %s</string>
+  <string name="dot_unicode_char">\u2022</string>
+  <string name="ad_prefix">Ad&#160;</string>
+  <string name="txt_ad_progress">&#160;%d of %d (%s)</string>
+  <string name="txt_ad_progress_without_group">&#160;%s</string>
 
 </resources>
