@@ -63,6 +63,11 @@ public class AdLoaderImpl extends
   }
 
   @Override
+  public void cancelAdRequest() {
+    cancel(false);
+  }
+
+  @Override
   public void addAdsLoadedListener(AdsLoadedListener adsLoadedListener) {
     synchronized (adsLoadedListeners) {
       adsLoadedListeners.add(adsLoadedListener);

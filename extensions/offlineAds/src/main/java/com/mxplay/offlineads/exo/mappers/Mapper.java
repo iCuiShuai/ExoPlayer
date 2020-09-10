@@ -12,6 +12,7 @@ import com.mxplay.offlineads.exo.vast.model.AdBreak;
 import com.mxplay.offlineads.exo.vast.model.VastAdModel;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -22,7 +23,7 @@ public class Mapper {
 
 
   public List<AdGroup> toAdGroups(List<AdBreak> adBreaks) throws Exception {
-    Set<AdGroup> ads = new HashSet<>();
+    Set<AdGroup> ads = new LinkedHashSet<>();
     int podIndex = 1;
     for (int i=0;i< adBreaks.size();i++) {
       AdBreak adBreak = adBreaks.get(i);

@@ -385,6 +385,7 @@ public final class OmaAdLoader
     adPlaybackState = AdPlaybackState.NONE;
     updateAdPlaybackState();
     adEventListener = null;
+    adsLoader.cancelAdRequest();
   }
 
   @Override
@@ -811,7 +812,9 @@ public final class OmaAdLoader
         }
       }
     }
-    android.util.Log.d(TAG, " playingAd "+ playingAd + "  DiscontinuityReason "+ reason);
+    if (DEBUG) {
+      android.util.Log.d(TAG, " playingAd " + playingAd + "  DiscontinuityReason " + reason);
+    }
     updateImaStateForPlayerState();
   }
 

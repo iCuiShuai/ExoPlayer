@@ -9,6 +9,8 @@ public interface AdsLoader {
 
     void requestAds(AdsRequest var1);
 
+    public void cancelAdRequest();
+
     void addAdsLoadedListener(AdsLoader.AdsLoadedListener var1);
 
     void removeAdsLoadedListener(AdsLoader.AdsLoadedListener var1);
