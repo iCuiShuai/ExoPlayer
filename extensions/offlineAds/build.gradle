@@ -1,0 +1,36 @@
+apply from: '../../constants.gradle'
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion project.ext.compileSdkVersion
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    defaultConfig {
+        minSdkVersion project.ext.minSdkVersion
+        targetSdkVersion project.ext.targetSdkVersion
+        consumerProguardFiles 'proguard-rules.txt'
+    }
+
+    testOptions.unitTests.includeAndroidResources = true
+}
+
+dependencies {
+    implementation project(modulePrefix + 'library-core')
+    implementation 'androidx.annotation:annotation:' + androidxAnnotationVersion
+    
+}
+
+ext {
+    javadocTitle = 'OMA extension'
+}
+apply from: '../../javadoc_library.gradle'
+
+ext {
+    releaseArtifact = 'extension-offineAds'
+    releaseDescription = 'Offline Media Ads extension for ExoPlayer.'
+}
+apply from: '../../publish.gradle'
