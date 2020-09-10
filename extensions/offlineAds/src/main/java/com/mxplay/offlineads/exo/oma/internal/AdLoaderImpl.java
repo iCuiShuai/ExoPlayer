@@ -21,8 +21,8 @@ import java.util.Set;
 public class AdLoaderImpl extends
     AsyncTask<AdsRequest, Void, AdLoaderImpl.AdLoaderResponse> implements AdsLoader {
 
-  private Context context;
-  private AdDisplayContainer adDisplayContainer;
+  private final Context context;
+  private final AdDisplayContainer adDisplayContainer;
 
   static final class AdLoaderResponse {
 
@@ -56,6 +56,9 @@ public class AdLoaderImpl extends
 
   @Override
   public void requestAds(AdsRequest adsRequest) {
+    if (getStatus() != Status.PENDING){
+      return;
+    }
     execute(adsRequest);
   }
 

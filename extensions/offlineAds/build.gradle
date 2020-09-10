@@ -31,6 +31,6 @@ apply from: '../../javadoc_library.gradle'
 
 ext {
     releaseArtifact = 'extension-offineAds'
-    releaseDescription = 'Interactive Media Ads extension for ExoPlayer.'
+    releaseDescription = 'Offline Media Ads extension for ExoPlayer.'
 }
 apply from: '../../publish.gradle'

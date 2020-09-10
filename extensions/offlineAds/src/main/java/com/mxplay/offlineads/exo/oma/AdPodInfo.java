@@ -7,8 +7,6 @@ public interface AdPodInfo {
 
     int getAdPosition();
 
-    boolean isBumper();
-
     double getMaxDuration();
 
     int getPodIndex();

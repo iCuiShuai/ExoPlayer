@@ -5,9 +5,9 @@ public final class VideoProgressUpdate {
   private float currentTime;
   private float duration;
 
-  public VideoProgressUpdate(long var1, long var3) {
-    this.currentTime = (float)var1 / 1000.0F;
-    this.duration = (float)var3 / 1000.0F;
+  public VideoProgressUpdate(long currentTime, long duration) {
+    this.currentTime = (float)currentTime / 1000.0F;
+    this.duration = (float)duration / 1000.0F;
   }
 
   public final float getCurrentTime() {
@@ -18,19 +18,19 @@ public final class VideoProgressUpdate {
     return this.duration;
   }
 
-  public final boolean equals(Object var1) {
-    if (this == var1) {
+  public final boolean equals(Object other) {
+    if (this == other) {
       return true;
-    } else if (var1 == null) {
+    } else if (other == null) {
       return false;
-    } else if (this.getClass() != var1.getClass()) {
+    } else if (this.getClass() != other.getClass()) {
       return false;
     } else {
-      VideoProgressUpdate var2 = (VideoProgressUpdate)var1;
-      if (Float.floatToIntBits(this.currentTime) != Float.floatToIntBits(var2.currentTime)) {
+      VideoProgressUpdate o = (VideoProgressUpdate)other;
+      if (Float.floatToIntBits(this.currentTime) != Float.floatToIntBits(o.currentTime)) {
         return false;
       } else {
-        return Float.floatToIntBits(this.duration) == Float.floatToIntBits(var2.duration);
+        return Float.floatToIntBits(this.duration) == Float.floatToIntBits(o.duration);
       }
     }
   }
