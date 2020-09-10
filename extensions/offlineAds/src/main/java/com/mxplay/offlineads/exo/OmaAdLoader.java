@@ -107,7 +107,7 @@ public final class OmaAdLoader
     }
   }
 
-  private static final boolean DEBUG = true;
+  private static final boolean DEBUG = false;
   private static final String TAG = "OmaAdsLoader";
 
   /** The value used in {@link VideoProgressUpdate}s to indicate an unset duration. */
@@ -156,7 +156,6 @@ public final class OmaAdLoader
   @Nullable private Player player;
   private VideoProgressUpdate lastContentProgress;
   private VideoProgressUpdate lastAdProgress;
-  private int lastVolumePercentage;
 
   private AdsManager adsManager;
   private boolean initializedAdsManager;
@@ -317,7 +316,6 @@ public final class OmaAdLoader
     }
     updateStartRequestTime(false);
     this.eventListener = eventListener;
-    lastVolumePercentage = 0;
     lastAdProgress = null;
     lastContentProgress = null;
     ViewGroup adViewGroup = adViewProvider.getAdViewGroup();
@@ -360,7 +358,6 @@ public final class OmaAdLoader
       }
       adsManager.pause();
     }
-    lastVolumePercentage = getVolume();
     lastAdProgress = getAdProgress();
     lastContentProgress = getContentProgress();
     player.removeListener(this);
@@ -582,27 +579,6 @@ public final class OmaAdLoader
     } else {
       return VideoProgressUpdate.VIDEO_TIME_NOT_READY;
     }
-  }
-
-  @Override
-  public int getVolume() {
-    if (player == null) {
-      return lastVolumePercentage;
-    }
-
-    Player.AudioComponent audioComponent = player.getAudioComponent();
-    if (audioComponent != null) {
-      return (int) (audioComponent.getVolume() * 100);
-    }
-
-    // Check for a selected track using an audio renderer.
-    TrackSelectionArray trackSelections = player.getCurrentTrackSelections();
-    for (int i = 0; i < player.getRendererCount() && i < trackSelections.length; i++) {
-      if (player.getRendererType(i) == C.TRACK_TYPE_AUDIO && trackSelections.get(i) != null) {
-        return 100;
-      }
-    }
-    return 0;
   }
 
   @Override

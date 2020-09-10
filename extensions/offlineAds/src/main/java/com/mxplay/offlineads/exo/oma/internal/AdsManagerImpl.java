@@ -7,10 +7,8 @@ import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
-import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 import android.widget.TextView;
 import ccom.mxplay.offlineads.exo.R;
 import com.google.android.exoplayer2.C;
@@ -23,7 +21,6 @@ import com.mxplay.offlineads.exo.oma.AdEvent;
 import com.mxplay.offlineads.exo.oma.AdEventImpl;
 import com.mxplay.offlineads.exo.oma.AdGroup;
 import com.mxplay.offlineads.exo.oma.AdPodInfo;
-import com.mxplay.offlineads.exo.oma.AdProgressInfo;
 import com.mxplay.offlineads.exo.oma.AdsManager;
 import com.mxplay.offlineads.exo.oma.AdsRenderingSettings;
 import com.mxplay.offlineads.exo.oma.ContentProgressProvider;
@@ -35,7 +32,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class AdsManagerImpl implements AdsManager {
@@ -45,7 +41,9 @@ public class AdsManagerImpl implements AdsManager {
 
   private static final boolean DEBUG = false;
   public static final String TAG = "OmaAdsManager";
-  private static final int DELAY_MILLIS = 300;
+  private static final int DELAY_MILLIS = 500;
+  private static final int DELAY_MILLIS_AD_RUNNING = 200;
+
 
 
   private final Context context;
@@ -73,7 +71,6 @@ public class AdsManagerImpl implements AdsManager {
     this.context = context;
     this.adDisplayContainer = adDisplayContainer;
     this.adDisplayContainer.getPlayer().addCallback(videoAdPlayerCallback);
-    ViewGroup adContainer = this.adDisplayContainer.getAdContainer();
     this.ads = ads;
     this.userRequestContext = userRequestContext;
     initCuePoints();
@@ -202,16 +199,6 @@ public class AdsManagerImpl implements AdsManager {
   }
 
   @Override
-  public void clicked() {
-
-  }
-
-  @Override
-  public void focusSkipButton() {
-
-  }
-
-  @Override
   public void init() {
 
   }
@@ -235,11 +222,6 @@ public class AdsManagerImpl implements AdsManager {
   @Override
   public Ad getCurrentAd() {
     return currentAd;
-  }
-
-  @Override
-  public boolean isCustomPlaybackUsed() {
-    return false;
   }
 
 
@@ -267,10 +249,6 @@ public class AdsManagerImpl implements AdsManager {
     synchronized (adsEventListeners){adsEventListeners.remove(adEventListener);}
   }
 
-  @Override
-  public AdProgressInfo getAdProgressInfo() {
-    return null;
-  }
 
   @Override
   public VideoProgressUpdate getAdProgress() {
@@ -284,7 +262,7 @@ public class AdsManagerImpl implements AdsManager {
       VideoAdPlayer player = adDisplayContainer.getPlayer();
       if (player == null) return ;
       VideoProgressUpdate adProgress = player.getAdProgress();
-      if (!lastAdProgress.equals(adProgress) && isCurrentAdDone(lastAdProgress, adProgress)){
+      if (!lastAdProgress.equals(adProgress) && isCurrentAdDone(adProgress)){
         try {
           stopAd();
         } catch (Exception e) {
@@ -298,7 +276,7 @@ public class AdsManagerImpl implements AdsManager {
       if (DEBUG) {
         Log.d(TAG, " contentProgress "+ contentProgress.toString() + " Ad progress "+ adProgress.toString());
       }
-      if (contentProgress != VideoProgressUpdate.VIDEO_TIME_NOT_READY){
+      if (currentAd == null && contentProgress != VideoProgressUpdate.VIDEO_TIME_NOT_READY){
         long pendingContentMs = (long) (contentProgress.getDuration() - contentProgress.getCurrentTime()) * C.MILLIS_PER_SECOND;
         if (pendingContentMs > 1000 && pendingContentMs < END_OF_CONTENT_POSITION_THRESHOLD_MS){
           processAd(C.TIME_END_OF_SOURCE);
@@ -306,13 +284,13 @@ public class AdsManagerImpl implements AdsManager {
           processAd((long) (contentProgress.getCurrentTime() * C.MILLIS_PER_SECOND));
         }
       }
-      handler.postDelayed(updateRunnable, 500);
+      handler.postDelayed(updateRunnable, adProgress != VideoProgressUpdate.VIDEO_TIME_NOT_READY ? DELAY_MILLIS_AD_RUNNING : DELAY_MILLIS);
     }
   };
 
-  private boolean isCurrentAdDone(VideoProgressUpdate lastAdProgress, VideoProgressUpdate current) {
+  private boolean isCurrentAdDone(VideoProgressUpdate current) {
    return current != VideoProgressUpdate.VIDEO_TIME_NOT_READY
-          && ((current.getCurrentTime() * 100) / current.getDuration()) > 99.0f;
+          && ((current.getCurrentTime() * 100) / current.getDuration()) >= 99.0f;
   }
 
   private void showAdView(VideoProgressUpdate adProgress){
@@ -414,10 +392,6 @@ public class AdsManagerImpl implements AdsManager {
 
     }
 
-    @Override
-    public void onVolumeChanged(int var1) {
-
-    }
 
     @Override
     public void onPause() {

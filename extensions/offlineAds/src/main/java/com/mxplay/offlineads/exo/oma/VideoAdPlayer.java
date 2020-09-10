@@ -1,11 +1,7 @@
-//
-// Source code recreated from a .class file by IntelliJ IDEA
-// (powered by Fernflower decompiler)
-//
 
 package com.mxplay.offlineads.exo.oma;
 
-public interface VideoAdPlayer extends AdProgressProvider, VolumeProvider {
+public interface VideoAdPlayer extends AdProgressProvider {
     void playAd();
 
     void loadAd(String var1);
@@ -24,8 +20,6 @@ public interface VideoAdPlayer extends AdProgressProvider, VolumeProvider {
 
     public interface VideoAdPlayerCallback {
         void onPlay();
-
-        void onVolumeChanged(int var1);
 
         void onPause();
 
