@@ -19,23 +19,23 @@ public class AdImpl implements Ad{
     return this.adId;
   }
 
-  public final void setAdId(String var1) {
-    this.adId = var1;
+  public final void setAdId(String adId) {
+    this.adId = adId;
   }
    public final boolean isSkippable() {
     return this.skippable;
   }
 
-  public final void setSkippable(boolean var1) {
-    this.skippable = var1;
+  public final void setSkippable(boolean skippable) {
+    this.skippable = skippable;
   }
 
   public final double getSkipTimeOffset() {
     return this.skipTimeOffset;
   }
 
-  public final void setSkipTimeOffset(double var1) {
-    this.skipTimeOffset = var1;
+  public final void setSkipTimeOffset(double skipTimeOffset) {
+    this.skipTimeOffset = skipTimeOffset;
   }
 
 
@@ -43,24 +43,24 @@ public class AdImpl implements Ad{
     return this.title;
   }
 
-  public final void setTitle(String var1) {
-    this.title = var1;
+  public final void setTitle(String title) {
+    this.title = title;
   }
 
   public final String getDescription() {
     return this.description;
   }
 
-  public final void setDescription(String var1) {
-    this.description = var1;
+  public final void setDescription(String description) {
+    this.description = description;
   }
 
   public final String getAdvertiserName() {
     return this.advertiserName;
   }
 
-  public final void setAdvertiserName(String var1) {
-    this.advertiserName = var1;
+  public final void setAdvertiserName(String advertiserName) {
+    this.advertiserName = advertiserName;
   }
 
   public final void setMediaUrl(String mediaUrl) {

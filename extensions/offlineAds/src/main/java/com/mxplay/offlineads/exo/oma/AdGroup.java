@@ -1,12 +1,13 @@
 package com.mxplay.offlineads.exo.oma;
 
+import androidx.annotation.NonNull;
 import java.util.List;
 
 public class AdGroup {
   private float startTime;
   private List<? extends Ad> ads;
 
-  public AdGroup(float startTime, List<Ad> ads) {
+  public AdGroup(float startTime, @NonNull List<Ad> ads) {
     this.startTime = startTime;
     this.ads = ads;
   }
