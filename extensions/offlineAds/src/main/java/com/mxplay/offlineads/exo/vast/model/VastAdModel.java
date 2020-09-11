@@ -2,6 +2,7 @@ package com.mxplay.offlineads.exo.vast.model;
 
 import android.text.TextUtils;
 import android.util.Log;
+import androidx.annotation.Nullable;
 import com.mxplay.offlineads.exo.util.DateTimeUtils;
 import com.mxplay.offlineads.exo.util.XmlTools;
 import javax.xml.xpath.XPath;
@@ -9,23 +10,20 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class VastAdModel {
 
   // Ad xpath expression
+  private static final String linearXPATH = "//Linear";
   private static final String titleXPATH = "//AdTitle";
   private static final String descXPATH = "//Description";
   private static final String durationXPATH = "//Duration";
   private static final String mediaFilesXPATH = "//MediaFile";
-  public static final String TAG = "VastAdModel";
+  private static final String TAG = "VastAdModel";
 
-
-  //AdTitle
-  //Description
-  //Duration
-  //MediaFiles
 
   private transient Document document;
 
@@ -47,12 +45,19 @@ public class VastAdModel {
     return null;
   }
 
-  public boolean isSkippable() {
-    return false;
-  }
 
   public double getSkipTimeOffset() {
-    return 0;
+    NamedNodeMap nodeAttributes = getNodeAttributes(linearXPATH);
+    try {
+      if (nodeAttributes != null){
+        Node skipoffset = nodeAttributes.getNamedItem("skipoffset");
+        if (skipoffset != null){
+          return DateTimeUtils.getTimeInMillis(skipoffset.getTextContent())/1000.0;
+        }
+      }
+    } catch (Exception ignore) {
+    }
+    return -1;
   }
 
   public String getTitle() {
@@ -89,6 +94,23 @@ public class VastAdModel {
       Log.e(TAG, e.getMessage(), e);
     }
     return "";
+  }
+
+  private @Nullable NamedNodeMap getNodeAttributes(String xPath) {
+    XPath xpath = XPathFactory.newInstance().newXPath();
+    try {
+      NodeList nodes = (NodeList) xpath.evaluate(xPath,
+          document, XPathConstants.NODESET);
+      if (nodes != null) {
+        if (nodes.getLength() > 0) {
+          Node item = nodes.item(0);
+          return item.getAttributes();
+        }
+      }
+    } catch (Exception e) {
+      Log.e(TAG, e.getMessage(), e);
+    }
+    return null;
   }
 
 

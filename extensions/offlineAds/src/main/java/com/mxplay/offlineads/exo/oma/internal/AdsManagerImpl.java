@@ -9,6 +9,7 @@ import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 import ccom.mxplay.offlineads.exo.R;
 import com.google.android.exoplayer2.C;
@@ -32,10 +33,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
-public class AdsManagerImpl implements AdsManager {
+public class AdsManagerImpl implements AdsManager, View.OnClickListener {
 
   private static final int DELAY_MILLIS = 500;
   private static final long PRELOAD_TIME_OFFSET = DELAY_MILLIS + 100;
@@ -46,6 +48,7 @@ public class AdsManagerImpl implements AdsManager {
   private static final boolean DEBUG = false;
   public static final String TAG = "OmaAdsManager";
   private static final int DELAY_MILLIS_AD_RUNNING = 200;
+  private static final Map<String, String> EMPTY_AD_DATA =  new HashMap<>();
 
 
 
@@ -57,9 +60,11 @@ public class AdsManagerImpl implements AdsManager {
   private final List<Float> cuePoints = new ArrayList<>();
   private ContentProgressProvider contentProgressProvider;
   private final Handler handler = new Handler(Looper.getMainLooper());
-  private HashMap<Ad, AdEvent.AdEventType> state = new HashMap<>();
+  private Map<Ad, AdEvent.AdEventType> state = new HashMap<>();
   private Ad currentAd;
   private VideoProgressUpdate lastAdProgress = VideoProgressUpdate.VIDEO_TIME_NOT_READY;
+  private TextView adProgressText;
+  private Button skipButton;
 
 
   private final Set<AdEvent.AdEventListener> adsEventListeners = Collections
@@ -76,8 +81,9 @@ public class AdsManagerImpl implements AdsManager {
     this.adDisplayContainer.getPlayer().addCallback(videoAdPlayerCallback);
     this.ads = ads;
     this.userRequestContext = userRequestContext;
-    initCuePoints();
     this.contentProgressProvider = contentProgressProvider;
+    initCuePoints();
+    initViews();
     scheduleImmediate();
   }
 
@@ -85,6 +91,12 @@ public class AdsManagerImpl implements AdsManager {
     for (int i = 0; i < ads.size(); i++) {
       cuePoints.add(ads.get(i).getStartTime());
     }
+  }
+
+  private void initViews(){
+    adProgressText = adDisplayContainer.getAdContainer().findViewById(R.id.adCounter);
+    skipButton = adDisplayContainer.getAdContainer().findViewById(R.id.skipButton);
+    skipButton.setOnClickListener(this);
   }
 
   private Ad processNextAd(long currentTime) {
@@ -115,12 +127,12 @@ public class AdsManagerImpl implements AdsManager {
 
     if (adEventType == null){
       setAdState(ad, AdEvent.AdEventType.LOADED);
-      onEvent(new AdEventImpl(AdEvent.AdEventType.LOADED, ad, new HashMap<>()));
+      onEvent(new AdEventImpl(AdEvent.AdEventType.LOADED, ad, EMPTY_AD_DATA));
       setAdState(ad, AdEvent.AdEventType.STARTED);
       player.loadAd(ad.getMediaUrl());
-      onEvent(new AdEventImpl(AdEvent.AdEventType.CONTENT_PAUSE_REQUESTED, ad, new HashMap<>()));
+      onEvent(new AdEventImpl(AdEvent.AdEventType.CONTENT_PAUSE_REQUESTED, ad, EMPTY_AD_DATA));
       player.playAd();
-      onEvent(new AdEventImpl(AdEvent.AdEventType.STARTED, ad, new HashMap<>()));
+      onEvent(new AdEventImpl(AdEvent.AdEventType.STARTED, ad, EMPTY_AD_DATA));
     }
   }
 
@@ -138,12 +150,37 @@ public class AdsManagerImpl implements AdsManager {
     return null;
   }
 
+
+  private void skipAd(Ad ad){
+    VideoAdPlayer player = adDisplayContainer.getPlayer();
+    if (player == null)
+      return;
+    AdEvent.AdEventType adEventType = state.get(ad);
+    if (adEventType == AdEvent.AdEventType.AD_PROGRESS) {
+      AdGroup adGroup = getAdGroup(ad);
+      if (adGroup != null){
+        for (Ad adObj :
+            adGroup.getAds()) {
+          setAdState(adObj, AdEvent.AdEventType.SKIPPED);
+        }
+      }
+      player.stopAd();
+      onEvent(new AdEventImpl(AdEvent.AdEventType.SKIPPED, ad, EMPTY_AD_DATA));
+      player.pauseAd();
+      onEvent(new AdEventImpl(AdEvent.AdEventType.CONTENT_RESUME_REQUESTED, ad, EMPTY_AD_DATA));
+      onEvent(new AdEventImpl(AdEvent.AdEventType.ALL_ADS_COMPLETED, ad, EMPTY_AD_DATA));
+    }
+    currentAd = null;
+  }
+
+
+
   private void markAdCompleted(Ad ad) {
     setAdState(ad, AdEvent.AdEventType.COMPLETED);
-    onEvent(new AdEventImpl(AdEvent.AdEventType.COMPLETED, ad, new HashMap<>()));
+    onEvent(new AdEventImpl(AdEvent.AdEventType.COMPLETED, ad, EMPTY_AD_DATA));
     if (ad.getAdPodInfo().getAdPosition() == ad.getAdPodInfo().getTotalAds()) {
-      onEvent(new AdEventImpl(AdEvent.AdEventType.ALL_ADS_COMPLETED, ad, new HashMap<>()));
-      onEvent(new AdEventImpl(AdEvent.AdEventType.CONTENT_RESUME_REQUESTED, ad, new HashMap<>()));
+      onEvent(new AdEventImpl(AdEvent.AdEventType.ALL_ADS_COMPLETED, ad, EMPTY_AD_DATA));
+      onEvent(new AdEventImpl(AdEvent.AdEventType.CONTENT_RESUME_REQUESTED, ad, EMPTY_AD_DATA));
     }
   }
 
@@ -166,7 +203,7 @@ public class AdsManagerImpl implements AdsManager {
     handler.removeCallbacks(updateRunnable);
     if (isCurrentState(currentAd, AdEvent.AdEventType.STARTED) || isCurrentState(currentAd, AdEvent.AdEventType.AD_PROGRESS)){
       setAdState(currentAd, AdEvent.AdEventType.PAUSED);
-      onEvent(new AdEventImpl(AdEvent.AdEventType.PAUSED, currentAd, new HashMap<>()));
+      onEvent(new AdEventImpl(AdEvent.AdEventType.PAUSED, currentAd, EMPTY_AD_DATA));
     }
   }
 
@@ -178,7 +215,7 @@ public class AdsManagerImpl implements AdsManager {
   public void resume() {
     if (isCurrentState(currentAd, AdEvent.AdEventType.PAUSED)){
       setAdState(currentAd, AdEvent.AdEventType.RESUMED);
-      onEvent(new AdEventImpl(AdEvent.AdEventType.RESUMED, currentAd, new HashMap<>()));
+      onEvent(new AdEventImpl(AdEvent.AdEventType.RESUMED, currentAd, EMPTY_AD_DATA));
     }
     scheduleUpdate();
   }
@@ -315,11 +352,29 @@ public class AdsManagerImpl implements AdsManager {
     ViewGroup adContainer = adDisplayContainer.getAdContainer();
     Ad playingAd = currentAd;
     if (playingAd != null && adProgress != VideoProgressUpdate.VIDEO_TIME_NOT_READY){
-      TextView adProgressText = adContainer.findViewById(R.id.adCounter);
       adContainer.setVisibility(View.VISIBLE);
       adProgressText.setText(formatAdProgress(currentAd.getAdPodInfo(), adProgress));
+      if (playingAd.isSkippable()) {
+        if (adProgress.getCurrentTime() >= playingAd.getSkipTimeOffset()) {
+          // Allow skipping.
+          skipButton.setText(context.getString(R.string.skip_ad));
+          skipButton.setEnabled(true);
+          skipButton.setTextSize(16);
+        } else {
+          String skipString = String.format(
+              Locale.US, "You can skip this ad in %d",
+              (int) (playingAd.getSkipTimeOffset() -
+                  adProgress.getCurrentTime()));
+          skipButton.setText(skipString);
+          skipButton.setEnabled(false);
+          skipButton.setTextSize(12);
+        }
+        skipButton.setVisibility(View.VISIBLE);
+      } else {
+        skipButton.setVisibility(View.INVISIBLE);
+      }
       setAdState(playingAd, AdEvent.AdEventType.AD_PROGRESS);
-      onEvent(new AdEventImpl(AdEvent.AdEventType.AD_PROGRESS, playingAd, new HashMap<>()));
+      onEvent(new AdEventImpl(AdEvent.AdEventType.AD_PROGRESS, playingAd, EMPTY_AD_DATA));
     }else {
       adContainer.setVisibility(View.GONE);
     }
@@ -382,6 +437,14 @@ public class AdsManagerImpl implements AdsManager {
     }
   }
 
+  private AdGroup getAdGroup(Ad ad) {
+    for (AdGroup adGroup : ads) {
+      if (adGroup.getAds().contains(ad)) {
+        return adGroup;
+      }
+    }
+    return null;
+  }
 
   private void onAdError(AdErrorEvent adErrorEvent){
     synchronized (adErrorListeners){
@@ -437,12 +500,15 @@ public class AdsManagerImpl implements AdsManager {
         Log.d(TAG, " onError  "+ (currentAd != null ? currentAd.getAdId() : ""));
       }
       if (isCurrentState(currentAd, AdEvent.AdEventType.STARTED) || isCurrentState(currentAd, AdEvent.AdEventType.AD_PROGRESS)){
-        markAdCompleted(currentAd);
-        long playerPosition = (long) (currentAd.getAdPodInfo().getTimeOffset() * C.MILLIS_PER_SECOND);
-        currentAd = processNextAd(playerPosition);
-        if (currentAd != null){
-          triggerEvent(currentAd, playerPosition);
-        }
+       handler.postDelayed(() -> {
+         markAdCompleted(currentAd);
+         long playerPosition = (long) (currentAd.getAdPodInfo().getTimeOffset() * C.MILLIS_PER_SECOND);
+         currentAd = processNextAd(playerPosition);
+         if (currentAd != null){
+           triggerEvent(currentAd, playerPosition);
+         }
+       }, 100);
+
       }
     }
 
@@ -452,4 +518,10 @@ public class AdsManagerImpl implements AdsManager {
     }
   };
 
+  @Override
+  public void onClick(View v) {
+    if (v.getId() == R.id.skipButton && currentAd != null){
+      skipAd(currentAd);
+    }
+  }
 }
