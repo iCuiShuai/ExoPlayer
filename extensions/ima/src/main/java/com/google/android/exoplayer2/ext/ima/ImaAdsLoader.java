@@ -589,6 +589,7 @@ public final class ImaAdsLoader
     if (timeOutHandler == null && adsIntercept != null && adsIntercept.getVastLoadMaxTimeout() > IAdsIntercept.VAST_LOAD_NO_TIMEOUT) {
       timeOutHandler = new Handler(Looper.getMainLooper());
       timeOutHandler.postDelayed(() -> {
+        adsLoader.removeAdsLoadedListener(ImaAdsLoader.this);
         onAdError(new AdsLoadRequestTimeoutEvent(pendingAdRequestContext));
       }, adsIntercept.getVastLoadMaxTimeout());
     }

@@ -10,6 +10,7 @@ import com.mxplay.offlineads.exo.oma.AdImpl;
 import com.mxplay.offlineads.exo.oma.AdPodInfoImpl;
 import com.mxplay.offlineads.exo.vast.model.AdBreak;
 import com.mxplay.offlineads.exo.vast.model.VastAdModel;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -69,7 +70,7 @@ public class Mapper {
         Log.w("Mapper", "Invalid ad id skipping ad group ");
         return null;
       }
-      if (TextUtils.isEmpty(ad.getMediaUrl()) || URLUtil.isNetworkUrl(ad.getMediaUrl())){
+      if (TextUtils.isEmpty(ad.getMediaUrl()) || URLUtil.isNetworkUrl(ad.getMediaUrl()) || !(new File(ad.getMediaUrl()).exists())){
         Log.w("Mapper", "Invalid ad media file skipping ad group "+ ad.getMediaUrl());
         return null;
       }
