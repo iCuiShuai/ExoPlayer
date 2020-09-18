@@ -1258,7 +1258,7 @@ public class MatroskaExtractorMX implements Extractor {
           byte [] dstByte = SnifferMX.decrypt(srcBuffer, track.cryptoData.encryptionKey);
           sampleDecryptBytes.reset(dstByte, dstByte.length);
         } catch (Exception e) {
-          throw new ParserException("Decrypt failed!");
+          throw new ParserException("Decrypt failed, " + e);
         }
       } else if (track.sampleStrippedBytes != null) {
         // If the sample has header stripping, prepare to read/output the stripped bytes first.
