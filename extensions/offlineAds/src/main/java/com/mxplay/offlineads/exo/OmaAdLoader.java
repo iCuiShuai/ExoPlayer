@@ -812,21 +812,14 @@ public final class OmaAdLoader
         }
       }
     }
-    if (DEBUG) {
-      android.util.Log.d(TAG, " playingAd " + playingAd + "  DiscontinuityReason " + reason);
-    }
+
     updateImaStateForPlayerState();
   }
 
   // Internal methods.
 
   private void initializeAdsManager() {
-    AdsRenderingSettings adsRenderingSettings = new AdsRenderingSettings() {
-      @Override
-      public void setPlayAdsAfterTime(double var1) {
-
-      }
-    };
+    AdsRenderingSettings adsRenderingSettings = new AdsRenderingSettings();
     // Skip ads based on the start position as required.
     long[] adGroupTimesUs = getAdGroupTimesUs(adsManager.getAdCuePoints());
     long contentPositionMs = player.getContentPosition();
@@ -954,9 +947,6 @@ public final class OmaAdLoader
     playingAd = player.isPlayingAd();
     playingAdIndexInAdGroup = playingAd ? player.getCurrentAdIndexInAdGroup() : C.INDEX_UNSET;
     boolean adFinished = wasPlayingAd && playingAdIndexInAdGroup != oldPlayingAdIndexInAdGroup;
-    if (DEBUG) {
-      Log.d(TAG, "updateImaStateForPlayerState wasPlayingAd "+ wasPlayingAd + " oldPlayingAdIndexInAdGroup "+ oldPlayingAdIndexInAdGroup+ " playingAdIndexInAdGroup "+ playingAdIndexInAdGroup+ " adFinish "+adFinished );
-    }
     if (adFinished) {
       // IMA is waiting for the ad playback to finish so invoke the callback now.
       // Either CONTENT_RESUME_REQUESTED will be passed next, or playAd will be called again.
