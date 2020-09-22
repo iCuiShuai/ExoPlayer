@@ -1069,7 +1069,7 @@ public final class OmaAdLoader
     adPlaybackState = adPlaybackState.withAdLoadError(adGroupIndex, adIndexInAdGroup);
     updateAdPlaybackState();
     if (adTracker != null) {
-      adTracker.trackEvent(IVideoAdTracker.EVENT_VIDEO_AD_PLAY_FAILED, IVideoAdTracker.buildFailedParams(adGroupIndex, adIndexInAdGroup, startRequestTime, exception, getAdGroupCount()));
+      adTracker.trackEvent(IVideoAdTracker.EVENT_VIDEO_AD_PLAY_FAILED, IVideoAdTracker.buildFailedParams(adGroupIndex, adIndexInAdGroup, startRequestTime, "Prepare Error", exception, getAdGroupCount()));
     }
   }
 
@@ -1138,6 +1138,9 @@ public final class OmaAdLoader
       eventListener.onAdLoadError(
           AdsMediaSource.AdLoadException.createForUnexpected(new RuntimeException(message, cause)),
           new DataSpec(Uri.parse("VAST_RESPONSE")));
+    }
+    if (adTracker != null) {
+      adTracker.trackEvent(IVideoAdTracker.EVENT_INTERNAL_ERROR, IVideoAdTracker.buildFailedParams(adGroupIndex, -1, startRequestTime, name, cause, getAdGroupCount()));
     }
   }
 

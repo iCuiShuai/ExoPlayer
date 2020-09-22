@@ -99,6 +99,7 @@ public class AdsManagerImpl implements AdsManager, View.OnClickListener {
   }
 
   private void initViews(){
+    adDisplayContainer.getAdContainer().setOnClickListener(this);
     adProgressText = adDisplayContainer.getAdContainer().findViewById(R.id.adCounter);
     skipButton = adDisplayContainer.getAdContainer().findViewById(R.id.skipButton);
     skipButton.setOnClickListener(this);
