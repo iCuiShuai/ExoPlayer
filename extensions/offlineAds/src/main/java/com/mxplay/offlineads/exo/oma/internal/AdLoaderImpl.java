@@ -13,6 +13,8 @@ import com.mxplay.offlineads.exo.oma.AdsLoader;
 import com.mxplay.offlineads.exo.oma.AdsManagerLoadedEvent;
 import com.mxplay.offlineads.exo.vast.model.VMAPModel;
 import com.mxplay.offlineads.exo.vast.processor.VMAPProcessor;
+
+import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -21,7 +23,7 @@ import java.util.Set;
 public class AdLoaderImpl extends
     AsyncTask<AdsRequest, Void, AdLoaderImpl.AdLoaderResponse> implements AdsLoader {
 
-  private final Context context;
+  private final WeakReference<Context> context;
   private final AdDisplayContainer adDisplayContainer;
 
   static final class AdLoaderResponse {
@@ -44,7 +46,7 @@ public class AdLoaderImpl extends
       .synchronizedSet(new HashSet<>());
 
   public AdLoaderImpl(Context context, AdDisplayContainer adDisplayContainer) {
-    this.context = context;
+    this.context = new WeakReference<>(context);
     this.adDisplayContainer = adDisplayContainer;
   }
 
@@ -106,7 +108,9 @@ public class AdLoaderImpl extends
                 AdError.AdErrorCode.VAST_EMPTY_RESPONSE,"Empty vast response"),
                 adsRequest.getUserRequestContext()));
       }
-      AdsManagerImpl adsManager = new AdsManagerImpl(context, adDisplayContainer, adGroups, adsRequest.getContentProgressProvider(), adsRequest.getUserRequestContext());
+      Context ctx = this.context.get();
+      if (ctx == null) throw new IllegalStateException("Context is null");
+      AdsManagerImpl adsManager = new AdsManagerImpl(ctx, adDisplayContainer, adGroups, adsRequest.getContentProgressProvider(), adsRequest.getUserRequestContext());
       return new AdLoaderResponse(
           new AdsManagerLoadedEvent(adsManager, adsRequest.getUserRequestContext()));
     } catch (Exception e) {
