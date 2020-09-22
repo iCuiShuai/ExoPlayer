@@ -1,8 +1,15 @@
 
 package com.mxplay.offlineads.exo.oma;
 
-public interface AdsRenderingSettings {
+public class AdsRenderingSettings {
 
-    void setPlayAdsAfterTime(double time);
+    private double playAdsAfterTime  = 0;
 
+    public void setPlayAdsAfterTime(double time){
+        this.playAdsAfterTime = time;
+    }
+
+    public double getPlayAdsAfterTime() {
+        return playAdsAfterTime;
+    }
 }

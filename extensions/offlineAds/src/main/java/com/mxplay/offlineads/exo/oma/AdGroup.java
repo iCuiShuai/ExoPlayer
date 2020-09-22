@@ -5,14 +5,14 @@ import java.util.List;
 
 public class AdGroup {
   private float startTime;
-  private List<? extends Ad> ads;
+  private List<AdImpl> ads;
 
-  public AdGroup(float startTime, @NonNull List<Ad> ads) {
+  public AdGroup(float startTime, @NonNull List<AdImpl> ads) {
     this.startTime = startTime;
     this.ads = ads;
   }
 
-  public List<? extends Ad> getAds() {
+  public List<AdImpl> getAds() {
     return ads;
   }
 
