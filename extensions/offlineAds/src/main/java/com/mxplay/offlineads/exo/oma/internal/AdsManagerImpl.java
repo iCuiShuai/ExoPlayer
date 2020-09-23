@@ -99,7 +99,6 @@ public class AdsManagerImpl implements AdsManager, View.OnClickListener {
   }
 
   private void initViews(){
-    adDisplayContainer.getAdContainer().setOnClickListener(this);
     adProgressText = adDisplayContainer.getAdContainer().findViewById(R.id.adCounter);
     skipButton = adDisplayContainer.getAdContainer().findViewById(R.id.skipButton);
     skipButton.setOnClickListener(this);
@@ -412,6 +411,7 @@ public class AdsManagerImpl implements AdsManager, View.OnClickListener {
     Ad playingAd = currentAd;
     if (playingAd != null && adProgress != VideoProgressUpdate.VIDEO_TIME_NOT_READY){
       adContainer.setVisibility(View.VISIBLE);
+      adContainer.setOnClickListener(this);
       adProgressText.setText(formatAdProgress(currentAd.getAdPodInfo(), adProgress));
       if (playingAd.isSkippable() && adProgress.getDuration() > playingAd.getSkipTimeOffset()) {
         if (adProgress.getCurrentTime() >= playingAd.getSkipTimeOffset()) {
@@ -436,6 +436,7 @@ public class AdsManagerImpl implements AdsManager, View.OnClickListener {
       onEvent(new AdEventImpl(AdEvent.AdEventType.AD_PROGRESS, playingAd, EMPTY_AD_DATA));
     }else {
       adContainer.setVisibility(View.GONE);
+      adContainer.setOnClickListener(null);
     }
   }
 
