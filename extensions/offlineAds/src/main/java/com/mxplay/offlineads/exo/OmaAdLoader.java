@@ -506,12 +506,12 @@ public final class OmaAdLoader
       sentPendingContentPositionMs = true;
       contentPositionMs = pendingContentPositionMs;
       expectedAdGroupIndex =
-          adPlaybackState.getAdGroupIndexForPositionUs(C.msToUs(contentPositionMs));
+          adPlaybackState.getAdGroupIndexForPositionUs(C.msToUs(contentPositionMs), C.msToUs(contentDurationMs));
     } else if (fakeContentProgressElapsedRealtimeMs != C.TIME_UNSET) {
       long elapsedSinceEndMs = SystemClock.elapsedRealtime() - fakeContentProgressElapsedRealtimeMs;
       contentPositionMs = fakeContentProgressOffsetMs + elapsedSinceEndMs;
       expectedAdGroupIndex =
-          adPlaybackState.getAdGroupIndexForPositionUs(C.msToUs(contentPositionMs));
+          adPlaybackState.getAdGroupIndexForPositionUs(C.msToUs(contentPositionMs), C.msToUs(contentDurationMs));
     } else if (imaAdState == IMA_AD_STATE_NONE && !playingAd && hasContentDuration) {
       contentPositionMs = player.getCurrentPosition();
       // Update the expected ad group index for the current content position. The update is delayed
@@ -824,7 +824,7 @@ public final class OmaAdLoader
     long[] adGroupTimesUs = getAdGroupTimesUs(adsManager.getAdCuePoints());
     long contentPositionMs = player.getContentPosition();
     int adGroupIndexForPosition =
-        adPlaybackState.getAdGroupIndexForPositionUs(C.msToUs(contentPositionMs));
+        adPlaybackState.getAdGroupIndexForPositionUs(C.msToUs(contentPositionMs), C.msToUs(contentDurationMs));
     if (adGroupIndexForPosition > 0 && adGroupIndexForPosition != C.INDEX_UNSET) {
       // Skip any ad groups before the one at or immediately before the playback position.
       for (int i = 0; i < adGroupIndexForPosition; i++) {
@@ -1089,7 +1089,7 @@ public final class OmaAdLoader
       // After sending content complete IMA will not poll the content position, so set the expected
       // ad group index.
       expectedAdGroupIndex =
-          adPlaybackState.getAdGroupIndexForPositionUs(C.msToUs(contentDurationMs));
+          adPlaybackState.getAdGroupIndexForPositionUs(C.msToUs(contentDurationMs), C.msToUs(contentDurationMs));
     }
   }
 
