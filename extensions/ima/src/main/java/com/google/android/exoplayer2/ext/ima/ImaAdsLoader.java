@@ -317,7 +317,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     }
   }
 
-  private static final boolean DEBUG = false;
+  private static final boolean DEBUG = true;
   private static final String TAG = "ImaAdsLoader";
 
   private static final String IMA_SDK_SETTINGS_PLAYER_TYPE = "google/exo.ext.ima";
@@ -722,7 +722,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
       return adGroupIndex;
     } else if (player.isPlayingAd()) {
       adGroupIndex = player.getCurrentAdIndexInAdGroup();
-    } else {
+    } else if (!timeline.isEmpty()){
       long positionMs = getContentPeriodPositionMs(player, timeline, period);
       timeline.getPeriod(/* periodIndex= */ 0, period);
       adGroupIndex = period.getAdGroupIndexForPositionUs(C.msToUs(positionMs));
