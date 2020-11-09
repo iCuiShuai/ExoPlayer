@@ -416,7 +416,6 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
   private Timeline timeline;
   private long contentDurationMs;
   private AdPlaybackState adPlaybackState;
-  private int firstAdPlayedIndex = 0;
 
   // Fields tracking IMA's state.
 
@@ -489,7 +488,9 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
   private long beforeShiftingAdGroupTimeUs = C.TIME_UNSET;
   private long adShiftedPositionUs = C.TIME_UNSET;
   private boolean isAdLoaderBlocked;
- /** ============================================ **/
+  private int firstAdPlayedIndex = 0;
+
+  /** ============================================ **/
 
   public void setAdsIntercept(IAdsIntercept adsIntercept) {
     this.adsIntercept = adsIntercept;
@@ -1329,46 +1330,52 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
       }
       return;
     }
-    fakeContentProgressElapsedRealtimeMs = C.TIME_UNSET;
-    fakeContentProgressOffsetMs = C.TIME_UNSET;
-    sentPendingContentPositionMs = true;
-    pendingContentPositionMs = C.TIME_UNSET;
+
     long adPlayDelayTimeOnSeekMs = adLoaderInputs.getAdPlaybackDelayDuringScrubMs();
     if (adGroupIndex > 0) {
       isAdLoaderBlocked = false;
       handler.removeCallbacks(watchContentProgressRunnable);
       long adGroupBeforePositionTimeUs = adPlaybackState.adGroupTimesUs[adGroupIndex];
       long newPos = playerPositionUs + C.msToUs(adPlayDelayTimeOnSeekMs);
-      if (C.usToMs(newPos) < (contentDurationMs - THRESHOLD_END_OF_CONTENT_MS)) { // check for end of content
+      long contentBoundry = contentDurationMs - THRESHOLD_END_OF_CONTENT_MS;
+      if (C.usToMs(newPos) < contentBoundry) { // check for end of content
         int adGroupIndexAfterPositionUs = adPlaybackState.getAdGroupIndexAfterPositionUs(newPos, C.msToUs(contentDurationMs));
-        if (adGroupIndexAfterPositionUs != C.INDEX_UNSET && newPos < adPlaybackState.adGroupTimesUs[adGroupIndexAfterPositionUs]) {
-          long adGroupAfterPositionTimeUs = adPlaybackState.adGroupTimesUs[adGroupIndexAfterPositionUs];
-          long threshold = (long) (adGroupBeforePositionTimeUs + ((adGroupAfterPositionTimeUs - adGroupBeforePositionTimeUs) * adLoaderInputs.getThresholdBetweenAdsOnSeek()));
-          if (newPos < threshold) {
-            shiftedAdGroupIndex = adGroupIndex;
-            beforeShiftingAdGroupTimeUs = adGroupBeforePositionTimeUs;
-            adShiftedPositionUs = newPos;
-            playingAd = false;
-            imaAdState = IMA_AD_STATE_NONE;
-            isAdLoaderBlocked = true;
-            adPlaybackState.adGroupTimesUs[adGroupIndex] = newPos;
-            adPlaybackState = adPlaybackState.setAdGroupDisabled(adGroupIndex - 1, true);
-            updateAdPlaybackState();
-            handler.postDelayed(watchContentProgressRunnable, adPlayDelayTimeOnSeekMs - mediaLoadTimeoutMs);
-            if (DEBUG) {
-              Log.d(TAG, " *** blocking ad adGroupIndex  : " + adGroupIndex +  " oldPos " + C.usToMs(adGroupBeforePositionTimeUs) + " next ad " + C.usToMs(adGroupAfterPositionTimeUs) + " newPos " + C.usToMs(newPos) );
-            }
-          } else {
-            if (DEBUG) {
-              Log.d(TAG, " *** newPos after threshold " + C.usToMs(newPos) + " threshold " + C.usToMs(threshold) + "  skipping " + adGroupIndex);
-            }
-            adPlaybackState = this.adPlaybackState.setAdGroupDisabled(adGroupIndex, true);
-            updateAdPlaybackState();
+        long boundry  = adGroupIndexAfterPositionUs != C.INDEX_UNSET ?  adPlaybackState.adGroupTimesUs[adGroupIndexAfterPositionUs] : contentBoundry;
+        long threshold = (long) (adGroupBeforePositionTimeUs + ((boundry - adGroupBeforePositionTimeUs) * adLoaderInputs.getThresholdBetweenAdsOnSeek()));
+        if (newPos < threshold) {
+          shiftedAdGroupIndex = adGroupIndex;
+          beforeShiftingAdGroupTimeUs = adGroupBeforePositionTimeUs;
+          adShiftedPositionUs = newPos;
+          playingAd = false;
+          imaAdState = IMA_AD_STATE_NONE;
+          resetFakeProgressFlags();
+          isAdLoaderBlocked = true;
+          adPlaybackState.adGroupTimesUs[adGroupIndex] = newPos;
+          adPlaybackState = adPlaybackState.setAdGroupDisabled(adGroupIndex - 1, true);
+          updateAdPlaybackState();
+          handler.postDelayed(watchContentProgressRunnable, adPlayDelayTimeOnSeekMs - mediaLoadTimeoutMs);
+          if (DEBUG) {
+            Log.d(TAG, " *** blocking ad adGroupIndex  : " + adGroupIndex +  " Ad1 " + C.usToMs(adGroupBeforePositionTimeUs) + " Ad2 boundry " + C.usToMs(boundry) + " newPos " + C.usToMs(newPos) );
           }
+        } else {
+          if (DEBUG) {
+            Log.d(TAG, " *** newPos after threshold " + C.usToMs(newPos) + " threshold " + C.usToMs(threshold) + "  skipping " + adGroupIndex);
+          }
+          adPlaybackState = this.adPlaybackState.setAdGroupDisabled(adGroupIndex, true);
+          updateAdPlaybackState();
         }
       }
 
+    }else {
+      resetFakeProgressFlags();
     }
+  }
+
+  private void resetFakeProgressFlags() {
+    fakeContentProgressElapsedRealtimeMs = C.TIME_UNSET;
+    fakeContentProgressOffsetMs = C.TIME_UNSET;
+    sentPendingContentPositionMs = true;
+    pendingContentPositionMs = C.TIME_UNSET;
   }
 
   private void resumeContentInternal() {
