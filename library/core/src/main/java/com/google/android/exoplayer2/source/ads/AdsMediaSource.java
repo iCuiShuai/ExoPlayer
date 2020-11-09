@@ -59,7 +59,7 @@ import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 public final class AdsMediaSource extends CompositeMediaSource<MediaPeriodId> {
 
   private static final String TAG = "AdsMediaSource";
-  private static final boolean DEBUG = true;
+  private static final boolean DEBUG = false;
   /**
    * Wrapper for exceptions that occur while loading ads, which are notified via {@link
    * MediaSourceEventListener#onLoadError(int, MediaPeriodId, LoadEventInfo, MediaLoadData,
