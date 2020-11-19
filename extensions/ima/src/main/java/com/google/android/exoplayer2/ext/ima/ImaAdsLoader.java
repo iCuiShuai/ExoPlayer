@@ -1737,6 +1737,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     @Override
     public void onAdError(AdErrorEvent adErrorEvent) {
       removeTimeoutCallback();
+      if (player == null) return;
       AdError error = adErrorEvent.getError();
       if (DEBUG) {
         Log.d(TAG, "onAdError", error);
