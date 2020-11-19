@@ -474,14 +474,14 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
    */
   private long waitingForPreloadElapsedRealtimeMs;
 
-  private IVideoAdTracker adTracker;
+  private final @Nullable IVideoAdTracker adTracker;
   private long startLoadMediaTime;
   private long startRequestTime = 0;
   private int lastRealStartTime = -1;
   private int lastPlayAdGroupIndex = -1;
   private int lastStartRequestAdGroupIndex = -1;
 
-  private IAdsIntercept adsIntercept;
+  private  @Nullable IAdsIntercept adsIntercept;
   private @NonNull AdLoaderInputs adLoaderInputs;
   /**  Flags for optimising ads during scrubbing */
   private int shiftedAdGroupIndex = C.INDEX_UNSET;
@@ -490,16 +490,11 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
   private boolean isAdLoaderBlocked;
   private int firstAdPlayedIndex = 0;
 
-  /** ============================================ **/
+  // ============================================
 
-  public void setAdsIntercept(IAdsIntercept adsIntercept) {
-    this.adsIntercept = adsIntercept;
-  }
+  /**  Flags for sending fakeProgress to preload ad in advance */
+  private boolean preloadFlag = true;
 
-
-  public void setAdTracker(IVideoAdTracker adTracker) {
-    this.adTracker = adTracker;
-  }
 
 
 
@@ -561,6 +556,8 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     this.adEventListener = adEventListener;
     this.imaFactory = imaFactory;
     this.adLoaderInputs = adLoaderInputs;
+    this.adTracker = adLoaderInputs.getAdTracker();
+    this.adsIntercept = adLoaderInputs.getAdsIntercept();
     if (imaSdkSettings == null) {
       imaSdkSettings = imaFactory.createImaSdkSettings();
       if (DEBUG) {
@@ -827,6 +824,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     updateAdPlaybackState();
     removeTimeoutCallback();
     resetAdOptimFlags();
+    adsIntercept  = null;
   }
 
   private void removeTimeoutCallback() {
@@ -1095,7 +1093,11 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
       long elapsedSinceEndMs = SystemClock.elapsedRealtime() - fakeContentProgressElapsedRealtimeMs;
       contentPositionMs = fakeContentProgressOffsetMs + elapsedSinceEndMs;
     } else if (imaAdState == IMA_AD_STATE_NONE && !playingAd && hasContentDuration) {
-      contentPositionMs = getContentPeriodPositionMs(player, timeline, period);
+      contentPositionMs  = getContentPeriodPositionMs(player, timeline, period);
+      long fakeProgressForPreloadMs = adLoaderInputs.getAdPreloadFakeProgressThresholdMs() != C.TIME_UNSET ?  contentPositionMs + adLoaderInputs.getAdPreloadFakeProgressThresholdMs() : contentPositionMs;
+      if (preloadFlag && shiftedAdGroupIndex == C.INDEX_UNSET && fakeProgressForPreloadMs + THRESHOLD_END_OF_CONTENT_MS < contentDurationMs){
+        contentPositionMs = fakeProgressForPreloadMs;
+      }
     } else {
       return VideoProgressUpdate.VIDEO_TIME_NOT_READY;
     }
@@ -1384,6 +1386,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
       adPlaybackState = adPlaybackState.withSkippedAdGroup(imaAdInfo.adGroupIndex);
       updateAdPlaybackState();
     }
+    preloadFlag = true;
   }
 
   private void resetAdOptimFlags() {
@@ -1460,6 +1463,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     }
     pendingContentPositionMs = C.TIME_UNSET;
     fakeContentProgressElapsedRealtimeMs = C.TIME_UNSET;
+    resetAdOptimFlags();
   }
 
   private void handleAdPrepareError(int adGroupIndex, int adIndexInAdGroup, Exception exception) {
@@ -1872,6 +1876,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
         adPlaybackState =
             adPlaybackState.withAdUri(adInfo.adGroupIndex, adInfo.adIndexInAdGroup, adUri);
         updateAdPlaybackState();
+        preloadFlag = false;
       } catch (RuntimeException e) {
         maybeNotifyInternalError("loadAd", e);
       }
