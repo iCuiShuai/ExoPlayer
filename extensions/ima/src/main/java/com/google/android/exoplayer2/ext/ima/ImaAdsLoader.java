@@ -1661,21 +1661,6 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     }
   }
 
-  /** Factory for objects provided by the IMA SDK. */
-  @VisibleForTesting
-  /* package */ interface ImaFactory {
-    /** @see ImaSdkSettings */
-    ImaSdkSettings createImaSdkSettings();
-    /** @see com.google.ads.interactivemedia.v3.api.ImaSdkFactory#createAdsRenderingSettings() */
-    AdsRenderingSettings createAdsRenderingSettings();
-    /** @see com.google.ads.interactivemedia.v3.api.ImaSdkFactory#createAdDisplayContainer() */
-    AdDisplayContainer createAdDisplayContainer();
-    /** @see com.google.ads.interactivemedia.v3.api.ImaSdkFactory#createAdsRequest() */
-    AdsRequest createAdsRequest();
-    /** @see ImaSdkFactory#createAdsLoader(Context, ImaSdkSettings, AdDisplayContainer) */
-    com.google.ads.interactivemedia.v3.api.AdsLoader createAdsLoader(
-        Context context, ImaSdkSettings imaSdkSettings, AdDisplayContainer adDisplayContainer);
-  }
 
   private final class ComponentListener
       implements VideoAdPlayer,
@@ -2011,71 +1996,5 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     }
   }
 
-  // TODO: Consider moving this into AdPlaybackState.
-  private static final class AdInfo {
-    public final int adGroupIndex;
-    public final int adIndexInAdGroup;
 
-    public AdInfo(int adGroupIndex, int adIndexInAdGroup) {
-      this.adGroupIndex = adGroupIndex;
-      this.adIndexInAdGroup = adIndexInAdGroup;
-    }
-
-    @Override
-    public boolean equals(@Nullable Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      AdInfo adInfo = (AdInfo) o;
-      if (adGroupIndex != adInfo.adGroupIndex) {
-        return false;
-      }
-      return adIndexInAdGroup == adInfo.adIndexInAdGroup;
-    }
-
-    @Override
-    public int hashCode() {
-      int result = adGroupIndex;
-      result = 31 * result + adIndexInAdGroup;
-      return result;
-    }
-
-    @Override
-    public String toString() {
-      return "(" + adGroupIndex + ", " + adIndexInAdGroup + ')';
-    }
-  }
-
-  /** Default {@link ImaFactory} for non-test usage, which delegates to {@link ImaSdkFactory}. */
-  private static final class DefaultImaFactory implements ImaFactory {
-    @Override
-    public ImaSdkSettings createImaSdkSettings() {
-      return ImaSdkFactory.getInstance().createImaSdkSettings();
-    }
-
-    @Override
-    public AdsRenderingSettings createAdsRenderingSettings() {
-      return ImaSdkFactory.getInstance().createAdsRenderingSettings();
-    }
-
-    @Override
-    public AdDisplayContainer createAdDisplayContainer() {
-      return ImaSdkFactory.getInstance().createAdDisplayContainer();
-    }
-
-    @Override
-    public AdsRequest createAdsRequest() {
-      return ImaSdkFactory.getInstance().createAdsRequest();
-    }
-
-    @Override
-    public com.google.ads.interactivemedia.v3.api.AdsLoader createAdsLoader(
-        Context context, ImaSdkSettings imaSdkSettings, AdDisplayContainer adDisplayContainer) {
-      return ImaSdkFactory.getInstance()
-          .createAdsLoader(context, imaSdkSettings, adDisplayContainer);
-    }
-  }
 }
