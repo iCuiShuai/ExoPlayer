@@ -4,7 +4,6 @@ import androidx.annotation.Nullable;
 
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.source.ads.AdPlaybackState;
-import com.google.android.exoplayer2.util.Assertions;
 import com.google.android.exoplayer2.util.Util;
 
 public class MxAdPlaybackState extends AdPlaybackState {
@@ -26,15 +25,11 @@ public class MxAdPlaybackState extends AdPlaybackState {
      * @return The index of the ad group, or {@link C#INDEX_UNSET}.
      */
     public int getAdGroupIndexForPositionUs(long positionUs, long periodDurationUs) {
-        int bsIndex = Util.binarySearchFloor(adGroupTimesUs, positionUs, true, false);
-        int l_index = bsIndex;
-        while (l_index >= 0 && isPositionBeforeAdGroup(positionUs, periodDurationUs, l_index)) {
-            l_index--;
+        int index = Util.binarySearchFloor(adGroupTimesUs, positionUs, true, false);
+        while (index >= 0 && isPositionBeforeAdGroup(positionUs, periodDurationUs, index)) {
+            index--;
         }
-        int f_index =  l_index >= 0 && adGroups[l_index].hasUnplayedAds() ? l_index : C.INDEX_UNSET;
-        int o_index = super.getAdGroupIndexForPositionUs(positionUs, periodDurationUs);
-        Assertions.checkState(f_index == o_index);
-        return f_index;
+        return index >= 0 && adGroups[index].hasUnplayedAds() ? index : C.INDEX_UNSET;
     }
 
     /** Optimise method which use binary search
@@ -53,20 +48,14 @@ public class MxAdPlaybackState extends AdPlaybackState {
                 || (periodDurationUs != C.TIME_UNSET && positionUs >= periodDurationUs)) {
             return C.INDEX_UNSET;
         }
-        int bsIndex = Util.binarySearchCeil(adGroupTimesUs, positionUs, true, false);
+        int index = Util.binarySearchCeil(adGroupTimesUs, positionUs, true, false);
 
-        // Use a linear search as the array elements may not be increasing due to TIME_END_OF_SOURCE.
-        // In practice we expect there to be few ad groups so the search shouldn't be expensive.
-        int index = bsIndex;
         while (index < adGroupTimesUs.length
                 && adGroupTimesUs[index] != C.TIME_END_OF_SOURCE
                 && (positionUs >= adGroupTimesUs[index] || !adGroups[index].hasUnplayedAds())) {
             index++;
         }
-        int f_index =  index < adGroupTimesUs.length ? index : C.INDEX_UNSET;
-        int o_index = super.getAdGroupIndexAfterPositionUs(positionUs, periodDurationUs);
-        Assertions.checkState(f_index == o_index);
-        return f_index;
+        return index < adGroupTimesUs.length ? index : C.INDEX_UNSET;
     }
 
     public static final class AdInfo {

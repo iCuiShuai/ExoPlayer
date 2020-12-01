@@ -1,10 +1,6 @@
 package com.google.android.exoplayer2.ext.ima;
 
-import android.util.Log;
-
 import androidx.annotation.NonNull;
-
-import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Map;
