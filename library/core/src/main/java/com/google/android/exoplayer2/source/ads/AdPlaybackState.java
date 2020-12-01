@@ -34,7 +34,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableType;
  * <p>Instances are immutable. Call the {@code with*} methods to get new instances that have the
  * required changes.
  */
-public final class AdPlaybackState {
+public  class AdPlaybackState {
 
   /**
    * Represents a group of ads, with information about their states.
@@ -554,7 +554,7 @@ public final class AdPlaybackState {
     return sb.toString();
   }
 
-  private boolean isPositionBeforeAdGroup(
+  protected boolean isPositionBeforeAdGroup(
       long positionUs, long periodDurationUs, int adGroupIndex) {
     if (positionUs == C.TIME_END_OF_SOURCE) {
       // The end of the content is at (but not before) any postroll ad, and after any other ads.
