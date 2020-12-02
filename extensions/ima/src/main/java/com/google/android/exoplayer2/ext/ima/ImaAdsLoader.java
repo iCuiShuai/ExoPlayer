@@ -397,7 +397,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
   private final AdDisplayContainer adDisplayContainer;
   private final com.google.ads.interactivemedia.v3.api.AdsLoader adsLoader;
   private final Runnable updateAdProgressRunnable;
-  private final Map<AdMediaInfo, AdInfo> adInfoByAdMediaInfo;
+  private final Map<AdMediaInfo, MxAdPlaybackState.AdInfo> adInfoByAdMediaInfo;
 
   private boolean wasSetPlayerCalled;
   @Nullable private Player nextPlayer;
@@ -426,7 +426,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
   /** The current ad media info, or {@code null} if in state {@link #IMA_AD_STATE_NONE}. */
   @Nullable private AdMediaInfo imaAdMediaInfo;
   /** The current ad info, or {@code null} if in state {@link #IMA_AD_STATE_NONE}. */
-  @Nullable private AdInfo imaAdInfo;
+  @Nullable private MxAdPlaybackState.AdInfo imaAdInfo;
   /**
    * Whether {@link com.google.ads.interactivemedia.v3.api.AdsLoader#contentComplete()} has been
    * called since starting ad playback.
@@ -448,7 +448,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
    * The ad info for a pending ad for which the media failed preparation, or {@code null} if no
    * pending ads have failed to prepare.
    */
-  @Nullable private AdInfo pendingAdPrepareErrorAdInfo;
+  @Nullable private MxAdPlaybackState.AdInfo pendingAdPrepareErrorAdInfo;
   /**
    * If a content period has finished but IMA has not yet called {@link
    * ComponentListener#playAd(AdMediaInfo)}, stores the value of {@link
@@ -1483,7 +1483,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
       if (fakeContentProgressOffsetMs == C.TIME_END_OF_SOURCE) {
         fakeContentProgressOffsetMs = contentDurationMs;
       }
-      pendingAdPrepareErrorAdInfo = new AdInfo(adGroupIndex, adIndexInAdGroup);
+      pendingAdPrepareErrorAdInfo = new MxAdPlaybackState.AdInfo(adGroupIndex, adIndexInAdGroup);
     } else {
       AdMediaInfo adMediaInfo = Assertions.checkNotNull(imaAdMediaInfo);
       // We're already playing an ad.
@@ -1606,7 +1606,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
   }
 
   private String getAdMediaInfoString(AdMediaInfo adMediaInfo) {
-    @Nullable AdInfo adInfo = adInfoByAdMediaInfo.get(adMediaInfo);
+    @Nullable MxAdPlaybackState.AdInfo adInfo = adInfoByAdMediaInfo.get(adMediaInfo);
     return "AdMediaInfo[" + adMediaInfo.getUrl() + (adInfo != null ? ", " + adInfo : "") + "]";
   }
 
@@ -1661,21 +1661,6 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     }
   }
 
-  /** Factory for objects provided by the IMA SDK. */
-  @VisibleForTesting
-  /* package */ interface ImaFactory {
-    /** @see ImaSdkSettings */
-    ImaSdkSettings createImaSdkSettings();
-    /** @see com.google.ads.interactivemedia.v3.api.ImaSdkFactory#createAdsRenderingSettings() */
-    AdsRenderingSettings createAdsRenderingSettings();
-    /** @see com.google.ads.interactivemedia.v3.api.ImaSdkFactory#createAdDisplayContainer() */
-    AdDisplayContainer createAdDisplayContainer();
-    /** @see com.google.ads.interactivemedia.v3.api.ImaSdkFactory#createAdsRequest() */
-    AdsRequest createAdsRequest();
-    /** @see ImaSdkFactory#createAdsLoader(Context, ImaSdkSettings, AdDisplayContainer) */
-    com.google.ads.interactivemedia.v3.api.AdsLoader createAdsLoader(
-        Context context, ImaSdkSettings imaSdkSettings, AdDisplayContainer adDisplayContainer);
-  }
 
   private final class ComponentListener
       implements VideoAdPlayer,
@@ -1833,7 +1818,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
 
         int adGroupIndex = getAdGroupIndexForAdPod(adPodInfo);
         int adIndexInAdGroup = adPodInfo.getAdPosition() - 1;
-        AdInfo adInfo = new AdInfo(adGroupIndex, adIndexInAdGroup);
+        MxAdPlaybackState.AdInfo adInfo = new MxAdPlaybackState.AdInfo(adGroupIndex, adIndexInAdGroup);
         adInfoByAdMediaInfo.put(adMediaInfo, adInfo);
         if (DEBUG) {
           Log.d(TAG, "loadAd " + getAdMediaInfoString(adMediaInfo));
@@ -1962,7 +1947,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
         // This method is called if loadAd has been called but the preloaded ad won't play due to a
         // seek to a different position, so drop the event and discard the ad. See also [Internal:
         // b/159111848].
-        @Nullable AdInfo adInfo = adInfoByAdMediaInfo.get(adMediaInfo);
+        @Nullable MxAdPlaybackState.AdInfo adInfo = adInfoByAdMediaInfo.get(adMediaInfo);
         if (adInfo != null) {
           adPlaybackState =
               adPlaybackState.withSkippedAd(adInfo.adGroupIndex, adInfo.adIndexInAdGroup);
@@ -2011,71 +1996,5 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     }
   }
 
-  // TODO: Consider moving this into AdPlaybackState.
-  private static final class AdInfo {
-    public final int adGroupIndex;
-    public final int adIndexInAdGroup;
 
-    public AdInfo(int adGroupIndex, int adIndexInAdGroup) {
-      this.adGroupIndex = adGroupIndex;
-      this.adIndexInAdGroup = adIndexInAdGroup;
-    }
-
-    @Override
-    public boolean equals(@Nullable Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      AdInfo adInfo = (AdInfo) o;
-      if (adGroupIndex != adInfo.adGroupIndex) {
-        return false;
-      }
-      return adIndexInAdGroup == adInfo.adIndexInAdGroup;
-    }
-
-    @Override
-    public int hashCode() {
-      int result = adGroupIndex;
-      result = 31 * result + adIndexInAdGroup;
-      return result;
-    }
-
-    @Override
-    public String toString() {
-      return "(" + adGroupIndex + ", " + adIndexInAdGroup + ')';
-    }
-  }
-
-  /** Default {@link ImaFactory} for non-test usage, which delegates to {@link ImaSdkFactory}. */
-  private static final class DefaultImaFactory implements ImaFactory {
-    @Override
-    public ImaSdkSettings createImaSdkSettings() {
-      return ImaSdkFactory.getInstance().createImaSdkSettings();
-    }
-
-    @Override
-    public AdsRenderingSettings createAdsRenderingSettings() {
-      return ImaSdkFactory.getInstance().createAdsRenderingSettings();
-    }
-
-    @Override
-    public AdDisplayContainer createAdDisplayContainer() {
-      return ImaSdkFactory.getInstance().createAdDisplayContainer();
-    }
-
-    @Override
-    public AdsRequest createAdsRequest() {
-      return ImaSdkFactory.getInstance().createAdsRequest();
-    }
-
-    @Override
-    public com.google.ads.interactivemedia.v3.api.AdsLoader createAdsLoader(
-        Context context, ImaSdkSettings imaSdkSettings, AdDisplayContainer adDisplayContainer) {
-      return ImaSdkFactory.getInstance()
-          .createAdsLoader(context, imaSdkSettings, adDisplayContainer);
-    }
-  }
 }

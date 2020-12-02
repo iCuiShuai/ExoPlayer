@@ -13,6 +13,8 @@ public class AdLoaderInputs {
     private @NonNull ImaCustomUiController imaCustomUiController =  new DefaultImaCustomUiController();
     /** enable this flag will send fake progress to IMA for preloading ads in advance. By default IMA load ads 8 sec before reaching ad cuepoint **/
     private long adPreloadThresholdMs = C.TIME_UNSET;
+    private long videoDuration = C.TIME_UNSET;
+
     private @Nullable IAdsIntercept adsIntercept;
     private @Nullable IVideoAdTracker adTracker;
 
@@ -51,6 +53,14 @@ public class AdLoaderInputs {
 
     public void setAdPreloadFakeProgressThresholdMs(long adPreloadThresholdMs) {
         this.adPreloadThresholdMs = adPreloadThresholdMs;
+    }
+
+    public long getVideoDuration() {
+        return videoDuration;
+    }
+
+    public void setVideoDuration(long videoDuration) {
+        this.videoDuration = videoDuration;
     }
 
     @Nullable
