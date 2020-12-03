@@ -92,7 +92,7 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
         private Set<UiElement> adUiElements;
         private long adPreloadTimeoutMs;
         private int vastLoadTimeoutMs;
-        private int mediaLoadTimeoutMs;
+        private int fakeCuePointsDistanceMs;
         private int mediaBitrate;
         private boolean focusSkipButtonWhenAvailable;
         private boolean playAdBeforeStartPosition;
@@ -108,7 +108,6 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
             this.context = Assertions.checkNotNull(context);
             adPreloadTimeoutMs = DEFAULT_AD_PRELOAD_TIMEOUT_MS;
             vastLoadTimeoutMs = TIMEOUT_UNSET;
-            mediaLoadTimeoutMs = TIMEOUT_UNSET;
             mediaBitrate = BITRATE_UNSET;
             focusSkipButtonWhenAvailable = true;
             playAdBeforeStartPosition = true;
@@ -186,16 +185,11 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
             return this;
         }
 
-        /**
-         * Sets the ad media load timeout, in milliseconds.
-         *
-         * @param mediaLoadTimeoutMs The ad media load timeout, in milliseconds.
-         * @return This builder, for convenience.
-         * @see AdsRenderingSettings#setLoadVideoTimeout(int)
-         */
-        public WatchTimeBaseAdLoader.Builder setMediaLoadTimeoutMs(int mediaLoadTimeoutMs) {
-            Assertions.checkArgument(mediaLoadTimeoutMs > 0);
-            this.mediaLoadTimeoutMs = mediaLoadTimeoutMs;
+
+
+
+        public WatchTimeBaseAdLoader.Builder setFakeCuePointsDistanceMs(int fakeCuePointsDistanceMs) {
+            this.fakeCuePointsDistanceMs = fakeCuePointsDistanceMs;
             return this;
         }
 
@@ -268,7 +262,7 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
                     /* adsResponse= */ null,
                     adPreloadTimeoutMs,
                     vastLoadTimeoutMs,
-                    mediaLoadTimeoutMs,
+                    fakeCuePointsDistanceMs,
                     mediaBitrate,
                     focusSkipButtonWhenAvailable,
                     playAdBeforeStartPosition,
@@ -293,7 +287,7 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
                     adsResponse,
                     adPreloadTimeoutMs,
                     vastLoadTimeoutMs,
-                    mediaLoadTimeoutMs,
+                    fakeCuePointsDistanceMs,
                     mediaBitrate,
                     focusSkipButtonWhenAvailable,
                     playAdBeforeStartPosition,
@@ -368,6 +362,7 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
     private static final int IMA_AD_STATE_PAUSED = 2;
 
     private static final int FAKE_CUEPOINTS_DISTANCE = 30; // in secs
+    public static final int NEXT_FAKE_CUEPOINTS_DISTANCE_THRESHOLD = 4000; // 4 sec
     public static final int NEXT_AD_DISTANCE_THRESHOLD = 2000; // 2 sec
 
 
@@ -378,6 +373,7 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
     private final long adPreloadTimeoutMs;
     private final int vastLoadTimeoutMs;
     private final int mediaLoadTimeoutMs;
+    private final int fakeCuePointsDistanceMs;
     private final boolean focusSkipButtonWhenAvailable;
     private final boolean playAdBeforeStartPosition;
     private final int mediaBitrate;
@@ -526,7 +522,7 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
                 /* adsResponse= */ null,
                 /* adPreloadTimeoutMs= */ WatchTimeBaseAdLoader.Builder.DEFAULT_AD_PRELOAD_TIMEOUT_MS,
                 /* vastLoadTimeoutMs= */ TIMEOUT_UNSET,
-                /* mediaLoadTimeoutMs= */ TIMEOUT_UNSET,
+                TIMEOUT_UNSET,
                 /* mediaBitrate= */ BITRATE_UNSET,
                 /* focusSkipButtonWhenAvailable= */ true,
                 /* playAdBeforeStartPosition= */ true,
@@ -544,7 +540,7 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
             @Nullable String adsResponse,
             long adPreloadTimeoutMs,
             int vastLoadTimeoutMs,
-            int mediaLoadTimeoutMs,
+            int fakeCuePointsDistanceMs,
             int mediaBitrate,
             boolean focusSkipButtonWhenAvailable,
             boolean playAdBeforeStartPosition,
@@ -561,7 +557,9 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
         } else {
             this.vastLoadTimeoutMs = vastLoadTimeoutMs;
         }
-        this.mediaLoadTimeoutMs = mediaLoadTimeoutMs;
+        this.fakeCuePointsDistanceMs = fakeCuePointsDistanceMs <= 0 ? FAKE_CUEPOINTS_DISTANCE : fakeCuePointsDistanceMs;
+        this.mediaLoadTimeoutMs = fakeCuePointsDistanceMs + NEXT_FAKE_CUEPOINTS_DISTANCE_THRESHOLD ;
+
         this.mediaBitrate = mediaBitrate;
         this.focusSkipButtonWhenAvailable = focusSkipButtonWhenAvailable;
         this.playAdBeforeStartPosition = playAdBeforeStartPosition;
@@ -1416,16 +1414,29 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
         if (DEBUG) {
             Log.d(TAG, " Player position " + C.usToMs(positionUs));
         }
+        int adGroupIndex = getFakeCuepointForLoadingAd(positionUs);
+        if (adGroupIndex != C.INDEX_UNSET) return adGroupIndex;
+
+        throw new IllegalStateException("Failed to find cue point");
+    }
+
+    private int getFakeCuepointForLoadingAd(long positionUs) {
         int adGroupIndex = getLoadingAdGroupIndex();
         if (adGroupIndex != C.INDEX_UNSET) {
             long timeLeftMs = C.usToMs(adPlaybackState.adGroupTimesUs[adGroupIndex] - positionUs);
+            if (timeLeftMs > 0 && timeLeftMs < NEXT_FAKE_CUEPOINTS_DISTANCE_THRESHOLD) {
+                if (DEBUG) {
+                    Log.d(TAG, "Next cue-point too close  " + adGroupIndex + " time : " + C.usToMs(adPlaybackState.adGroupTimesUs[adGroupIndex]) + " time left : " + timeLeftMs);
+                }
+                adPlaybackState = adPlaybackState.withSkippedAdGroup(adGroupIndex);
+                return getFakeCuepointForLoadingAd(positionUs);
+            }
             if (DEBUG) {
                 Log.d(TAG, " Loading  Next Ad  " + adGroupIndex + " time : " + C.usToMs(adPlaybackState.adGroupTimesUs[adGroupIndex]) + " time left : " + timeLeftMs);
             }
             return adGroupIndex;
         }
-
-        throw new IllegalStateException("Failed to find cue point");
+        return C.INDEX_UNSET;
     }
 
 
@@ -1531,17 +1542,15 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
         List<Float> fakeCuePoints = new ArrayList<>();
         for (int i = 0; i < originalCuepoints.size(); i++) {
             float cuePoint = originalCuepoints.get(i);
-            if (cuePoint == -1.0) {
-                fakeCuePoints.add(cuePoint);
-            } else if (cuePoint == 0){
+            if (cuePoint == -1.0 || cuePoint == 0) {
                 fakeCuePoints.add(cuePoint);
             }
         }
-
-        float start = FAKE_CUEPOINTS_DISTANCE;
-        for (int i = 0; i < adLoaderInputs.getVideoDuration() / 30 + 1; i++) {
+        int fakeCuePointsDistance = fakeCuePointsDistanceMs/1000;
+        float start = fakeCuePointsDistance;
+        for (int i = 0; i < adLoaderInputs.getVideoDuration() / fakeCuePointsDistance + 1; i++) {
             fakeCuePoints.add(start);
-            start += FAKE_CUEPOINTS_DISTANCE;
+            start += fakeCuePointsDistance;
         }
         return fakeCuePoints;
     }
