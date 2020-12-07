@@ -55,6 +55,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -415,6 +417,7 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
     private long contentDurationMs;
     private AdPlaybackState adPlaybackState;
     private AdPlaybackState adPlaybackStateActual;
+    private List<Integer> skippedFakeCuepoints = new LinkedList<>();
     // Fields tracking IMA's state.
 
     /**
@@ -1028,8 +1031,9 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
                 if (adGroupIndexAfterPositionUs != C.INDEX_UNSET && adPlaybackState.adGroups[adGroupIndexAfterPositionUs].count < 0) {
                     long nextAdTimeOffsetMs = C.usToMs(adPlaybackState.adGroupTimesUs[adGroupIndexAfterPositionUs] - positionUs);
                     if (nextAdTimeOffsetMs < NEXT_AD_DISTANCE_THRESHOLD) {
-                        adPlaybackState = adPlaybackState.withSkippedAdGroup(adGroupIndexAfterPositionUs);
+                        adPlaybackState = adPlaybackState.setAdGroupDisabled(adGroupIndexAfterPositionUs, true);
                         updateAdPlaybackState();
+                        skippedFakeCuepoints.add(adGroupIndexAfterPositionUs);
                         if (DEBUG)
                             Log.d(TAG, " Skipped fake cuepoint " + adGroupIndexAfterPositionUs + " -- pos: " + C.usToMs(adPlaybackState.adGroupTimesUs[adGroupIndexAfterPositionUs]));
                     }
@@ -1184,16 +1188,33 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
 
     private void skipAdOnUserSeek(Player player) {
         if (!timeline.isEmpty()) {
+            Iterator<Integer> iterator = skippedFakeCuepoints.iterator();
+            while (iterator.hasNext()){
+                Integer next = iterator.next();
+                adPlaybackState = adPlaybackState.setAdGroupDisabled(next, false);
+                iterator.remove();
+            }
+            boolean updateState = false;
             long positionMs = getContentPeriodPositionMs(player, timeline, period);
             timeline.getPeriod(/* periodIndex= */ 0, period);
             int newAdGroupIndex = period.getAdGroupIndexForPositionUs(C.msToUs(positionMs));
             if (newAdGroupIndex != C.INDEX_UNSET && adPlaybackState.adGroups[newAdGroupIndex].count < 0) {
                 adPlaybackState = adPlaybackState.withSkippedAdGroup(newAdGroupIndex);
-                updateAdPlaybackState();
+                updateState = true;
                 if (DEBUG) {
                     Log.d(TAG, "Ad skipped on user seek onTimelineChanged/onPositionDiscontinuity " + newAdGroupIndex);
                 }
             }
+            int newFakeAdGroupIndex = adPlaybackState.getAdGroupIndexForPositionUs(C.msToUs(positionMs), C.msToUs(contentDurationMs));
+            if (newFakeAdGroupIndex != C.INDEX_UNSET &&  newFakeAdGroupIndex > newAdGroupIndex && adPlaybackState.adGroups[newFakeAdGroupIndex].count < 0) {
+                adPlaybackState = adPlaybackState.withSkippedAdGroup(newFakeAdGroupIndex);
+                updateState = true;
+                if (DEBUG) {
+                    Log.d(TAG, "Re-enabled cuepoint Ad skipped on user seek onTimelineChanged/onPositionDiscontinuity " + newFakeAdGroupIndex);
+                }
+            }
+
+            if (updateState) updateAdPlaybackState();
         }
     }
 
