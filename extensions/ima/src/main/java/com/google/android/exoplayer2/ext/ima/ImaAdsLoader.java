@@ -1949,9 +1949,12 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
         // b/159111848].
         @Nullable MxAdPlaybackState.AdInfo adInfo = adInfoByAdMediaInfo.get(adMediaInfo);
         if (adInfo != null) {
-          adPlaybackState =
-              adPlaybackState.withSkippedAd(adInfo.adGroupIndex, adInfo.adIndexInAdGroup);
-          updateAdPlaybackState();
+          try {
+            adPlaybackState =
+                adPlaybackState.withSkippedAd(adInfo.adGroupIndex, adInfo.adIndexInAdGroup);
+            updateAdPlaybackState();
+          } catch (Exception ignore) {
+          }
         }
         return;
       }
