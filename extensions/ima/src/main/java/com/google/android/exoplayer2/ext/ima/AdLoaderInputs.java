@@ -3,7 +3,11 @@ package com.google.android.exoplayer2.ext.ima;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.ads.interactivemedia.v3.api.FriendlyObstruction;
 import com.google.android.exoplayer2.C;
+
+import java.util.LinkedList;
+import java.util.List;
 
 public class AdLoaderInputs {
     /** Represents a boundry between two ads if user seek before this ad will be delayed otherwise it will be skipped */
@@ -17,6 +21,9 @@ public class AdLoaderInputs {
 
     private @Nullable IAdsIntercept adsIntercept;
     private @Nullable IVideoAdTracker adTracker;
+
+    private @Nullable
+    List<FriendlyObstruction> friendlyObstructions;
 
     public float getThresholdBetweenAdsOnSeek() {
         return thresholdBetweenAdsOnSeek;
@@ -79,5 +86,15 @@ public class AdLoaderInputs {
 
     public void setAdTracker(@Nullable IVideoAdTracker adTracker) {
         this.adTracker = adTracker;
+    }
+
+    public void setFriendlyObstructions(@NonNull List<FriendlyObstruction> friendlyObstructions) {
+        this.friendlyObstructions = friendlyObstructions;
+    }
+
+    @NonNull
+    public List<FriendlyObstruction> getFriendlyObstructions() {
+        if (friendlyObstructions == null) friendlyObstructions = new LinkedList<>();
+        return friendlyObstructions;
     }
 }

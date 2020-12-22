@@ -43,6 +43,7 @@ import com.google.ads.interactivemedia.v3.api.AdsManager;
 import com.google.ads.interactivemedia.v3.api.AdsManagerLoadedEvent;
 import com.google.ads.interactivemedia.v3.api.AdsRenderingSettings;
 import com.google.ads.interactivemedia.v3.api.AdsRequest;
+import com.google.ads.interactivemedia.v3.api.FriendlyObstruction;
 import com.google.ads.interactivemedia.v3.api.ImaSdkFactory;
 import com.google.ads.interactivemedia.v3.api.ImaSdkSettings;
 import com.google.ads.interactivemedia.v3.api.UiElement;
@@ -113,6 +114,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
 
     @Nullable private ImaSdkSettings imaSdkSettings;
     @Nullable private AdEventListener adEventListener;
+    @Nullable private AdErrorListener adErrorListener;
     @Nullable private Set<UiElement> adUiElements;
     private long adPreloadTimeoutMs;
     private int vastLoadTimeoutMs;
@@ -165,6 +167,19 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
       this.adEventListener = Assertions.checkNotNull(adEventListener);
       return this;
     }
+
+    /**
+     * Sets a listener for ad error events that will be passed to {@link
+     * AdsManager#addAdErrorListener(AdErrorListener)}
+     *
+     * @param adErrorListener The error ad event listener.
+     * @return This builder, for convenience.
+     */
+    public Builder setAdErrorListener(AdErrorListener adErrorListener) {
+      this.adErrorListener = Assertions.checkNotNull(adErrorListener);
+      return this;
+    }
+
 
     /**
      * Sets the ad UI elements to be rendered by the IMA SDK.
@@ -297,6 +312,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
           playAdBeforeStartPosition,
           adUiElements,
           adEventListener,
+          adErrorListener,
           imaFactory,
               adLoaderInputs);
     }
@@ -322,6 +338,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
           playAdBeforeStartPosition,
           adUiElements,
           adEventListener,
+          adErrorListener,
           imaFactory, new AdLoaderInputs());
     }
   }
@@ -389,6 +406,8 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
   private final int mediaBitrate;
   @Nullable private final Set<UiElement> adUiElements;
   @Nullable private final AdEventListener adEventListener;
+  @Nullable private final AdErrorListener adErrorListener;
+
   private final ImaFactory imaFactory;
   private final Timeline.Period period;
   private final Handler handler;
@@ -523,6 +542,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
         /* playAdBeforeStartPosition= */ true,
         /* adUiElements= */ null,
         /* adEventListener= */ null,
+        /* adErrorListener= */ null,
         /* imaFactory= */ new DefaultImaFactory(),
         /* extra inputs for loader */ new AdLoaderInputs());
   }
@@ -541,6 +561,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
       boolean playAdBeforeStartPosition,
       @Nullable Set<UiElement> adUiElements,
       @Nullable AdEventListener adEventListener,
+      @Nullable AdErrorListener adErrorListener,
       ImaFactory imaFactory,
       AdLoaderInputs adLoaderInputs) {
     Assertions.checkArgument(adTagUri != null || adsResponse != null);
@@ -554,6 +575,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     this.playAdBeforeStartPosition = playAdBeforeStartPosition;
     this.adUiElements = adUiElements;
     this.adEventListener = adEventListener;
+    this.adErrorListener = adErrorListener;
     this.imaFactory = imaFactory;
     this.adLoaderInputs = adLoaderInputs;
     this.adTracker = adLoaderInputs.getAdTracker();
@@ -571,6 +593,9 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     componentListener = new ComponentListener();
     adCallbacks = new ArrayList<>(/* initialCapacity= */ 1);
     adDisplayContainer = imaFactory.createAdDisplayContainer();
+    for (FriendlyObstruction obstruction : adLoaderInputs.getFriendlyObstructions()){
+      adDisplayContainer.registerFriendlyObstruction(obstruction);
+    }
     adDisplayContainer.setPlayer(/* videoAdPlayer= */ componentListener);
     adsLoader =
         imaFactory.createAdsLoader(
@@ -825,6 +850,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     removeTimeoutCallback();
     resetAdOptimFlags();
     adsIntercept  = null;
+    adDisplayContainer.unregisterAllFriendlyObstructions();
   }
 
   private void removeTimeoutCallback() {
@@ -1655,6 +1681,9 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
       if (adEventListener != null) {
         adsManager.removeAdEventListener(adEventListener);
       }
+      if (adErrorListener != null) {
+        adsManager.removeAdErrorListener(adErrorListener);
+      }
       adsManager.destroy();
       adsManager = null;
       adLoaderInputs.getImaCustomUiController().releaseAdManager();
@@ -1689,6 +1718,9 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
       adsManager.addAdEventListener(this);
       if (adEventListener != null) {
         adsManager.addAdEventListener(adEventListener);
+      }
+      if (adErrorListener != null) {
+        adsManager.addAdErrorListener(adErrorListener);
       }
       if (player != null) {
         // If a player is attached already, start playback immediately.
@@ -1729,7 +1761,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
       if (player == null) return;
       AdError error = adErrorEvent.getError();
       if (DEBUG) {
-        Log.d(TAG, "onAdError", error);
+        Log.d(TAG, "onAdError::  "+ adTagUri, error);
       }
       boolean isHandled = false;
       if (adsIntercept != null) {
