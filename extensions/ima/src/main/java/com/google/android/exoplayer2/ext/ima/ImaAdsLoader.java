@@ -43,6 +43,7 @@ import com.google.ads.interactivemedia.v3.api.AdsManager;
 import com.google.ads.interactivemedia.v3.api.AdsManagerLoadedEvent;
 import com.google.ads.interactivemedia.v3.api.AdsRenderingSettings;
 import com.google.ads.interactivemedia.v3.api.AdsRequest;
+import com.google.ads.interactivemedia.v3.api.FriendlyObstruction;
 import com.google.ads.interactivemedia.v3.api.ImaSdkFactory;
 import com.google.ads.interactivemedia.v3.api.ImaSdkSettings;
 import com.google.ads.interactivemedia.v3.api.UiElement;
@@ -342,7 +343,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     }
   }
 
-  private static final boolean DEBUG = true;
+  private static final boolean DEBUG = false;
   private static final String TAG = "ImaAdsLoader";
 
   private static final String IMA_SDK_SETTINGS_PLAYER_TYPE = "google/exo.ext.ima";
@@ -592,6 +593,9 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     componentListener = new ComponentListener();
     adCallbacks = new ArrayList<>(/* initialCapacity= */ 1);
     adDisplayContainer = imaFactory.createAdDisplayContainer();
+    for (FriendlyObstruction obstruction : adLoaderInputs.getFriendlyObstructions()){
+      adDisplayContainer.registerFriendlyObstruction(obstruction);
+    }
     adDisplayContainer.setPlayer(/* videoAdPlayer= */ componentListener);
     adsLoader =
         imaFactory.createAdsLoader(
@@ -846,6 +850,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     removeTimeoutCallback();
     resetAdOptimFlags();
     adsIntercept  = null;
+    adDisplayContainer.unregisterAllFriendlyObstructions();
   }
 
   private void removeTimeoutCallback() {

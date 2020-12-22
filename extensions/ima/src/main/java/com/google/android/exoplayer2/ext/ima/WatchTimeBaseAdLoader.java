@@ -23,6 +23,7 @@ import com.google.ads.interactivemedia.v3.api.AdsManager;
 import com.google.ads.interactivemedia.v3.api.AdsManagerLoadedEvent;
 import com.google.ads.interactivemedia.v3.api.AdsRenderingSettings;
 import com.google.ads.interactivemedia.v3.api.AdsRequest;
+import com.google.ads.interactivemedia.v3.api.FriendlyObstruction;
 import com.google.ads.interactivemedia.v3.api.ImaSdkSettings;
 import com.google.ads.interactivemedia.v3.api.UiElement;
 import com.google.ads.interactivemedia.v3.api.player.AdMediaInfo;
@@ -584,6 +585,9 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
         componentListener = new WatchTimeBaseAdLoader.ComponentListener();
         adCallbacks = new ArrayList<>(/* initialCapacity= */ 1);
         adDisplayContainer = imaFactory.createAdDisplayContainer();
+        for (FriendlyObstruction obstruction : adLoaderInputs.getFriendlyObstructions()){
+            adDisplayContainer.registerFriendlyObstruction(obstruction);
+        }
         adDisplayContainer.setPlayer(/* videoAdPlayer= */ componentListener);
         adsLoader =
                 imaFactory.createAdsLoader(
@@ -789,6 +793,7 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
         hasAdPlaybackState = true;
         updateAdPlaybackState();
         removeTimeoutCallback();
+        adDisplayContainer.unregisterAllFriendlyObstructions();
     }
 
     private void removeTimeoutCallback() {
