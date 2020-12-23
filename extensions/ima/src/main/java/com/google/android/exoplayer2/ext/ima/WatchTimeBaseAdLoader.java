@@ -80,7 +80,7 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
          *
          * @see #setAdPreloadTimeoutMs(long)
          */
-        public static final long DEFAULT_AD_PRELOAD_TIMEOUT_MS = 10 * C.MILLIS_PER_SECOND;
+        public static final long DEFAULT_AD_PRELOAD_TIMEOUT_MS = 2 * C.MILLIS_PER_SECOND;
 
         private final Context context;
 
@@ -325,7 +325,7 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
      * Threshold before the start of an ad at which IMA is expected to be able to preload the ad, in
      * milliseconds.
      */
-    private static final long THRESHOLD_AD_PRELOAD_MS = 4000;
+    private static final long THRESHOLD_AD_PRELOAD_MS = 1000;
     /**
      * The threshold below which ad cue points are treated as matching, in microseconds.
      */
@@ -362,8 +362,8 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
     private static final int IMA_AD_STATE_PAUSED = 2;
 
     private static final int FAKE_CUEPOINTS_DISTANCE = 30; // in secs
-    public static final int NEXT_FAKE_CUEPOINTS_DISTANCE_THRESHOLD = 4000; // 4 sec
-    public static final int NEXT_AD_DISTANCE_THRESHOLD = 2000; // 2 sec
+    public static final int NEXT_FAKE_CUEPOINTS_DISTANCE_THRESHOLD = 8000; // 8 sec
+    public static final int NEXT_AD_DISTANCE_THRESHOLD = 3000; // 3 sec
 
 
     @Nullable
@@ -1748,7 +1748,9 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
         @Override
         public void playAd(AdMediaInfo adMediaInfo) {
             if (DEBUG) {
-                Log.d(TAG, "playAd " + getAdMediaInfoString(adMediaInfo));
+                long positionUs =
+                        C.msToUs(getContentPeriodPositionMs(Assertions.checkNotNull(player), timeline, period));
+                Log.d(TAG, "playAd " + getAdMediaInfoString(adMediaInfo) + " Player position "+ C.usToMs(positionUs));
             }
             if (adsManager == null) {
                 // Drop events after release.
@@ -1761,9 +1763,6 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
                 Log.w(TAG, "Unexpected playAd without stopAd");
             }
 
-            long positionMs = getContentPeriodPositionMs(Assertions.checkNotNull(player), timeline, period);
-
-            Log.d(TAG, "playAd player position " + positionMs);
 
             try {
                 if (imaAdState == IMA_AD_STATE_NONE) {
