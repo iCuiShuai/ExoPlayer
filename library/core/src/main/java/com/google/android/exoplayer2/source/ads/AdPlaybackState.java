@@ -305,7 +305,7 @@ public  class AdPlaybackState {
     contentDurationUs = C.TIME_UNSET;
   }
 
-  private AdPlaybackState(
+  protected AdPlaybackState(
       long[] adGroupTimesUs, AdGroup[] adGroups, long adResumePositionUs, long contentDurationUs) {
     adGroupCount = adGroups.length;
     this.adGroupTimesUs = adGroupTimesUs;
