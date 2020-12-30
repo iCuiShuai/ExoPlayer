@@ -1179,9 +1179,11 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
   private void updateAdProgress() {
     VideoProgressUpdate videoProgressUpdate = getAdVideoProgressUpdate();
     AdMediaInfo adMediaInfo = Assertions.checkNotNull(imaAdMediaInfo);
-    for (int i = 0; i < adCallbacks.size(); i++) {
-      adCallbacks.get(i).onAdProgress(adMediaInfo, videoProgressUpdate);
-    }
+   if (imaAdState == IMA_AD_STATE_PLAYING) {
+     for (int i = 0; i < adCallbacks.size(); i++) {
+       adCallbacks.get(i).onAdProgress(adMediaInfo, videoProgressUpdate);
+     }
+   }
     handler.removeCallbacks(updateAdProgressRunnable);
     handler.postDelayed(updateAdProgressRunnable, AD_PROGRESS_UPDATE_INTERVAL_MS);
   }
