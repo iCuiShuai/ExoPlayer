@@ -78,6 +78,8 @@ dependencies {
     withExtensionsImplementation project(path: modulePrefix + 'extension-vp9')
     withExtensionsImplementation project(path: modulePrefix + 'extension-rtmp')
     withExtensionsImplementation project(path: modulePrefix + 'extension-dav1d')
+    withExtensionsImplementation project(path: modulePrefix + 'extension-vvc')
+
 }
 
 apply plugin: 'com.google.android.gms.strict-version-matcher-plugin'

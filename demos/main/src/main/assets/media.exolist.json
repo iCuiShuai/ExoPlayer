@@ -505,6 +505,43 @@
     ]
   },
   {
+    "name": "vvc test video",
+    "samples": [
+      {
+        "name": "h266 test",
+        "uri": "/mnt/sdcard/vvc/test_h266_360p_2.mp4"
+      },
+      {
+        "name": "h266 test 2",
+        "uri": "/mnt/sdcard/vvc/aashram_s1e8_h264_360_90-18_h2661.mp4"
+      },
+      {
+        "name": "h266 test 3",
+        "uri": "/mnt/sdcard/vvc/aashram_s1e8_h264_360_90-9_h266-allp_r24_g72_h266.mp4"
+      },
+      {
+        "name": "h266 test b frames",
+        "uri": "/mnt/sdcard/vvc/aashram_s1e8_h264_360_1500-60_h266_22bp_r24_g24_bframes.mp4"
+      },
+      {
+        "name": "h266 test no b frames",
+        "uri": "/mnt/sdcard/vvc/aashram_s1e8_h264_360_1500-60_h266_allp_r24_g72_noBframes.mp4"
+      },
+      {
+        "name": "h266 test b frames, during 18s",
+        "uri": "/mnt/sdcard/vvc/aashram_s1e8_h264_360_r24_1980-18_h266.mp4"
+      },
+      {
+        "name": "h266 test 480p",
+        "uri": "/mnt/sdcard/vvc/aashram_s1e8_h264_480_r24_1980-18_h266.mp4"
+      },
+      {
+        "name": "h266 test online",
+        "uri": "https://j2apps.s.llnwi.net/video/aashram_s1e8_h264_480_r24_1980-18_h266.mp4"
+      }
+    ]
+  },
+  {
     "name": "AV1 test Stream",
     "samples": [
       {
