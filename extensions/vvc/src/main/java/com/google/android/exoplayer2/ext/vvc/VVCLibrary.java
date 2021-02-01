@@ -17,9 +17,11 @@ package com.google.android.exoplayer2.ext.vvc;
 
 import com.google.android.exoplayer2.ExoPlayerLibraryInfo;
 import com.google.android.exoplayer2.util.LibraryLoader;
+import com.google.android.exoplayer2.util.Log;
 
 /** Configures and queries the underlying native library. */
 public final class VVCLibrary {
+  private static final String TAG = "VVCLibrary";
   private static boolean isAvailable = false;
   static {
     ExoPlayerLibraryInfo.registerModule("goog.exo.vvc1");
@@ -31,21 +33,38 @@ public final class VVCLibrary {
 
   /** Returns whether the underlying library is available, loading it if necessary. */
   public static boolean nativeInit() {
-    if(isAvailable) {
-      VVCDecoder.nativeInit();
+    try {
+      if(!isAvailable) {
+        VVCDecoder.nativeInit();
+        isAvailable = true;
+      }
+    } catch (Throwable ignore) {
+      Log.w(TAG, "Failed to init vvclibrary ");
     }
-
     return isAvailable;
   }
 
   public static boolean isAvailable() {
-    if(isAvailable) {
-      return isAvailable;
-    }
-    isAvailable =  LOADER.isAvailable();
-    nativeInit();
     return isAvailable;
   }
+
+  /** Returns whether the underlying library is available, loading it if necessary. */
+//  public static boolean nativeInit() {
+//    if(isAvailable) {
+//      VVCDecoder.nativeInit();
+//    }
+//
+//    return isAvailable;
+//  }
+//
+//  public static boolean isAvailable() {
+//    if(isAvailable) {
+//      return isAvailable;
+//    }
+//    isAvailable =  LOADER.isAvailable();
+//    nativeInit();
+//    return isAvailable;
+//  }
 
   /**
    * @return true library can be used
