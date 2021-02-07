@@ -37,6 +37,19 @@ import java.nio.ByteBuffer;
 
   @C.VideoOutputMode private volatile int outputMode;
 
+  public static byte[] vvcConfigData = new byte[100];
+  public static int vvcConfigLength = 0;
+
+  public static void updateVVCConfig(byte[]vvcConfig, int length) {
+    try {
+      int validLength = length > 100 ? 100 : length;
+      System.arraycopy(vvcConfig, 0, vvcConfigData, 0, validLength);
+      vvcConfigLength = validLength;
+    }catch (Exception e) {
+
+    }
+  }
+
   public static void nativeInit() {
     nativeClassInit();
   }
@@ -60,7 +73,7 @@ import java.nio.ByteBuffer;
       throw new VVCDecoderException("Failed to load decoder native library.");
     }
     Log.d("ycptest", "VVCDecoder init  costtime thread num:  "+threads);
-    vvcDecoderContext = vvcInit(threads);
+    vvcDecoderContext = vvcInit(threads, vvcConfigData, vvcConfigLength);
     if (vvcDecoderContext == DAV1D_ERROR || vvcCheckError(vvcDecoderContext) == DAV1D_ERROR) {
       throw new VVCDecoderException(
           "Failed to initialize decoder. Error: " + vvcGetErrorMessage(vvcDecoderContext));
@@ -265,7 +278,7 @@ import java.nio.ByteBuffer;
    * @param threads Number of threads to be used by a libvvc decoder.
    * @return The address of the decoder context or {@link #DAV1D_ERROR} if there was an error.
    */
-  private native long vvcInit(int threads);
+  private native long vvcInit(int threads, byte[]vvcConfig, int length);
 
   /**
    * Deallocates the decoder context.

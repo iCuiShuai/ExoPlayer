@@ -73,8 +73,8 @@ public class LibVVCVideoRenderer extends SimpleDecoderVideoRendererDav1d {
 
   @Nullable private VVCDecoder decoder;
 
-  public static void nativeInit() {
-    VVCLibrary.nativeInit();
+  public static void nativeInit(byte[]vvcConfig, int length) {
+    VVCLibrary.nativeInit(vvcConfig, length);
   }
 
   /**

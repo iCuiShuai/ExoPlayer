@@ -32,8 +32,9 @@ public final class VVCLibrary {
   private VVCLibrary() {}
 
   /** Returns whether the underlying library is available, loading it if necessary. */
-  public static boolean nativeInit() {
+  public static boolean nativeInit(byte[]vvcConfig, int length) {
     try {
+      VVCDecoder.updateVVCConfig(vvcConfig, length);
       if(!isAvailable) {
         VVCDecoder.nativeInit();
         isAvailable = true;
