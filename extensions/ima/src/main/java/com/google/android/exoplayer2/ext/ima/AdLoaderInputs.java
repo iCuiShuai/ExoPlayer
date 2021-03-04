@@ -6,6 +6,7 @@ import androidx.annotation.Nullable;
 import com.google.ads.interactivemedia.v3.api.FriendlyObstruction;
 import com.google.android.exoplayer2.C;
 
+import com.mxplay.adloader.VideoAdsTracker;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -20,7 +21,7 @@ public class AdLoaderInputs {
     private long videoDuration = C.TIME_UNSET;
 
     private @Nullable IAdsIntercept adsIntercept;
-    private @Nullable IVideoAdTracker adTracker;
+    private @Nullable VideoAdsTracker adTracker;
 
     private @Nullable
     List<FriendlyObstruction> friendlyObstructions;
@@ -80,11 +81,11 @@ public class AdLoaderInputs {
     }
 
     @Nullable
-    public IVideoAdTracker getAdTracker() {
+    public VideoAdsTracker getAdTracker() {
         return adTracker;
     }
 
-    public void setAdTracker(@Nullable IVideoAdTracker adTracker) {
+    public void setAdTracker(@Nullable VideoAdsTracker adTracker) {
         this.adTracker = adTracker;
     }
 
