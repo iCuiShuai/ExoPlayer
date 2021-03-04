@@ -19,7 +19,7 @@ android {
 }
 
 dependencies {
-    api project(path: ':extension-adloader-core')
+    api project(path: modulePrefix+'extension-adloader-core')
     implementation project(modulePrefix + 'library-core')
     implementation 'androidx.annotation:annotation:' + androidxAnnotationVersion
     
