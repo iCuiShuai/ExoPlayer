@@ -20,6 +20,7 @@ import com.google.android.exoplayer2.upstream.DataSpec;
 import com.google.android.exoplayer2.util.Assertions;
 import com.google.android.exoplayer2.util.Log;
 import com.google.android.exoplayer2.util.Util;
+import com.mxplay.adloader.VideoAdsTracker;
 import com.mxplay.offlineads.exo.oma.Ad;
 import com.mxplay.offlineads.exo.oma.AdDisplayContainer;
 import com.mxplay.offlineads.exo.oma.AdError;
@@ -34,7 +35,6 @@ import com.mxplay.offlineads.exo.oma.VideoAdPlayer;
 import com.mxplay.offlineads.exo.oma.VideoProgressUpdate;
 import com.mxplay.offlineads.exo.oma.internal.AdLoaderImpl;
 import com.mxplay.offlineads.exo.oma.internal.AdsRequest;
-import com.mxplay.offlineads.exo.tracking.IVideoAdTracker;
 import java.io.IOException;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -58,7 +58,7 @@ public final class OmaAdLoader
     ExoPlayerLibraryInfo.registerModule("goog.exo.ima");
   }
 
-  private IVideoAdTracker adTracker;
+  private VideoAdsTracker adTracker = VideoAdsTracker.getNoOpTracker();
   private long preloadDuration = MAXIMUM_PRELOAD_DURATION_MS;
   private long adLoadedTime;
   private long startLoadMediaTime;
@@ -166,7 +166,7 @@ public final class OmaAdLoader
   private AdPlaybackState adPlaybackState;
 
 
-  public void setAdTracker(IVideoAdTracker adTracker) {
+  public void setAdTracker(VideoAdsTracker adTracker) {
     this.adTracker = adTracker;
   }
 
@@ -288,6 +288,7 @@ public final class OmaAdLoader
     request.setContentProgressProvider(this);
     request.setUserRequestContext(pendingAdRequestContext);
     adsLoader.requestAds(request);
+    adTracker.onAdManagerRequested();
     updateStartRequestTime(false);
   }
 
@@ -441,6 +442,9 @@ public final class OmaAdLoader
     }
     try {
       handleAdEvent(adEvent);
+      if (adEventType == AdEvent.AdEventType.STARTED || adEventType == AdEvent.AdEventType.COMPLETED){
+        adTracker.onAdEvent(adEventType.name());
+      }
     } catch (Exception e) {
       maybeNotifyInternalError("onAdEvent", e);
     }
@@ -459,9 +463,7 @@ public final class OmaAdLoader
       pendingAdRequestContext = null;
       adPlaybackState = new AdPlaybackState();
       updateAdPlaybackState();
-      if (adTracker != null) {
-        adTracker.trackEvent(IVideoAdTracker.EVENT_VIDEO_AD_PLAY_FAILED, IVideoAdTracker.buildFailedParams(adGroupIndex, startRequestTime, error, getAdGroupCount()));
-      }
+      adTracker.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adTracker.buildFailedParams(adGroupIndex, startRequestTime, error, getAdGroupCount()));
     } else if (isAdGroupLoadError(error)) {
       try {
         handleAdGroupLoadError(error);
@@ -609,9 +611,11 @@ public final class OmaAdLoader
         Log.w(TAG, "Unexpected loadAd in an ad group with no remaining unavailable ads "+adGroupIndex);
         return;
       }
+      Uri adUri = Uri.parse(adUriString);
       adPlaybackState =
-          adPlaybackState.withAdUri(adGroupIndex, adIndexInAdGroup, Uri.parse(adUriString));
+          adPlaybackState.withAdUri(adGroupIndex, adIndexInAdGroup, adUri);
       updateAdPlaybackState();
+      adTracker.onAdLoad(adGroupIndex, adIndexInAdGroup, adUri);
     } catch (Exception e) {
       maybeNotifyInternalError("loadAd", e);
     }
@@ -674,9 +678,7 @@ public final class OmaAdLoader
     }
     if (lastPlayAdGroupIndex != getAdGroupIndex()) {
       lastPlayAdGroupIndex = getAdGroupIndex();
-      if (adTracker != null) {
-        adTracker.trackEvent(IVideoAdTracker.EVENT_VIDEO_AD_PLAY_SUCCESS, IVideoAdTracker.buildSuccessParams(adLoadedTime, startRequestTime, startLoadMediaTime, adGroupIndex, getAdGroupCount()));
-      }
+      adTracker.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_SUCCESS, adTracker.buildSuccessParams(adLoadedTime, startRequestTime, startLoadMediaTime, adGroupIndex, getAdGroupCount()));
     }
   }
 
@@ -1009,9 +1011,7 @@ public final class OmaAdLoader
       // Drop the error, as we don't know which ad group it relates to.
       return;
     }
-    if (adTracker != null) {
-      adTracker.trackEvent(IVideoAdTracker.EVENT_VIDEO_AD_PLAY_FAILED, IVideoAdTracker.buildFailedParams(adGroupIndex, startRequestTime, error, getAdGroupCount()));
-    }
+    adTracker.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adTracker.buildFailedParams(adGroupIndex, startRequestTime, error, getAdGroupCount()));
     AdPlaybackState.AdGroup adGroup = adPlaybackState.adGroups[adGroupIndex];
     if (adGroup.count == C.LENGTH_UNSET) {
       adPlaybackState =
@@ -1068,9 +1068,7 @@ public final class OmaAdLoader
     }
     adPlaybackState = adPlaybackState.withAdLoadError(adGroupIndex, adIndexInAdGroup);
     updateAdPlaybackState();
-    if (adTracker != null) {
-      adTracker.trackEvent(IVideoAdTracker.EVENT_VIDEO_AD_PLAY_FAILED, IVideoAdTracker.buildFailedParams(adGroupIndex, adIndexInAdGroup, startRequestTime, "Prepare Error", exception, getAdGroupCount()));
-    }
+    adTracker.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adTracker.buildFailedParams(adGroupIndex, adIndexInAdGroup, startRequestTime, exception, getAdGroupCount()));
   }
 
   private int getAdGroupCount() {
@@ -1139,9 +1137,7 @@ public final class OmaAdLoader
           AdsMediaSource.AdLoadException.createForUnexpected(new RuntimeException(message, cause)),
           new DataSpec(Uri.parse("VAST_RESPONSE")));
     }
-    if (adTracker != null) {
-      adTracker.trackEvent(IVideoAdTracker.EVENT_INTERNAL_ERROR, IVideoAdTracker.buildFailedParams(adGroupIndex, -1, startRequestTime, name, cause, getAdGroupCount()));
-    }
+    adTracker.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adTracker.buildFailedParams(adGroupIndex, -1, startRequestTime, new RuntimeException(message, cause), getAdGroupCount()));
   }
 
   private static long[] getAdGroupTimesUs(List<Float> cuePoints) {
