@@ -22,4 +22,16 @@ dependencies {
     implementation 'androidx.annotation:annotation:' + androidxAnnotationVersion
 }
 
+ext {
+    javadocTitle = 'Ad loader core lib extension'
+}
+apply from: '../../javadoc_library.gradle'
+
+ext {
+    releaseArtifact = 'extension-adloader-core'
+    releaseDescription = 'Ad loader core lib for ExoPlayer ads'
+}
+apply from: '../../publish.gradle'
+
+
 
