@@ -1041,10 +1041,10 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
 
   private void handleAdEvent(AdEvent adEvent) {
     switch (adEvent.getType()) {
-      case AD_PROGRESS:
+      case LOADED:
         Ad ad = adEvent.getAd();
         if (isPipMode && ad != null && ad.getVastMediaHeight() <= 1 && ad.getVastMediaWidth() <= 1) {
-          adPlaybackState = adPlaybackState.withSkippedAdGroup(getAdGroupIndex());
+          adPlaybackState = adPlaybackState.setAdGroupDisabled(getAdGroupIndex(), true);
           updateAdPlaybackState();
         }
         break;
