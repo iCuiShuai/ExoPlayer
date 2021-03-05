@@ -754,8 +754,11 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     }
   }
 
-  public void setPipMode(boolean isPip) {
+  public void setPipMode(boolean isPip, boolean skipCurrentAd) {
     this.isPipMode = isPip;
+    if (isPip && skipCurrentAd && adsManager != null && imaAdState == IMA_AD_STATE_PLAYING) {
+      resumeContentInternal();
+    }
   }
 
   private void updateStartRequestTime(boolean force) {
