@@ -29,6 +29,8 @@ import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+
+import com.google.ads.interactivemedia.v3.api.Ad;
 import com.google.ads.interactivemedia.v3.api.AdDisplayContainer;
 import com.google.ads.interactivemedia.v3.api.AdError;
 import com.google.ads.interactivemedia.v3.api.AdError.AdErrorCode;
@@ -44,7 +46,6 @@ import com.google.ads.interactivemedia.v3.api.AdsManagerLoadedEvent;
 import com.google.ads.interactivemedia.v3.api.AdsRenderingSettings;
 import com.google.ads.interactivemedia.v3.api.AdsRequest;
 import com.google.ads.interactivemedia.v3.api.FriendlyObstruction;
-import com.google.ads.interactivemedia.v3.api.ImaSdkFactory;
 import com.google.ads.interactivemedia.v3.api.ImaSdkSettings;
 import com.google.ads.interactivemedia.v3.api.UiElement;
 import com.google.ads.interactivemedia.v3.api.player.AdMediaInfo;
@@ -429,6 +430,8 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
   private VideoProgressUpdate lastAdProgress;
   private int lastVolumePercent;
 
+  boolean isPipMode = true;
+
   @Nullable private AdsManager adsManager;
   private boolean isAdsManagerInitialized;
   private boolean hasAdPlaybackState;
@@ -753,6 +756,13 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     }
   }
 
+  public void setPipMode(boolean isPip, boolean skipCurrentAd) {
+    this.isPipMode = isPip;
+    if (isPip && skipCurrentAd && adsManager != null && imaAdState == IMA_AD_STATE_PLAYING) {
+      resumeContentInternal();
+    }
+  }
+
   private void updateStartRequestTime(boolean force) {
     int adGroupIndex = getAdGroupIndex();
     if (lastStartRequestAdGroupIndex != adGroupIndex && (adGroupIndex != C.INDEX_UNSET || force)) {
@@ -1036,6 +1046,13 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
 
   private void handleAdEvent(AdEvent adEvent) {
     switch (adEvent.getType()) {
+      case LOADED:
+        Ad ad = adEvent.getAd();
+        if (isPipMode && ad != null && ad.getVastMediaHeight() <= 1 && ad.getVastMediaWidth() <= 1) {
+          adPlaybackState = adPlaybackState.setAdGroupDisabled(getAdGroupIndex(), true);
+          updateAdPlaybackState();
+        }
+        break;
       case AD_BREAK_FETCH_ERROR:
         removeTimeoutCallback();
         String adGroupTimeSecondsString =
