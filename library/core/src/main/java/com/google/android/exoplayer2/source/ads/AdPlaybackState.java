@@ -34,7 +34,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableType;
  * <p>Instances are immutable. Call the {@code with*} methods to get new instances that have the
  * required changes.
  */
-public final class AdPlaybackState {
+public  class AdPlaybackState {
 
   /**
    * Represents a group of ads, with information about their states.
@@ -52,6 +52,8 @@ public final class AdPlaybackState {
     @AdState public final int[] states;
     /** The durations of each ad in the ad group, in microseconds. */
     public final long[] durationsUs;
+    private boolean disabled;
+
 
     /** Creates a new ad group with an unspecified number of ads. */
     public AdGroup() {
@@ -59,16 +61,25 @@ public final class AdPlaybackState {
           /* count= */ C.LENGTH_UNSET,
           /* states= */ new int[0],
           /* uris= */ new Uri[0],
-          /* durationsUs= */ new long[0]);
+          /* durationsUs= */ new long[0], false);
     }
 
     private AdGroup(
-        int count, @AdState int[] states, @NullableType Uri[] uris, long[] durationsUs) {
+            int count, @AdState int[] states, @NullableType Uri[] uris, long[] durationsUs, boolean disabled) {
       Assertions.checkArgument(states.length == uris.length);
       this.count = count;
       this.states = states;
       this.uris = uris;
       this.durationsUs = durationsUs;
+      this.disabled = disabled;
+    }
+
+    public void setDisabled(boolean disabled) {
+      this.disabled = disabled;
+    }
+
+    public boolean isDisabled() {
+      return disabled;
     }
 
     /**
@@ -97,7 +108,7 @@ public final class AdPlaybackState {
 
     /** Returns whether the ad group has at least one ad that still needs to be played. */
     public boolean hasUnplayedAds() {
-      return count == C.LENGTH_UNSET || getFirstAdIndexToPlay() < count;
+      return !disabled && (count == C.LENGTH_UNSET || getFirstAdIndexToPlay() < count);
     }
 
     @Override
@@ -130,7 +141,7 @@ public final class AdPlaybackState {
       @AdState int[] states = copyStatesWithSpaceForAdCount(this.states, count);
       long[] durationsUs = copyDurationsUsWithSpaceForAdCount(this.durationsUs, count);
       @NullableType Uri[] uris = Arrays.copyOf(this.uris, count);
-      return new AdGroup(count, states, uris, durationsUs);
+      return new AdGroup(count, states, uris, durationsUs, this.disabled);
     }
 
     /**
@@ -147,7 +158,7 @@ public final class AdPlaybackState {
       @NullableType Uri[] uris = Arrays.copyOf(this.uris, states.length);
       uris[index] = uri;
       states[index] = AD_STATE_AVAILABLE;
-      return new AdGroup(count, states, uris, durationsUs);
+      return new AdGroup(count, states, uris, durationsUs,  this.disabled);
     }
 
     /**
@@ -174,7 +185,7 @@ public final class AdPlaybackState {
       Uri[] uris =
           this.uris.length == states.length ? this.uris : Arrays.copyOf(this.uris, states.length);
       states[index] = state;
-      return new AdGroup(count, states, uris, durationsUs);
+      return new AdGroup(count, states, uris, durationsUs,  this.disabled);
     }
 
     /** Returns a new instance with the specified ad durations, in microseconds. */
@@ -184,7 +195,7 @@ public final class AdPlaybackState {
       if (durationsUs.length < this.uris.length) {
         durationsUs = copyDurationsUsWithSpaceForAdCount(durationsUs, uris.length);
       }
-      return new AdGroup(count, states, uris, durationsUs);
+      return new AdGroup(count, states, uris, durationsUs,  this.disabled);
     }
 
     /**
@@ -198,7 +209,7 @@ public final class AdPlaybackState {
             /* count= */ 0,
             /* states= */ new int[0],
             /* uris= */ new Uri[0],
-            /* durationsUs= */ new long[0]);
+            /* durationsUs= */ new long[0],  false);
       }
       int count = this.states.length;
       @AdState int[] states = Arrays.copyOf(this.states, count);
@@ -207,7 +218,7 @@ public final class AdPlaybackState {
           states[i] = AD_STATE_SKIPPED;
         }
       }
-      return new AdGroup(count, states, uris, durationsUs);
+      return new AdGroup(count, states, uris, durationsUs,  this.disabled);
     }
 
     @CheckResult
@@ -294,7 +305,7 @@ public final class AdPlaybackState {
     contentDurationUs = C.TIME_UNSET;
   }
 
-  private AdPlaybackState(
+  protected AdPlaybackState(
       long[] adGroupTimesUs, AdGroup[] adGroups, long adResumePositionUs, long contentDurationUs) {
     adGroupCount = adGroups.length;
     this.adGroupTimesUs = adGroupTimesUs;
@@ -392,6 +403,20 @@ public final class AdPlaybackState {
   public AdPlaybackState withPlayedAd(int adGroupIndex, int adIndexInAdGroup) {
     AdGroup[] adGroups = Util.nullSafeArrayCopy(this.adGroups, this.adGroups.length);
     adGroups[adGroupIndex] = adGroups[adGroupIndex].withAdState(AD_STATE_PLAYED, adIndexInAdGroup);
+    return new AdPlaybackState(adGroupTimesUs, adGroups, adResumePositionUs, contentDurationUs);
+  }
+
+  /**
+   * Returns an instance with all ads in the specified ad group temporary enable/disable (except for those already
+   * marked as played or in the error state).
+   */
+  @CheckResult
+  public AdPlaybackState setAdGroupDisabled(int adGroupIndex, boolean disabled) {
+    if (adGroupIndex == C.INDEX_UNSET) return this;
+    AdGroup[] adGroups = Util.nullSafeArrayCopy(this.adGroups, this.adGroups.length);
+   if (adGroupIndex >= adGroups.length) return this;
+   if (!adGroups[adGroupIndex].hasUnplayedAds() && disabled) return this;
+    adGroups[adGroupIndex].setDisabled(disabled);
     return new AdPlaybackState(adGroupTimesUs, adGroups, adResumePositionUs, contentDurationUs);
   }
 
@@ -529,7 +554,7 @@ public final class AdPlaybackState {
     return sb.toString();
   }
 
-  private boolean isPositionBeforeAdGroup(
+  protected boolean isPositionBeforeAdGroup(
       long positionUs, long periodDurationUs, int adGroupIndex) {
     if (positionUs == C.TIME_END_OF_SOURCE) {
       // The end of the content is at (but not before) any postroll ad, and after any other ads.

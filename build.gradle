@@ -26,8 +26,18 @@ allprojects {
     repositories {
         google()
         jcenter()
-        maven { url 'http://mx.git.com:8098/nexus/content/repositories/releases/' }
-        maven { url 'http://mx.git.com:8098/nexus/content/repositories/snapshots/' }
+        maven { url 'http://mx.nexus.com:8098/nexus/content/repositories/releases/'
+            credentials {
+                username "$System.env.MX_NEXUS_USER"
+                password "$System.env.MX_NEXUS_PW"
+            }
+        }
+        maven { url 'http://mx.nexus.com:8098/nexus/content/repositories/snapshots/'
+            credentials {
+                username "$System.env.MX_NEXUS_USER"
+                password "$System.env.MX_NEXUS_PW"
+            }
+        }
 
     }
     project.ext {

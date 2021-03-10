@@ -19,19 +19,19 @@ android {
 }
 
 dependencies {
-    api project(path: modulePrefix+'extension-adloader-core')
-    implementation project(modulePrefix + 'library-core')
     implementation 'androidx.annotation:annotation:' + androidxAnnotationVersion
-    
 }
 
 ext {
-    javadocTitle = 'OMA extension'
+    javadocTitle = 'Ad loader core lib extension'
 }
 apply from: '../../javadoc_library.gradle'
 
 ext {
-    releaseArtifact = 'extension-offineAds'
-    releaseDescription = 'Offline Media Ads extension for ExoPlayer.'
+    releaseArtifact = 'extension-adloader-core'
+    releaseDescription = 'Ad loader core lib for ExoPlayer ads'
 }
 apply from: '../../publish.gradle'
+
+
+

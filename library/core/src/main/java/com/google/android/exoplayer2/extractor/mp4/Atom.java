@@ -80,6 +80,9 @@ import java.util.List;
   public static final int TYPE_vpcC = 0x76706343;
 
   @SuppressWarnings("ConstantCaseForConstants")
+  public static final int TYPE_vvc1 = 0x76766331;
+
+  @SuppressWarnings("ConstantCaseForConstants")
   public static final int TYPE_av01 = 0x61763031;
 
   @SuppressWarnings("ConstantCaseForConstants")

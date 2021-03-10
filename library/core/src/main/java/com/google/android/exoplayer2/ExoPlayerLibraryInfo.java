@@ -49,7 +49,7 @@ public final class ExoPlayerLibraryInfo {
    * Whether the library was compiled with {@link com.google.android.exoplayer2.util.Assertions}
    * checks enabled.
    */
-  public static final boolean ASSERTIONS_ENABLED = true;
+  public static final boolean ASSERTIONS_ENABLED = false;
 
   /** Whether an exception should be thrown in case of an OpenGl error. */
   public static final boolean GL_ASSERTIONS_ENABLED = false;

@@ -139,6 +139,11 @@ public final class PlaybackStatsListener
                 : null;
     return activeStatsTracker == null ? null : activeStatsTracker.build(/* isFinal= */ false);
   }
+  
+  public  long getContentTotalPlayTimeMs(){
+    PlaybackStatsTracker  tracker = activeContentPlayback != null ? playbackStatsTrackers.get(activeContentPlayback) : null;
+    return tracker == null ? 0 : tracker.getTotalPlayTimeMs(/* isFinal= */ );
+  }
 
   /**
    * Finishes all pending playback sessions. Should be called when the listener is removed from the
@@ -755,6 +760,19 @@ public final class PlaybackStatsListener
       }
     }
 
+    public long getTotalPlayTimeMs(){
+      long playTime = 0;
+      if (this.playbackStateDurationsMs.length >  PlaybackStats.PLAYBACK_STATE_PLAYING){
+        if (currentPlaybackState == PlaybackStats.PLAYBACK_STATE_PLAYING){
+          long buildTimeMs = SystemClock.elapsedRealtime();
+          long lastStateDurationMs = Math.max(0, buildTimeMs - currentPlaybackStateStartTimeMs);
+          playTime = playbackStateDurationsMs[currentPlaybackState] + lastStateDurationMs;
+        }else
+        playTime =  playbackStateDurationsMs[PlaybackStats.PLAYBACK_STATE_PLAYING];
+      }
+      return playTime;
+    }
+    
     /**
      * Builds the playback stats.
      *

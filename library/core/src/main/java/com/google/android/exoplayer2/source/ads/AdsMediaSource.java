@@ -19,6 +19,8 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.util.Log;
+
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.C;
@@ -56,6 +58,8 @@ import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
  */
 public final class AdsMediaSource extends CompositeMediaSource<MediaPeriodId> {
 
+  private static final String TAG = "AdsMediaSource";
+  private static final boolean DEBUG = false;
   /**
    * Wrapper for exceptions that occur while loading ads, which are notified via {@link
    * MediaSourceEventListener#onLoadError(int, MediaPeriodId, LoadEventInfo, MediaLoadData,
@@ -218,11 +222,14 @@ public final class AdsMediaSource extends CompositeMediaSource<MediaPeriodId> {
         adMediaSourceHolders[adGroupIndex][adIndexInAdGroup] = adMediaSourceHolder;
         prepareChildSource(id, adMediaSource);
       }
+      if (DEBUG) { Log.d(TAG, " createPeriod ad period ::1 adGroupIndex " + adGroupIndex + " index " + adIndexInAdGroup); }
+
       return adMediaSourceHolder.createMediaPeriod(adUri, id, allocator, startPositionUs);
     } else {
       MaskingMediaPeriod mediaPeriod =
           new MaskingMediaPeriod(contentMediaSource, id, allocator, startPositionUs);
       mediaPeriod.createPeriod(id);
+      if(DEBUG) Log.d(TAG, " createPeriod content period ");
       return mediaPeriod;
     }
   }

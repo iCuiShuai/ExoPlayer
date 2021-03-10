@@ -768,7 +768,8 @@ import java.util.List;
           || childAtomType == Atom.TYPE_dvav
           || childAtomType == Atom.TYPE_dva1
           || childAtomType == Atom.TYPE_dvhe
-          || childAtomType == Atom.TYPE_dvh1) {
+          || childAtomType == Atom.TYPE_dvh1
+          || childAtomType == Atom.TYPE_vvc1) {
         parseVideoSampleEntry(stsd, childAtomType, childStartPosition, childAtomSize, trackId,
             rotationDegrees, drmInitData, out, i);
       } else if (childAtomType == Atom.TYPE_mp4a
@@ -887,6 +888,10 @@ import java.util.List;
     byte[] projectionData = null;
     @C.StereoMode
     int stereoMode = Format.NO_VALUE;
+    if (atomType == Atom.TYPE_vvc1) {
+      Assertions.checkState(mimeType == null);
+      mimeType = MimeTypes.VIDEO_VVC1;
+    }
     while (childPosition - position < size) {
       parent.setPosition(childPosition);
       int childStartPosition = parent.getPosition();

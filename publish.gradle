@@ -3,17 +3,17 @@ apply plugin: 'maven-publish'
 /** example
  ext {
  publishDesc = 'AD lib for mx player.'
- publishGroupId = 'com.mxplay.code'
+ publishGroupId = 'com.zenjoy.code'
  publishArtifactId = 'adlibrary'
  publishVersion = '1.1.1'
  publishVersionCode = 111
  publishSource = false
  publishFile = project.file('android-ad-sdk.aar')
- publisherUserName = 'admin'
- publisherPassword = 'admin123'
+ publisherUserName = 'userName'
+ publisherPassword = 'userPassword'
  publishUrlSnapshot = 'http://10.7.0.7:8098/nexus/content/repositories/snapshots/'
- publishDependencies = [['com.mxplay.code', 'aol-android-ad-sdk-wrapper', "${aolVersion}"]
- ,['com.mxplay.code', 'aol-android-google-ad-mm-adapter-wrapper', "${aolVersion}"]]
+ publishDependencies = [['com.zenjoy.code', 'aol-android-ad-sdk-wrapper', "${aolVersion}"]
+ ,['com.zenjoy.code', 'aol-android-google-ad-mm-adapter-wrapper', "${aolVersion}"]]
  }
 
  */
@@ -72,12 +72,15 @@ def stringNonNull(name) {
 }
 
 def readProperties(name) {
-    Properties properties = new Properties()
-    def file = project.rootProject.file('local.properties')
-    if (!file.exists())
-        return ""
-    properties.load(file.newDataInputStream())
-    return properties.getProperty(name)
+    try {
+        Properties properties = new Properties()
+        properties.load(project.rootProject.file('local.properties').newDataInputStream())
+        return properties.getProperty(name)
+    }catch (Exception e) {
+
+    }
+
+    return null
 }
 
 def getNeedPublishSource() {
@@ -89,35 +92,46 @@ def getNeedPublishSource() {
     return ext.get('publishSource')
 }
 
-def getPublishArtifactId() {
-    ext.has('publishArtifactId') ? ext.get('PublishArtifactId') : project.name;
+def _getPublishArtifactId() {
+    ext.has('publishArtifactId') ? ext.get('publishArtifactId') : project.name;
 }
 
-def getPublisherUserName() {
-    def ret = ext.has('publisherUserName') ? ext.get('publisherUserName') : readProperties('publisherUserName')
+static def _getEnv(name) {
+    return System.getenv(name)
+}
+
+def _getString(name) {
+    def value = ext.has(name) ? ext.get(name) : readProperties(name)
+    if (value == null) {
+        value = _getEnv(name)
+    }
+
+    return value
+}
+
+def _getPublisherUserName() {
+    def ret = _getString('publisherUserName')
     if (ret == null) {
-        System.out.println("publisherUserName is null")
-//        new NullPointerException("publisherUserName is null").printStackTrace()
+        new NullPointerException("publisherUserName is null").printStackTrace()
     }
     return ret
 }
 
-def getPublisherPassword() {
-    def ret = ext.has('publisherPassword') ? ext.get('publisherPassword') : readProperties('publisherPassword')
+def _getPublisherPassword() {
+    def ret = _getString('publisherPassword')
 
     if (ret == null) {
-        System.out.println("publisherPassword is null")
-//        new NullPointerException("publisherPassword is null").printStackTrace()
+        new NullPointerException("publisherPassword is null").printStackTrace()
     }
     return ret
 }
 
-def getPublishUrlSnapshot() {
-    return ext.has('publishUrlSnapshot') ? ext.get('publishUrlSnapshot') : readProperties('publishUrlSnapshot')
+def _getPublishUrlSnapshot() {
+    return _getString('publishUrlSnapshot')
 }
 
-def getPublishUrlRelease() {
-    return ext.has('publishUrlRelease') ? ext.get('publishUrlRelease') : readProperties('publishUrlRelease')
+def _getPublishUrlRelease() {
+    return _getString('publishUrlRelease')
 }
 
 def extraDependencies(dependencies) {
@@ -149,7 +163,7 @@ publishing {
             ext.repo = 'Release'
 
             groupId "${publishGroupId}"
-            artifactId getPublishArtifactId()
+            artifactId _getPublishArtifactId()
             version "${publishVersion}"
 
             testSourceCode()
@@ -184,7 +198,7 @@ publishing {
             ext.repo = 'Snapshot'
 
             groupId "${publishGroupId}"
-            artifactId getPublishArtifactId()
+            artifactId _getPublishArtifactId()
             version "${publishVersion}-SNAPSHOT"
 
             testSourceCode()
@@ -219,21 +233,21 @@ publishing {
         maven {
             name 'Snapshot'
             credentials {
-                username getPublisherUserName()
-                password getPublisherPassword()
+                username _getPublisherUserName()
+                password _getPublisherPassword()
             }
 
-            url getPublishUrlSnapshot()
+            url _getPublishUrlSnapshot()
         }
 
         maven {
             name 'Release'
             credentials {
-                username getPublisherUserName()
-                password getPublisherPassword()
+                username _getPublisherUserName()
+                password _getPublisherPassword()
             }
 
-            url getPublishUrlRelease()
+            url _getPublishUrlRelease()
         }
     }
 }
@@ -256,6 +270,80 @@ private void addDependencies(node, isSnapshot) {
     }
     if (compile) {
         configurations.compile.allDependencies.each { dependency ->
+            if (isValidDependency(dependency)) {
+                if (!(isUnspecifiedIgnored() && isUnspecifiedDependency(dependency))) {
+                    def dependencyNode = dependencies.appendNode('dependency')
+                    dependencyNode.appendNode('artifactId', dependency.name)
+                    if (!isUnspecifiedDependency(dependency)) {
+                        dependencyNode.appendNode('groupId', dependency.group)
+                        dependencyNode.appendNode('version', dependency.version)
+                    } else {
+                        dependencyNode.appendNode('groupId', "${publishGroupId}")
+                        if (isSnapshot)
+                            dependencyNode.appendNode('version', "${publishVersion}-SNAPSHOT")
+                        else
+                            dependencyNode.appendNode('version', "${publishVersion}")
+                    }
+
+                    //If there are any exclusions in dependency
+                    if (dependency.excludeRules != null && dependency.excludeRules.size() > 0) {
+                        def exclusionsNode = dependencyNode.appendNode('exclusions')
+                        dependency.excludeRules.each { rule ->
+                            def exclusionNode = exclusionsNode.appendNode('exclusion')
+                            exclusionNode.appendNode('groupId', rule.group)
+                            exclusionNode.appendNode('artifactId', rule.module)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    def imp = true
+    try {
+        def dependencies1 = configurations.implementation.allDependencies
+    }catch (Exception e) {
+        imp = false
+    }
+    if (imp) {
+        configurations.implementation.allDependencies.each { dependency ->
+            if (isValidDependency(dependency)) {
+                if (!(isUnspecifiedIgnored() && isUnspecifiedDependency(dependency))) {
+                    def dependencyNode = dependencies.appendNode('dependency')
+                    dependencyNode.appendNode('artifactId', dependency.name)
+                    if (!isUnspecifiedDependency(dependency)) {
+                        dependencyNode.appendNode('groupId', dependency.group)
+                        dependencyNode.appendNode('version', dependency.version)
+                    } else {
+                        dependencyNode.appendNode('groupId', "${publishGroupId}")
+                        if (isSnapshot)
+                            dependencyNode.appendNode('version', "${publishVersion}-SNAPSHOT")
+                        else
+                            dependencyNode.appendNode('version', "${publishVersion}")
+                    }
+
+                    //If there are any exclusions in dependency
+                    if (dependency.excludeRules != null && dependency.excludeRules.size() > 0) {
+                        def exclusionsNode = dependencyNode.appendNode('exclusions')
+                        dependency.excludeRules.each { rule ->
+                            def exclusionNode = exclusionsNode.appendNode('exclusion')
+                            exclusionNode.appendNode('groupId', rule.group)
+                            exclusionNode.appendNode('artifactId', rule.module)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    def api = true
+    try {
+        def dependencies1 = configurations.api.allDependencies
+    }catch (Exception e) {
+        api = false
+    }
+    if (api) {
+        configurations.api.allDependencies.each { dependency ->
             if (isValidDependency(dependency)) {
                 if (!(isUnspecifiedIgnored() && isUnspecifiedDependency(dependency))) {
                     def dependencyNode = dependencies.appendNode('dependency')
