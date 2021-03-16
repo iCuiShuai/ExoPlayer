@@ -47,6 +47,7 @@ public class Mapper {
       AdImpl ad = new AdImpl();
       ad.setAdPodInfo(new AdPodInfoImpl());
       ad.setAdId(vastAdModel.getAdId());
+      ad.setCreativeId(vastAdModel.getCreativeId());
       ad.setAdvertiserName(vastAdModel.getAdvertiserName());
       double skipTimeOffset = vastAdModel.getSkipTimeOffset();
       ad.setSkippable(skipTimeOffset > -1);

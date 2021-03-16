@@ -2,6 +2,8 @@ package com.mxplay.adloader;
 
 import android.net.Uri;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -22,6 +24,8 @@ public abstract class VideoAdsTracker {
     public static final String EVENT_VIDEO_AD_PLAY_SUCCESS = "VideoAdPlaySuccess";
     public static final String EVENT_VIDEO_AD_PLAY_FAILED = "VideoAdPlayFailed";
 
+    public static final String CREATIVE_ID = "creativeId";
+    public static final String ADVERTISER = "advertiser";
     public static final String AD_URI = "uri";
     public static final String SESSION_ID = "s_id";
     public static final String REASON = "reason";
@@ -108,9 +112,13 @@ public abstract class VideoAdsTracker {
         trackEvent(EVENT_AD_LOAD, result);
     }
 
-    public void onAdEvent(String name){
+    public void onAdEvent(String name, @Nullable String creativeId, @Nullable String advertiser){
         Map<String, String> result = new HashMap<>();
         result.put(AD_LOADER_NAME, adLoaderName);
+        if (creativeId != null)
+        result.put(CREATIVE_ID, creativeId);
+        if (advertiser != null)
+        result.put(ADVERTISER, advertiser);
         result.put(REQUEST_TIME, String.valueOf(System.currentTimeMillis()));
         result.put(SESSION_ID, sessionId);
         trackEvent(name, result);
