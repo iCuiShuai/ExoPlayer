@@ -22,9 +22,16 @@ public class AdLoaderInputs {
 
     private @Nullable IAdsIntercept adsIntercept;
     private @Nullable VideoAdsTracker adTracker;
+    private final long startTime;
 
     private @Nullable
     List<FriendlyObstruction> friendlyObstructions;
+
+    private IAdTagProvider adTagProvider;
+
+    public AdLoaderInputs() {
+        startTime = System.currentTimeMillis();
+    }
 
     public float getThresholdBetweenAdsOnSeek() {
         return thresholdBetweenAdsOnSeek;
@@ -97,5 +104,17 @@ public class AdLoaderInputs {
     public List<FriendlyObstruction> getFriendlyObstructions() {
         if (friendlyObstructions == null) friendlyObstructions = new LinkedList<>();
         return friendlyObstructions;
+    }
+
+    public @Nullable IAdTagProvider getAdTagProvider() {
+        return adTagProvider;
+    }
+
+    public void setAdTagProvider(IAdTagProvider adTagProvider) {
+        this.adTagProvider = adTagProvider;
+    }
+
+    public long getStartTime() {
+        return startTime;
     }
 }

@@ -498,7 +498,6 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
   private long waitingForPreloadElapsedRealtimeMs;
 
   private final @NonNull VideoAdsTracker adTracker;
-  private @Nullable IAdTagProvider adTagProvider;
   private long startLoadMediaTime;
   private long startRequestTime = 0;
   private int lastRealStartTime = -1;
@@ -520,9 +519,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
   private boolean preloadFlag = true;
 
 
-  public void setAdTagProvider(IAdTagProvider adTagProvider) {
-    this.adTagProvider = adTagProvider;
-  }
+
 
 
 
@@ -757,6 +754,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
       updateAdPlaybackState();
     } else {
       // Ads haven't loaded yet, so request them.
+      @Nullable IAdTagProvider adTagProvider = adLoaderInputs.getAdTagProvider();
       if(adTagProvider != null){
         adTagProvider.registerTagListener(adTag->{
           adTagUri = adTag;
