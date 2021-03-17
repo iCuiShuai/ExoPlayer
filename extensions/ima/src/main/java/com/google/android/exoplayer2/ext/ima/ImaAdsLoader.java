@@ -430,7 +430,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
   private VideoProgressUpdate lastAdProgress;
   private int lastVolumePercent;
 
-  boolean isPipMode = true;
+  boolean isPipMode = false;
 
   @Nullable private AdsManager adsManager;
   private boolean isAdsManagerInitialized;
@@ -771,6 +771,10 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     if (isPip && skipCurrentAd && adsManager != null && imaAdState == IMA_AD_STATE_PLAYING) {
       resumeContentInternal();
     }
+  }
+
+  public boolean isPipMode() {
+    return isPipMode;
   }
 
   private void updateStartRequestTime(boolean force) {
