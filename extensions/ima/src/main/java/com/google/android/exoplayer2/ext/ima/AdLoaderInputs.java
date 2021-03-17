@@ -23,15 +23,11 @@ public class AdLoaderInputs {
     private @Nullable IAdsIntercept adsIntercept;
     private @Nullable VideoAdsTracker adTracker;
 
-
     private @Nullable
     List<FriendlyObstruction> friendlyObstructions;
 
     private IAdTagProvider adTagProvider;
 
-    public AdLoaderInputs() {
-
-    }
 
     public float getThresholdBetweenAdsOnSeek() {
         return thresholdBetweenAdsOnSeek;
