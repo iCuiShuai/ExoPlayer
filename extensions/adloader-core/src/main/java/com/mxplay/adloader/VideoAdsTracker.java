@@ -33,6 +33,8 @@ public abstract class VideoAdsTracker {
     public static final String LOAD_MEDIA_TIME = "loadMediaTime";
     public static final String TOTAL_COST_TIME = "totalCostTime";
     public static final String AD_INDEX_IN_AD_GROUP = "adIndexInAdGroup";
+    public static final String START_TIME = "startTime";
+    public static final String TIME_STAMP = "timeStamp";
 
     public static VideoAdsTracker getNoOpTracker(){
         return new VideoAdsTracker("") {
@@ -52,6 +54,8 @@ public abstract class VideoAdsTracker {
         result.put(TOTAL_COST_TIME, String.valueOf(System.currentTimeMillis() - startRequestTime));
         result.put(AD_GROUP_INDEX, String.valueOf(adGroupIndex));
         result.put(AD_GROUP_COUNT, String.valueOf(adGroupCount));
+        result.put(START_TIME,String.valueOf(startTime));
+        result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
         result.put(SESSION_ID, sessionId);
         return result;
     }
@@ -77,14 +81,18 @@ public abstract class VideoAdsTracker {
         result.put(REASON, exception == null ? UNKNOWN : exception.getMessage());
         result.put(TOTAL_COST_TIME, String.valueOf(System.currentTimeMillis() - startRequestTime));
         result.put(SESSION_ID, sessionId);
+        result.put(START_TIME,String.valueOf(startTime));
+        result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
         return result;
     }
 
     private String sessionId;
     private String adLoaderName = IMA_DEFAULT_AD_LOADER;
+    private final long startTime;
 
     public VideoAdsTracker(String adLoaderName) {
         this.adLoaderName = adLoaderName;
+        this.startTime = System.currentTimeMillis();
     }
 
     public void onAdManagerRequested(){
@@ -93,6 +101,8 @@ public abstract class VideoAdsTracker {
         result.put(AD_LOADER_NAME, adLoaderName);
         result.put(REQUEST_TIME, String.valueOf(System.currentTimeMillis()));
         result.put(SESSION_ID, sessionId);
+        result.put(START_TIME,String.valueOf(startTime));
+        result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
         trackEvent(EVENT_ALL_ADS_REQUESTED, result);
     }
     
@@ -105,6 +115,8 @@ public abstract class VideoAdsTracker {
         result.put(AD_GROUP_INDEX, String.valueOf(adGroupIndex));
         result.put(AD_INDEX_IN_GROUP, String.valueOf(adIndexInGroup));
         result.put(AD_URI, adUri.toString());
+        result.put(START_TIME,String.valueOf(startTime));
+        result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
         trackEvent(EVENT_AD_LOAD, result);
     }
 
@@ -113,6 +125,8 @@ public abstract class VideoAdsTracker {
         result.put(AD_LOADER_NAME, adLoaderName);
         result.put(REQUEST_TIME, String.valueOf(System.currentTimeMillis()));
         result.put(SESSION_ID, sessionId);
+        result.put(START_TIME,String.valueOf(startTime));
+        result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
         trackEvent(name, result);
     }
 

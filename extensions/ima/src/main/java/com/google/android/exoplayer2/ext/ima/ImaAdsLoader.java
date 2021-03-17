@@ -522,8 +522,6 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
 
 
 
-
-
   /**
    * Creates a new IMA ads loader.
    *

@@ -22,7 +22,7 @@ public class AdLoaderInputs {
 
     private @Nullable IAdsIntercept adsIntercept;
     private @Nullable VideoAdsTracker adTracker;
-    private final long startTime;
+
 
     private @Nullable
     List<FriendlyObstruction> friendlyObstructions;
@@ -30,7 +30,7 @@ public class AdLoaderInputs {
     private IAdTagProvider adTagProvider;
 
     public AdLoaderInputs() {
-        startTime = System.currentTimeMillis();
+
     }
 
     public float getThresholdBetweenAdsOnSeek() {
@@ -114,7 +114,4 @@ public class AdLoaderInputs {
         this.adTagProvider = adTagProvider;
     }
 
-    public long getStartTime() {
-        return startTime;
-    }
 }
