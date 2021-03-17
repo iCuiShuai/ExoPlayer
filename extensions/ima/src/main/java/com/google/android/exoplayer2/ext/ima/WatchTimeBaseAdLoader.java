@@ -1639,7 +1639,9 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
             try {
                 handleAdEvent(adEvent);
                 if (adEventType == AdEvent.AdEventType.STARTED || adEventType == AdEvent.AdEventType.COMPLETED){
-                    adTracker.onAdEvent(adEventType.name());
+                    @Nullable String creativeId = adEvent.getAd() != null ? adEvent.getAd().getCreativeId() : null;
+                    @Nullable String advertiser = adEvent.getAd() != null ? adEvent.getAd().getAdvertiserName() : null;
+                    adTracker.onAdEvent(adEventType.name(), creativeId, advertiser);
                 }
             } catch (RuntimeException e) {
                 maybeNotifyInternalError("onAdEvent", e);

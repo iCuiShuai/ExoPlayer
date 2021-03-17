@@ -17,8 +17,10 @@ import org.w3c.dom.NodeList;
 public class VastAdModel {
 
   // Ad xpath expression
+  private static final String creativesXPATH = "//Creative";
   private static final String linearXPATH = "//Linear";
   private static final String titleXPATH = "//AdTitle";
+  private static final String advertiserXPATH = "//Advertiser";
   private static final String descXPATH = "//Description";
   private static final String durationXPATH = "//Duration";
   private static final String mediaFilesXPATH = "//MediaFile";
@@ -41,8 +43,21 @@ public class VastAdModel {
     return null;
   }
 
-  public String getAdvertiserName() {
+  public @Nullable String getCreativeId()  {
+    NamedNodeMap nodeAttributes = getNodeAttributes(creativesXPATH);
+    try {
+      if (nodeAttributes != null){
+        Node creativeId = nodeAttributes.getNamedItem("id");
+        return creativeId.getTextContent();
+      }
+    } catch (Exception ignore) {
+    }
     return null;
+  }
+
+
+  public @Nullable String getAdvertiserName() {
+    return getNodeValue(advertiserXPATH);
   }
 
 

@@ -1,7 +1,10 @@
 package com.mxplay.offlineads.exo.oma;
 
+import androidx.annotation.Nullable;
+
 public class AdImpl implements Ad{
   private String adId;
+  private String creativeId;
   private boolean skippable;
   private double skipTimeOffset = -1.0D;
   private String title;
@@ -17,6 +20,13 @@ public class AdImpl implements Ad{
 
   public final String getAdId() {
     return this.adId;
+  }
+  public void setCreativeId(String creativeId) {
+    this.creativeId = creativeId;
+  }
+
+  public @Nullable String getCreativeId() {
+    return creativeId;
   }
 
   public final void setAdId(String adId) {
