@@ -398,7 +398,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
    */
   private static final int IMA_AD_STATE_PAUSED = 2;
 
-  @Nullable private final Uri adTagUri;
+  @Nullable private  Uri adTagUri;
   @Nullable private final String adsResponse;
   private final long adPreloadTimeoutMs;
   private final int vastLoadTimeoutMs;
@@ -752,7 +752,15 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
       updateAdPlaybackState();
     } else {
       // Ads haven't loaded yet, so request them.
-      requestAds(adViewGroup);
+      @Nullable IAdTagProvider adTagProvider = adLoaderInputs.getAdTagProvider();
+      if(adTagProvider != null){
+        adTagProvider.registerTagListener(adTag->{
+          adTagUri = adTag;
+          requestAds(adViewGroup);
+        });
+      }else {
+        requestAds(adViewGroup);
+      }
     }
   }
 

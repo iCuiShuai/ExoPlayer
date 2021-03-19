@@ -26,6 +26,9 @@ public class AdLoaderInputs {
     private @Nullable
     List<FriendlyObstruction> friendlyObstructions;
 
+    private IAdTagProvider adTagProvider;
+
+
     public float getThresholdBetweenAdsOnSeek() {
         return thresholdBetweenAdsOnSeek;
     }
@@ -98,4 +101,13 @@ public class AdLoaderInputs {
         if (friendlyObstructions == null) friendlyObstructions = new LinkedList<>();
         return friendlyObstructions;
     }
+
+    public @Nullable IAdTagProvider getAdTagProvider() {
+        return adTagProvider;
+    }
+
+    public void setAdTagProvider(IAdTagProvider adTagProvider) {
+        this.adTagProvider = adTagProvider;
+    }
+
 }
