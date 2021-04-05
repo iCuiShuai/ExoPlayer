@@ -1595,6 +1595,7 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
                 adsManager.destroy();
                 return;
             }
+            adTracker.onAdsManagerLoaded(adsManager.getAdCuePoints().size());
             pendingAdRequestContext = null;
             WatchTimeBaseAdLoader.this.adsManager = adsManager;
             adPlaybackStateActual = new MxAdPlaybackState(AdPlaybackStateFactory.fromCuePoints(adsManager.getAdCuePoints()).adGroupTimesUs);

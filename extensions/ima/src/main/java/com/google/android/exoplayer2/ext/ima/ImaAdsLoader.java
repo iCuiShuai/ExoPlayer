@@ -1737,6 +1737,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
         adsManager.destroy();
         return;
       }
+      adTracker.onAdsManagerLoaded(adsManager.getAdCuePoints().size());
       pendingAdRequestContext = null;
       ImaAdsLoader.this.adsManager = adsManager;
       if (DEBUG) {
