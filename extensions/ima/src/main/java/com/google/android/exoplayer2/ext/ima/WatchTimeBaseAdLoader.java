@@ -14,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import com.google.ads.interactivemedia.v3.api.Ad;
 import com.google.ads.interactivemedia.v3.api.AdDisplayContainer;
 import com.google.ads.interactivemedia.v3.api.AdError;
 import com.google.ads.interactivemedia.v3.api.AdErrorEvent;
@@ -420,6 +421,9 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
     private AdPlaybackState adPlaybackState;
     private AdPlaybackState adPlaybackStateActual;
     private List<Integer> skippedFakeCuepoints = new LinkedList<>();
+    private boolean isPipMode = false;
+    private Ad lastAudioAd;
+
     // Fields tracking IMA's state.
 
     /**
@@ -798,6 +802,17 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
         adDisplayContainer.unregisterAllFriendlyObstructions();
     }
 
+    public void setPipMode(boolean isPip, boolean skipCurrentAd) {
+        this.isPipMode = isPip;
+        if (isPip && skipCurrentAd && adsManager != null && imaAdState == IMA_AD_STATE_PLAYING) {
+            resumeContentInternal();
+        }
+    }
+
+    public boolean isPipMode() {
+        return isPipMode;
+    }
+
     private void removeTimeoutCallback() {
         handler.removeCallbacksAndMessages(null);
     }
@@ -951,6 +966,12 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
     }
     private void handleAdEvent(AdEvent adEvent) {
         switch (adEvent.getType()) {
+            case LOADED:
+                Ad ad = adEvent.getAd();
+                if (isPipMode && ad != null && ad.getVastMediaHeight() <= 1 && ad.getVastMediaWidth() <= 1) {
+                    lastAudioAd = ad;
+                }
+                break;
             case AD_BREAK_FETCH_ERROR:
                 removeTimeoutCallback();
                 if (DEBUG) {
@@ -1255,6 +1276,7 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
             }
             skipAllFakeCuePoints();
         }
+        lastAudioAd = null;
     }
 
 
@@ -1729,11 +1751,19 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
                     }
                     return;
                 }
-
                 int fakeAdGroupIndex = getFakeAdGroupIndexForAdPod(adPodInfo);
                 int adIndexInAdGroup = adPodInfo.getAdPosition() - 1;
                 MxAdPlaybackState.AdInfo adInfo = new MxAdPlaybackState.AdInfo(fakeAdGroupIndex, adIndexInAdGroup);
                 adInfoByAdMediaInfo.put(adMediaInfo, adInfo);
+                if (lastAudioAd != null && lastAudioAd.getAdPodInfo() == adPodInfo){
+                    adPlaybackState = adPlaybackState.withSkippedAdGroup(fakeAdGroupIndex);
+                    updateAdPlaybackState();
+                    lastAudioAd = null;
+                    if (DEBUG) {
+                        Log.d(TAG, " skipping audio loadAd in pip mode");
+                    }
+                    return;
+                }
 
                 if (DEBUG) {
                     Log.d(TAG, "loadAd " + getAdMediaInfoString(adMediaInfo));
