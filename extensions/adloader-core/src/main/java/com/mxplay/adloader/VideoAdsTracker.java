@@ -44,6 +44,9 @@ public abstract class VideoAdsTracker {
     public static final String START_TIME = "startTime";
     public static final String TIME_STAMP = "timeStamp";
 
+    public final static String AD_UNIT_ID = "adUnitId";
+    public final static String AD_UNIT_NAME = "adUnitName";
+
     public static VideoAdsTracker getNoOpTracker(){
         return new VideoAdsTracker("") {
             @Override
@@ -94,8 +97,8 @@ public abstract class VideoAdsTracker {
         return result;
     }
 
-    private String sessionId;
-    private String adLoaderName = IMA_DEFAULT_AD_LOADER;
+    protected String sessionId;
+    protected String adLoaderName = IMA_DEFAULT_AD_LOADER;
     private final long startTime;
 
     public VideoAdsTracker(String adLoaderName) {
