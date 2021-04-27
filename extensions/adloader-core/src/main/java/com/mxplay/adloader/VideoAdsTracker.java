@@ -15,8 +15,12 @@ public abstract class VideoAdsTracker {
     public static final String IMA_DEFAULT_AD_LOADER = "IMA_DEFAULT_AD_LOADER";
     public static final String WATCH_TIME_BASE_AD_LOADER = "WATCH_TIME_BASE_AD_LOADER";
     public static final String OFFLINE_AD_LOADER = "OFFLINE-AD-LOADER";
+    public static final String PRE_ROLL_AD_LOADER = "PRE_ROLL_AD_LOADER";
+
 
     public static final String EVENT_ALL_ADS_REQUESTED = "allAdsRequested";
+    public static final String EVENT_AD_MANAGER_LOADED = "adsManagerLoaded";
+
     public static final String EVENT_AD_REQUESTED = "adRequested";
     public static final String EVENT_AD_LOAD = "onAdLoad";
 
@@ -39,6 +43,9 @@ public abstract class VideoAdsTracker {
     public static final String AD_INDEX_IN_AD_GROUP = "adIndexInAdGroup";
     public static final String START_TIME = "startTime";
     public static final String TIME_STAMP = "timeStamp";
+
+    public final static String AD_UNIT_ID = "adUnitId";
+    public final static String AD_UNIT_NAME = "adUnitName";
 
     public static VideoAdsTracker getNoOpTracker(){
         return new VideoAdsTracker("") {
@@ -90,13 +97,17 @@ public abstract class VideoAdsTracker {
         return result;
     }
 
-    private String sessionId;
-    private String adLoaderName = IMA_DEFAULT_AD_LOADER;
+    protected String sessionId;
+    protected String adLoaderName = IMA_DEFAULT_AD_LOADER;
     private final long startTime;
 
     public VideoAdsTracker(String adLoaderName) {
         this.adLoaderName = adLoaderName;
         this.startTime = System.currentTimeMillis();
+    }
+
+    public long getStartTime() {
+        return startTime;
     }
 
     public void onAdManagerRequested(){
@@ -109,7 +120,15 @@ public abstract class VideoAdsTracker {
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
         trackEvent(EVENT_ALL_ADS_REQUESTED, result);
     }
-    
+
+    public void onAdsManagerLoaded(int groupCount) {
+        Map<String, String> result = new HashMap<>();
+        result.put(AD_LOADER_NAME, adLoaderName);
+        result.put(SESSION_ID, sessionId);
+        result.put(AD_GROUP_COUNT, String.valueOf(groupCount));
+        result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
+        trackEvent(EVENT_AD_MANAGER_LOADED, result);
+    }
     
     public void onAdLoad(int adGroupIndex, int adIndexInGroup, Uri adUri){
         Map<String, String> result = new HashMap<>();

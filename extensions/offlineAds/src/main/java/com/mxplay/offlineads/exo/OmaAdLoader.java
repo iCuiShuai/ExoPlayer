@@ -410,6 +410,7 @@ public final class OmaAdLoader
       adsManager.destroy();
       return;
     }
+    adTracker.onAdsManagerLoaded(adsManager.getAdCuePoints().size());
     pendingAdRequestContext = null;
     this.adsManager = adsManager;
     adsManager.addAdErrorListener(this);
