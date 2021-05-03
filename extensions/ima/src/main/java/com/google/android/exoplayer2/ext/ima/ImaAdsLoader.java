@@ -931,7 +931,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
   @Override
   public void onPositionDiscontinuity(@Player.DiscontinuityReason int reason) {
     handleTimelineOrPositionChanged((reason == Player.DISCONTINUITY_REASON_SEEK || reason == Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT)
-            && adLoaderInputs.isAdDelayOnScrubbingEnabled(mediaLoadTimeoutMs));
+            && adLoaderInputs.isAdDelayOnScrubbingEnabled(mediaLoadTimeoutMs) && player != null && player.isPlaying());
   }
 
   @Override
@@ -1358,7 +1358,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     private final Runnable watchContentProgressRunnable = new Runnable() {
         @Override
         public void run() {
-            if (shiftedAdGroupIndex == C.INDEX_UNSET || adShiftedPositionUs == C.TIME_UNSET || player == null) {
+            if (shiftedAdGroupIndex == C.INDEX_UNSET || adShiftedPositionUs == C.TIME_UNSET || player == null || !player.isPlaying()) {
                 isAdLoaderBlocked = false;
                 return;
             }
