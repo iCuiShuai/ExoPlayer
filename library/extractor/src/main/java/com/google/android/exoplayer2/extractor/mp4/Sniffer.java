@@ -229,7 +229,8 @@ import java.io.IOException;
   }
 
   public static boolean isMXVMP4WithPreVideo(ExtractorInput input)
-      throws IOException, InterruptedException {
+      throws IOException {
+    /*
     long inputLength = input.getLength();
     int bytesToSearch = (int) (inputLength == C.LENGTH_UNSET || inputLength > SEARCH_LENGTH
         ? SEARCH_LENGTH : inputLength);
@@ -273,11 +274,14 @@ import java.io.IOException;
       }
     }
 
+     */
+
     return false;
   }
 
   public static int getMXVMainContentOffset(ExtractorInput input)
-      throws IOException, InterruptedException {
+      throws IOException {
+    /*
     int preVideoSize = 0;
     long inputLength = input.getLength();
 
@@ -343,5 +347,8 @@ import java.io.IOException;
       }
     }
     return preVideoSize;
+
+     */
+    return -1;
   }
 }

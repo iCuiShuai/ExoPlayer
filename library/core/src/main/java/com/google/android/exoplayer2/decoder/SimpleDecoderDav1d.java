@@ -25,8 +25,8 @@ import java.util.ArrayDeque;
 /** Base class for {@link Decoder}s that use their own decode thread. */
 @SuppressWarnings("UngroupedOverloads")
 public abstract class SimpleDecoderDav1d<
-        I extends DecoderInputBuffer, O extends OutputBuffer, E extends Exception>
-    implements Decoder<I, O, E> {
+        I extends DecoderInputBuffer, O extends OutputBuffer, E extends DecoderException>
+    implements Decoder<I, O, E>{
   public static final int DAV1D_ERROR = 0;
   public static final int DAV1D_OK = 1;
   public static final int DAV1D_DECODE_ONLY = 2;

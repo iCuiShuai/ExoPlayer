@@ -138,7 +138,7 @@ public final class AV1Reader implements ElementaryStreamReader {
     int offset = data.getPosition();
     int limit = data.limit();
     int length = limit - offset;
-    byte[] dataArray = data.data;
+    byte[] dataArray = data.getData();
 
     // Append the data to the buffer.
     totalBytesWritten += data.bytesLeft();

@@ -53,6 +53,7 @@ public final class MimeTypes {
   public static final String VIDEO_DIVX = BASE_TYPE_VIDEO + "/divx";
   public static final String VIDEO_FLV = BASE_TYPE_VIDEO + "/x-flv";
   public static final String VIDEO_DOLBY_VISION = BASE_TYPE_VIDEO + "/dolby-vision";
+  public static final String VIDEO_VVC1 = BASE_TYPE_VIDEO + "/vvc1";
   public static final String VIDEO_OGG = BASE_TYPE_VIDEO + "/ogg";
   public static final String VIDEO_UNKNOWN = BASE_TYPE_VIDEO + "/x-unknown";
 
@@ -352,6 +353,8 @@ public final class MimeTypes {
       return MimeTypes.VIDEO_DOLBY_VISION;
     } else if (codec.startsWith("av01")) {
       return MimeTypes.VIDEO_AV1;
+    } else if (codec.startsWith("vvc1")) {
+      return MimeTypes.VIDEO_VVC1;
     } else if (codec.startsWith("vp9") || codec.startsWith("vp09")) {
       return MimeTypes.VIDEO_VP9;
     } else if (codec.startsWith("vp8") || codec.startsWith("vp08")) {

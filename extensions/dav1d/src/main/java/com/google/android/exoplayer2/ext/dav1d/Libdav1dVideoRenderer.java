@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,51 +15,27 @@
  */
 package com.google.android.exoplayer2.ext.dav1d;
 
+import static com.google.android.exoplayer2.decoder.DecoderReuseEvaluation.REUSE_RESULT_YES_WITHOUT_RECONFIGURATION;
 import static java.lang.Runtime.getRuntime;
 
 import android.os.Handler;
 import android.view.Surface;
 import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.ExoPlaybackException;
-import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.Format;
-import com.google.android.exoplayer2.PlayerMessage.Target;
 import com.google.android.exoplayer2.RendererCapabilities;
-import com.google.android.exoplayer2.decoder.SimpleDecoderDav1d;
-import com.google.android.exoplayer2.drm.DrmSessionManager;
+import com.google.android.exoplayer2.decoder.DecoderReuseEvaluation;
 import com.google.android.exoplayer2.drm.ExoMediaCrypto;
 import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.TraceUtil;
-import com.google.android.exoplayer2.util.Util;
-import com.google.android.exoplayer2.video.SimpleDecoderVideoRendererDav1d;
-import com.google.android.exoplayer2.video.VideoDecoderException;
-import com.google.android.exoplayer2.video.VideoDecoderInputBuffer;
+import com.google.android.exoplayer2.video.DecoderVideoRenderer;
 import com.google.android.exoplayer2.video.VideoDecoderOutputBuffer;
-import com.google.android.exoplayer2.video.VideoDecoderOutputBufferRenderer;
 import com.google.android.exoplayer2.video.VideoRendererEventListener;
 
-/**
- * Decodes and renders video using libdav1d decoder.
- *
- * <p>This renderer accepts the following messages sent via {@link ExoPlayer#createMessage(Target)}
- * on the playback thread:
- *
- * <ul>
- *   <li>Message with type {@link C#MSG_SET_SURFACE} to set the output surface. The message payload
- *       should be the target {@link Surface}, or null.
- *   <li>Message with type {@link C#MSG_SET_VIDEO_DECODER_OUTPUT_BUFFER_RENDERER} to set the output
- *       buffer renderer. The message payload should be the target {@link
- *       VideoDecoderOutputBufferRenderer}, or null.
- * </ul>
- */
-public class Libdav1dVideoRenderer extends SimpleDecoderVideoRendererDav1d {
+/** Decodes and renders video using the native VP9 decoder. */
+public class Libdav1dVideoRenderer extends DecoderVideoRenderer {
 
-  private static final int DEFAULT_NUM_OF_INPUT_BUFFERS = 4;
-  private static final int DEFAULT_NUM_OF_OUTPUT_BUFFERS = 4;
-  /* Default size based on 720p resolution video compressed by a factor of two. */
-  private static final int DEFAULT_INPUT_BUFFER_SIZE =
-      Util.ceilDivide(1280, 64) * Util.ceilDivide(720, 64) * (64 * 64 * 3 / 2) / 2;
+  private static final String TAG = "LibvpxVideoRenderer";
 
   /** The number of input buffers. */
   private final int numInputBuffers;
@@ -68,6 +44,11 @@ public class Libdav1dVideoRenderer extends SimpleDecoderVideoRendererDav1d {
    * requiring multiple output buffers to be dequeued at a time for it to make progress.
    */
   private final int numOutputBuffers;
+  /**
+   * The default input buffer size. The value is based on <a
+   * href="https://android.googlesource.com/platform/frameworks/av/+/d42b90c5183fbd9d6a28d9baee613fddbf8131d6/media/libstagefright/codecs/on2/dec/SoftVPX.cpp">SoftVPX.cpp</a>.
+   */
+  private static final int DEFAULT_INPUT_BUFFER_SIZE = 768 * 1024;
 
   private final int threads;
 
@@ -76,9 +57,18 @@ public class Libdav1dVideoRenderer extends SimpleDecoderVideoRendererDav1d {
   public static void nativeInit() {
     Dav1dLibrary.nativeInit();
   }
+  /**
+   * Creates a new instance.
+   *
+   * @param allowedJoiningTimeMs The maximum duration in milliseconds for which this video renderer
+   *     can attempt to seamlessly join an ongoing playback.
+   */
+  public Libdav1dVideoRenderer(long allowedJoiningTimeMs) {
+    this(allowedJoiningTimeMs, null, null, 0);
+  }
 
   /**
-   * Creates a Libdav1dVideoRenderer.
+   * Creates a new instance.
    *
    * @param allowedJoiningTimeMs The maximum duration in milliseconds for which this video renderer
    *     can attempt to seamlessly join an ongoing playback.
@@ -98,13 +88,13 @@ public class Libdav1dVideoRenderer extends SimpleDecoderVideoRendererDav1d {
         eventHandler,
         eventListener,
         maxDroppedFramesToNotify,
-        /* threads= */ getRuntime().availableProcessors(),
-        DEFAULT_NUM_OF_INPUT_BUFFERS,
-        DEFAULT_NUM_OF_OUTPUT_BUFFERS);
+        getRuntime().availableProcessors(),
+        /* numInputBuffers= */ 4,
+        /* numOutputBuffers= */ 4);
   }
 
   /**
-   * Creates a Libdav1dVideoRenderer.
+   * Creates a new instance.
    *
    * @param allowedJoiningTimeMs The maximum duration in milliseconds for which this video renderer
    *     can attempt to seamlessly join an ongoing playback.
@@ -113,7 +103,7 @@ public class Libdav1dVideoRenderer extends SimpleDecoderVideoRendererDav1d {
    * @param eventListener A listener of events. May be null if delivery of events is not required.
    * @param maxDroppedFramesToNotify The maximum number of frames that can be dropped between
    *     invocations of {@link VideoRendererEventListener#onDroppedFrames(int, long)}.
-   * @param threads Number of threads libdav1d will use to decode.
+   * @param threads Number of threads libvpx will use to decode.
    * @param numInputBuffers Number of input buffers.
    * @param numOutputBuffers Number of output buffers.
    */
@@ -125,39 +115,41 @@ public class Libdav1dVideoRenderer extends SimpleDecoderVideoRendererDav1d {
       int threads,
       int numInputBuffers,
       int numOutputBuffers) {
-    super(
-        allowedJoiningTimeMs,
-        eventHandler,
-        eventListener,
-        maxDroppedFramesToNotify,
-        /* drmSessionManager= */ null,
-        /* playClearSamplesWithoutKeys= */ false);
+    super(allowedJoiningTimeMs, eventHandler, eventListener, maxDroppedFramesToNotify);
     this.threads = threads;
     this.numInputBuffers = numInputBuffers;
     this.numOutputBuffers = numOutputBuffers;
   }
 
   @Override
-  @Capabilities
-  protected int supportsFormatInternal(
-      @Nullable DrmSessionManager<ExoMediaCrypto> drmSessionManager, Format format) {
-    if (!MimeTypes.VIDEO_AV1.equalsIgnoreCase(format.sampleMimeType)
-        || !Dav1dLibrary.isAvailable()) {
-      return RendererCapabilities.create(FORMAT_UNSUPPORTED_TYPE);
-    }
-    if (!supportsFormatDrm(drmSessionManager, format.drmInitData)) {
-      return RendererCapabilities.create(FORMAT_UNSUPPORTED_DRM);
-    }
-    return RendererCapabilities.create(FORMAT_HANDLED, ADAPTIVE_SEAMLESS, TUNNELING_NOT_SUPPORTED);
+  public String getName() {
+    return TAG;
   }
 
   @Override
-  protected SimpleDecoderDav1d<
-          VideoDecoderInputBuffer,
-          ? extends VideoDecoderOutputBuffer,
-          ? extends VideoDecoderException>
-      createDecoder(Format format, @Nullable ExoMediaCrypto mediaCrypto)
-          throws VideoDecoderException {
+  @Capabilities
+  public final int supportsFormat(Format format) {
+    if (!MimeTypes.VIDEO_AV1.equalsIgnoreCase(format.sampleMimeType)
+        || !Dav1dLibrary.isAvailable()) {
+      return RendererCapabilities.create(C.FORMAT_UNSUPPORTED_TYPE);
+    }
+    return RendererCapabilities.create(
+        C.FORMAT_HANDLED, ADAPTIVE_SEAMLESS, TUNNELING_NOT_SUPPORTED);
+  }
+
+  @Override
+  protected Dav1dDecoder createDecoder(Format format, @Nullable ExoMediaCrypto mediaCrypto)
+      throws Dav1dDecoderException {
+//    TraceUtil.beginSection("createVpxDecoder");
+//    int initialInputBufferSize =
+//        format.maxInputSize != Format.NO_VALUE ? format.maxInputSize : DEFAULT_INPUT_BUFFER_SIZE;
+//    VpxDecoder decoder =
+//        new VpxDecoder(
+//            numInputBuffers, numOutputBuffers, initialInputBufferSize, mediaCrypto, threads);
+//    this.decoder = decoder;
+//    TraceUtil.endSection();
+//    return decoder;
+
     TraceUtil.beginSection("createDav1dDecoder");
     int initialInputBufferSize =
         format.maxInputSize != Format.NO_VALUE ? format.maxInputSize : DEFAULT_INPUT_BUFFER_SIZE;
@@ -186,16 +178,14 @@ public class Libdav1dVideoRenderer extends SimpleDecoderVideoRendererDav1d {
     }
   }
 
-  // PlayerMessage.Target implementation.
-
   @Override
-  public void handleMessage(int messageType, @Nullable Object message) throws ExoPlaybackException {
-    if (messageType == C.MSG_SET_SURFACE) {
-      setOutputSurface((Surface) message);
-    } else if (messageType == C.MSG_SET_VIDEO_DECODER_OUTPUT_BUFFER_RENDERER) {
-      setOutputBufferRenderer((VideoDecoderOutputBufferRenderer) message);
-    } else {
-      super.handleMessage(messageType, message);
-    }
+  protected DecoderReuseEvaluation canReuseDecoder(
+      String decoderName, Format oldFormat, Format newFormat) {
+    return new DecoderReuseEvaluation(
+        decoderName,
+        oldFormat,
+        newFormat,
+        REUSE_RESULT_YES_WITHOUT_RECONFIGURATION,
+        /* discardReasons= */ 0);
   }
 }

@@ -19,6 +19,7 @@ import android.os.Build;
 import android.os.SystemClock;
 
 import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.trackselection.ExoTrackSelection;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.upstream.Allocator;
 import com.google.android.exoplayer2.upstream.DefaultAllocator;
@@ -173,7 +174,7 @@ public class DynamicLoadControl implements LoadControl {
    *     buffer depletion rather than a user action.
    * @param targetBufferBytes The target buffer size in bytes. If set to {@link C#LENGTH_UNSET}, the
    *     target buffer size will be calculated using {@link #calculateTargetBufferSize(Renderer[],
-   *     TrackSelectionArray)}.
+   *     ExoTrackSelection[)}.
    * @param prioritizeTimeOverSizeThresholds Whether the load control prioritizes buffer time
    *     constraints over buffer size constraints.
    * @param priorityTaskManager If not null, registers itself as a task with priority {@link
@@ -206,7 +207,7 @@ public class DynamicLoadControl implements LoadControl {
 
   @Override
   public void onTracksSelected(Renderer[] renderers, TrackGroupArray trackGroups,
-                               TrackSelectionArray trackSelections) {
+                               ExoTrackSelection[] trackSelections) {
     targetBufferSize =
         targetBufferBytesOverwrite == C.LENGTH_UNSET
             ? calculateTargetBufferSize(renderers, trackSelections)
@@ -240,7 +241,7 @@ public class DynamicLoadControl implements LoadControl {
   }
 
   @Override
-  public boolean shouldContinueLoading(long bufferedDurationUs, float playbackSpeed) {
+  public boolean shouldContinueLoading(long playbackPositionUs, long bufferedDurationUs, float playbackSpeed) {
     boolean targetBufferSizeReached = allocator.getTotalBytesAllocated() >= targetBufferSize;
     boolean wasBuffering = isBuffering;
     if (prioritizeTimeOverSizeThresholds) {
@@ -267,7 +268,7 @@ public class DynamicLoadControl implements LoadControl {
 
   @Override
   public boolean shouldStartPlayback(
-      long bufferedDurationUs, float playbackSpeed, boolean rebuffering) {
+      long bufferedDurationUs, float playbackSpeed, boolean rebuffering, long targetLiveOffsetUs) {
     if (!rebuffering)
       return true;
 
@@ -323,10 +324,10 @@ public class DynamicLoadControl implements LoadControl {
    * @return The target buffer size in bytes.
    */
   protected int calculateTargetBufferSize(
-          Renderer[] renderers, TrackSelectionArray trackSelectionArray) {
+          Renderer[] renderers, ExoTrackSelection[] trackSelectionArray) {
     int targetBufferSize = 0;
     for (int i = 0; i < renderers.length; i++) {
-      if (trackSelectionArray.get(i) != null) {
+      if (trackSelectionArray[i] != null) {
         targetBufferSize += getDefaultBufferSize(renderers[i].getTrackType());
       }
     }

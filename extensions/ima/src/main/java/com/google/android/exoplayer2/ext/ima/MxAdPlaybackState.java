@@ -18,7 +18,10 @@ public class MxAdPlaybackState extends AdPlaybackState {
     }
 
     public MxAdPlaybackState(long[] adGroupTimesUs, AdGroup[] adGroups, long adResumePositionUs, long contentDurationUs) {
-        super(adGroupTimesUs, adGroups, adResumePositionUs, contentDurationUs);
+
+        // TODO IMA
+//        super(adGroupTimesUs, adGroups, adResumePositionUs, contentDurationUs);
+        super(adGroupTimesUs, adResumePositionUs, contentDurationUs);
     }
 
     /** Optimise method which use binary search
@@ -36,9 +39,10 @@ public class MxAdPlaybackState extends AdPlaybackState {
     @Override
     public int getAdGroupIndexForPositionUs(long positionUs, long periodDurationUs) {
         int index = Util.binarySearchFloor(adGroupTimesUs, positionUs, true, false);
-        while (index >= 0 && isPositionBeforeAdGroup(positionUs, periodDurationUs, index)) {
-            index--;
-        }
+        // TODO IMA
+//        while (index >= 0 && isPositionBeforeAdGroup(positionUs, periodDurationUs, index)) {
+//            index--;
+//        }
         return index >= 0 && adGroups[index].hasUnplayedAds() ? index : C.INDEX_UNSET;
     }
 
@@ -107,7 +111,8 @@ public class MxAdPlaybackState extends AdPlaybackState {
         AdGroup[] adGroups = Util.nullSafeArrayCopy(this.adGroups, this.adGroups.length);
         if (adGroupIndex >= adGroups.length) return this;
         if (!adGroups[adGroupIndex].hasUnplayedAds() && disabled) return this;
-        adGroups[adGroupIndex].setDisabled(disabled);
+        // TODO IMA
+//        adGroups[adGroupIndex].setDisabled(disabled);
         return new MxAdPlaybackState(adGroupTimesUs, adGroups, adResumePositionUs, contentDurationUs);
     }
 

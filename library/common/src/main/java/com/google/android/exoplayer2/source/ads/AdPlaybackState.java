@@ -36,7 +36,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableType;
  * <p>Instances are immutable. Call the {@code with*} methods to get new instances that have the
  * required changes.
  */
-public final class AdPlaybackState {
+public class AdPlaybackState {
 
   /**
    * Represents a group of ads, with information about their states.

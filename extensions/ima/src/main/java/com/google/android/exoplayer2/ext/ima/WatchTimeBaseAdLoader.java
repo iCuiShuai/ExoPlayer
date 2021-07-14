@@ -713,6 +713,28 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
     }
 
     @Override
+    public void start(AdsMediaSource adsMediaSource, DataSpec adTagDataSpec, Object adsId,
+        AdViewProvider adViewProvider, EventListener eventListener) {
+
+    }
+
+    @Override
+    public void stop(AdsMediaSource adsMediaSource, EventListener eventListener) {
+
+    }
+
+    @Override
+    public void handlePrepareComplete(AdsMediaSource adsMediaSource, int adGroupIndex,
+        int adIndexInAdGroup) {
+
+    }
+
+    @Override
+    public void handlePrepareError(AdsMediaSource adsMediaSource, int adGroupIndex,
+        int adIndexInAdGroup, IOException exception) {
+
+    }
+
     public void start(AdsLoader.EventListener eventListener, AdsLoader.AdViewProvider adViewProvider) {
         Assertions.checkState(
                 wasSetPlayerCalled, "Set player using adsLoader.setPlayer before preparing the player.");
@@ -743,10 +765,11 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
                 adsManager.resume();
             }
         } else if (adsManager != null) {
-            adPlaybackStateActual = new MxAdPlaybackState(AdPlaybackStateFactory.fromCuePoints(adsManager.getAdCuePoints()).adGroupTimesUs);
-            List<Float> fakeCuePoints = generateFakeCuePoints(adsManager);
-            adPlaybackState =  new MxAdPlaybackState(AdPlaybackStateFactory.fromCuePoints(fakeCuePoints).adGroupTimesUs);
-            updateAdPlaybackState();
+            // TODO IMA
+//            adPlaybackStateActual = new MxAdPlaybackState(AdPlaybackStateFactory.fromCuePoints(adsManager.getAdCuePoints()).adGroupTimesUs);
+//            List<Float> fakeCuePoints = generateFakeCuePoints(adsManager);
+//            adPlaybackState =  new MxAdPlaybackState(AdPlaybackStateFactory.fromCuePoints(fakeCuePoints).adGroupTimesUs);
+//            updateAdPlaybackState();
         } else {
             // Ads haven't loaded yet, so request them.
             requestAds(adViewGroup);
@@ -754,7 +777,6 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
     }
 
 
-    @Override
     public void stop() {
         @Nullable Player player = this.player;
         if (player == null) {
@@ -817,7 +839,6 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
         handler.removeCallbacksAndMessages(null);
     }
 
-    @Override
     public void handlePrepareError(int adGroupIndex, int adIndexInAdGroup, IOException exception) {
         if (player == null) {
             return;
@@ -1057,9 +1078,10 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
                 if (adGroupIndexAfterPositionUs != C.INDEX_UNSET && adPlaybackState.adGroups[adGroupIndexAfterPositionUs].count < 0) {
                     long nextAdTimeOffsetMs = C.usToMs(adPlaybackState.adGroupTimesUs[adGroupIndexAfterPositionUs] - positionUs);
                     if (nextAdTimeOffsetMs < NEXT_AD_DISTANCE_THRESHOLD) {
-                        adPlaybackState = adPlaybackState.setAdGroupDisabled(adGroupIndexAfterPositionUs, true);
-                        updateAdPlaybackState();
-                        skippedFakeCuepoints.add(adGroupIndexAfterPositionUs);
+                        // TODO IMA
+//                        adPlaybackState = adPlaybackState.setAdGroupDisabled(adGroupIndexAfterPositionUs, true);
+//                        updateAdPlaybackState();
+//                        skippedFakeCuepoints.add(adGroupIndexAfterPositionUs);
                         if (DEBUG)
                             Log.d(TAG, " Skipped fake cuepoint " + adGroupIndexAfterPositionUs + " -- pos: " + C.usToMs(adPlaybackState.adGroupTimesUs[adGroupIndexAfterPositionUs]));
                     }
@@ -1214,7 +1236,8 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
             Iterator<Integer> iterator = skippedFakeCuepoints.iterator();
             while (iterator.hasNext()){
                 Integer next = iterator.next();
-                adPlaybackState = adPlaybackState.setAdGroupDisabled(next, false);
+                // TODO IMA
+//                adPlaybackState = adPlaybackState.setAdGroupDisabled(next, false);
                 iterator.remove();
             }
             boolean updateState = false;
@@ -1620,7 +1643,8 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
             adTracker.onAdsManagerLoaded(adsManager.getAdCuePoints().size());
             pendingAdRequestContext = null;
             WatchTimeBaseAdLoader.this.adsManager = adsManager;
-            adPlaybackStateActual = new MxAdPlaybackState(AdPlaybackStateFactory.fromCuePoints(adsManager.getAdCuePoints()).adGroupTimesUs);
+            // TODO IMA
+//            adPlaybackStateActual = new MxAdPlaybackState(AdPlaybackStateFactory.fromCuePoints(adsManager.getAdCuePoints()).adGroupTimesUs);
             if (DEBUG) {
                 Log.d(TAG, "onAdsManagerLoaded : " + TextUtils.join(" , ", adsManager.getAdCuePoints()));
             }
@@ -1634,7 +1658,8 @@ public class WatchTimeBaseAdLoader implements Player.EventListener, AdsLoader {
                 // If a player is attached already, start playback immediately.
                 try {
                     List<Float> fakeCuePoints = generateFakeCuePoints(adsManager);
-                    adPlaybackState = new MxAdPlaybackState(AdPlaybackStateFactory.fromCuePoints(fakeCuePoints).adGroupTimesUs);
+                    // TODO IMA
+//                    adPlaybackState = new MxAdPlaybackState(AdPlaybackStateFactory.fromCuePoints(fakeCuePoints).adGroupTimesUs);
                     if (DEBUG) {
                         Log.d(TAG, "onAdsManagerLoaded : fake " + TextUtils.join(" , ", fakeCuePoints));
                     }

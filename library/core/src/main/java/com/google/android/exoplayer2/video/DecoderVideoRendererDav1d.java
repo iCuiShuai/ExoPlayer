@@ -15,6 +15,11 @@
  */
 package com.google.android.exoplayer2.video;
 
+import static com.google.android.exoplayer2.decoder.DecoderReuseEvaluation.DISCARD_REASON_DRM_SESSION_CHANGED;
+import static com.google.android.exoplayer2.decoder.DecoderReuseEvaluation.DISCARD_REASON_REUSE_NOT_IMPLEMENTED;
+import static com.google.android.exoplayer2.decoder.DecoderReuseEvaluation.REUSE_RESULT_NO;
+import static java.lang.Math.max;
+
 import android.os.Handler;
 import android.os.SystemClock;
 import android.view.Surface;
@@ -24,16 +29,19 @@ import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.BaseRenderer;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlaybackException;
+import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.FormatHolder;
-import com.google.android.exoplayer2.RendererCapabilities;
+import com.google.android.exoplayer2.PlayerMessage.Target;
+import com.google.android.exoplayer2.decoder.Decoder;
 import com.google.android.exoplayer2.decoder.DecoderCounters;
+import com.google.android.exoplayer2.decoder.DecoderException;
 import com.google.android.exoplayer2.decoder.DecoderInputBuffer;
-import com.google.android.exoplayer2.decoder.SimpleDecoderDav1d;
+import com.google.android.exoplayer2.decoder.DecoderReuseEvaluation;
 import com.google.android.exoplayer2.drm.DrmSession;
 import com.google.android.exoplayer2.drm.DrmSession.DrmSessionException;
-import com.google.android.exoplayer2.drm.DrmSessionManager;
 import com.google.android.exoplayer2.drm.ExoMediaCrypto;
+import com.google.android.exoplayer2.source.SampleStream;
 import com.google.android.exoplayer2.util.Assertions;
 import com.google.android.exoplayer2.util.TimedValueQueue;
 import com.google.android.exoplayer2.util.TraceUtil;
@@ -42,16 +50,32 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-/** Decodes and renders video using a {@link SimpleDecoder}. */
-public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
+/**
+ * Decodes and renders video using a {@link Decoder}.
+ *
+ * <p>This renderer accepts the following messages sent via {@link ExoPlayer#createMessage(Target)}
+ * on the playback thread:
+ *
+ * <ul>
+ *   <li>Message with type {@link #MSG_SET_SURFACE} to set the output surface. The message payload
+ *       should be the target {@link Surface}, or null.
+ *   <li>Message with type {@link #MSG_SET_VIDEO_DECODER_OUTPUT_BUFFER_RENDERER} to set the output
+ *       buffer renderer. The message payload should be the target {@link
+ *       VideoDecoderOutputBufferRenderer}, or null.
+ *   <li>Message with type {@link #MSG_SET_VIDEO_FRAME_METADATA_LISTENER} to set a listener for
+ *       metadata associated with frames being rendered. The message payload should be the {@link
+ *       VideoFrameMetadataListener}, or null.
+ * </ul>
+ */
+public abstract class DecoderVideoRendererDav1d extends BaseRenderer {
 
   /** Decoder reinitialization states. */
   @Documented
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({
-    REINITIALIZATION_STATE_NONE,
-    REINITIALIZATION_STATE_SIGNAL_END_OF_STREAM,
-    REINITIALIZATION_STATE_WAIT_END_OF_STREAM
+      REINITIALIZATION_STATE_NONE,
+      REINITIALIZATION_STATE_SIGNAL_END_OF_STREAM,
+      REINITIALIZATION_STATE_WAIT_END_OF_STREAM
   })
   private @interface ReinitializationState {}
   /** The decoder does not need to be re-initialized. */
@@ -71,44 +95,42 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
 
   private final long allowedJoiningTimeMs;
   private final int maxDroppedFramesToNotify;
-  private final boolean playClearSamplesWithoutKeys;
   private final EventDispatcher eventDispatcher;
   private final TimedValueQueue<Format> formatQueue;
   private final DecoderInputBuffer flagsOnlyBuffer;
-  private final DrmSessionManager<ExoMediaCrypto> drmSessionManager;
 
-  private boolean drmResourcesAcquired;
   private Format inputFormat;
   private Format outputFormat;
-  private SimpleDecoderDav1d<
-          VideoDecoderInputBuffer,
-          ? extends VideoDecoderOutputBuffer,
-          ? extends VideoDecoderException>
+
+  @Nullable
+  private Decoder<
+      VideoDecoderInputBuffer, ? extends VideoDecoderOutputBuffer, ? extends DecoderException>
       decoder;
+
   private VideoDecoderInputBuffer inputBuffer;
   private VideoDecoderOutputBuffer outputBuffer;
   @Nullable private Surface surface;
   @Nullable private VideoDecoderOutputBufferRenderer outputBufferRenderer;
+  @Nullable private VideoFrameMetadataListener frameMetadataListener;
   @C.VideoOutputMode private int outputMode;
 
-  @Nullable private DrmSession<ExoMediaCrypto> decoderDrmSession;
-  @Nullable private DrmSession<ExoMediaCrypto> sourceDrmSession;
+  @Nullable private DrmSession decoderDrmSession;
+  @Nullable private DrmSession sourceDrmSession;
 
   @ReinitializationState private int decoderReinitializationState;
   private boolean decoderReceivedBuffers;
 
-  private boolean renderedFirstFrame;
+  private boolean renderedFirstFrameAfterReset;
+  private boolean mayRenderFirstFrameAfterEnableIfNotStarted;
+  private boolean renderedFirstFrameAfterEnable;
   private long initialPositionUs;
   private long joiningDeadlineMs;
-  private boolean waitingForKeys;
   private boolean waitingForFirstSampleInFormat;
 
-  private float currentPixelWidthHeightRatio;
   private boolean inputStreamEnded;
   private boolean outputStreamEnded;
   private int reportedWidth;
   private int reportedHeight;
-  private float reportedPixelWidthHeightRatio;
 
   private long droppedFrameAccumulationStartTimeMs;
   private int droppedFrames;
@@ -128,26 +150,15 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
    * @param eventListener A listener of events. May be null if delivery of events is not required.
    * @param maxDroppedFramesToNotify The maximum number of frames that can be dropped between
    *     invocations of {@link VideoRendererEventListener#onDroppedFrames(int, long)}.
-   * @param drmSessionManager For use with encrypted media. May be null if support for encrypted
-   *     media is not required.
-   * @param playClearSamplesWithoutKeys Encrypted media may contain clear (un-encrypted) regions.
-   *     For example a media file may start with a short clear region so as to allow playback to
-   *     begin in parallel with key acquisition. This parameter specifies whether the renderer is
-   *     permitted to play clear regions of encrypted media files before {@code drmSessionManager}
-   *     has obtained the keys necessary to decrypt encrypted regions of the media.
    */
-  protected SimpleDecoderVideoRendererDav1d(
+  protected DecoderVideoRendererDav1d(
       long allowedJoiningTimeMs,
       @Nullable Handler eventHandler,
       @Nullable VideoRendererEventListener eventListener,
-      int maxDroppedFramesToNotify,
-      @Nullable DrmSessionManager<ExoMediaCrypto> drmSessionManager,
-      boolean playClearSamplesWithoutKeys) {
+      int maxDroppedFramesToNotify) {
     super(C.TRACK_TYPE_VIDEO);
     this.allowedJoiningTimeMs = allowedJoiningTimeMs;
     this.maxDroppedFramesToNotify = maxDroppedFramesToNotify;
-    this.drmSessionManager = drmSessionManager;
-    this.playClearSamplesWithoutKeys = playClearSamplesWithoutKeys;
     joiningDeadlineMs = C.TIME_UNSET;
     clearReportedVideoSize();
     formatQueue = new TimedValueQueue<>();
@@ -155,16 +166,9 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
     eventDispatcher = new EventDispatcher(eventHandler, eventListener);
     decoderReinitializationState = REINITIALIZATION_STATE_NONE;
     outputMode = C.VIDEO_OUTPUT_MODE_NONE;
-    currentPixelWidthHeightRatio = Format.NO_VALUE;
   }
 
   // BaseRenderer implementation.
-
-  @Override
-  @Capabilities
-  public final int supportsFormat(Format format) {
-    return supportsFormatInternal(drmSessionManager, format);
-  }
 
   @Override
   public void render(long positionUs, long elapsedRealtimeUs) throws ExoPlaybackException {
@@ -176,7 +180,7 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
       // We don't have a format yet, so try and read one.
       FormatHolder formatHolder = getFormatHolder();
       flagsOnlyBuffer.clear();
-      int result = readSource(formatHolder, flagsOnlyBuffer, true);
+      @SampleStream.ReadDataResult int result = readSource(formatHolder, flagsOnlyBuffer, true);
       if (result == C.RESULT_FORMAT_READ) {
         onInputFormatChanged(formatHolder);
       } else if (result == C.RESULT_BUFFER_READ) {
@@ -201,7 +205,7 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
         while (drainOutputBuffer(positionUs, elapsedRealtimeUs)) {}
         while (feedInputBuffer()) {}
         TraceUtil.endSection();
-      } catch (VideoDecoderException e) {
+      } catch (DecoderException e) {
         throw createRendererException(e, inputFormat);
       }
       decoderCounters.ensureUpdated();
@@ -215,12 +219,9 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
 
   @Override
   public boolean isReady() {
-    if (waitingForKeys) {
-      return false;
-    }
     if (inputFormat != null
         && (isSourceReady() || outputBuffer != null)
-        && (renderedFirstFrame || !hasOutput())) {
+        && (renderedFirstFrameAfterReset || !hasOutput())) {
       // Ready. If we were joining then we've now joined, so clear the joining deadline.
       joiningDeadlineMs = C.TIME_UNSET;
       return true;
@@ -237,16 +238,30 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
     }
   }
 
+  // PlayerMessage.Target implementation.
+
+  @Override
+  public void handleMessage(int messageType, @Nullable Object message) throws ExoPlaybackException {
+    if (messageType == MSG_SET_SURFACE) {
+      setOutputSurface((Surface) message);
+    } else if (messageType == MSG_SET_VIDEO_DECODER_OUTPUT_BUFFER_RENDERER) {
+      setOutputBufferRenderer((VideoDecoderOutputBufferRenderer) message);
+    } else if (messageType == MSG_SET_VIDEO_FRAME_METADATA_LISTENER) {
+      frameMetadataListener = (VideoFrameMetadataListener) message;
+    } else {
+      super.handleMessage(messageType, message);
+    }
+  }
+
   // Protected methods.
 
   @Override
-  protected void onEnabled(boolean joining) throws ExoPlaybackException {
-    if (drmSessionManager != null && !drmResourcesAcquired) {
-      drmResourcesAcquired = true;
-      drmSessionManager.prepare();
-    }
+  protected void onEnabled(boolean joining, boolean mayRenderStartOfStream)
+      throws ExoPlaybackException {
     decoderCounters = new DecoderCounters();
     eventDispatcher.enabled(decoderCounters);
+    mayRenderFirstFrameAfterEnableIfNotStarted = mayRenderStartOfStream;
+    renderedFirstFrameAfterEnable = false;
   }
 
   @Override
@@ -283,7 +298,6 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
   @Override
   protected void onDisabled() {
     inputFormat = null;
-    waitingForKeys = false;
     clearReportedVideoSize();
     clearRenderedFirstFrame();
     try {
@@ -295,33 +309,13 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
   }
 
   @Override
-  protected void onReset() {
-    if (drmSessionManager != null && drmResourcesAcquired) {
-      drmResourcesAcquired = false;
-      drmSessionManager.release();
-    }
-  }
-
-  @Override
-  protected void onStreamChanged(Format[] formats, long offsetUs) throws ExoPlaybackException {
+  protected void onStreamChanged(Format[] formats, long startPositionUs, long offsetUs)
+      throws ExoPlaybackException {
+    // TODO: This shouldn't just update the output stream offset as long as there are still buffers
+    // of the previous stream in the decoder. It should also make sure to render the first frame of
+    // the next stream if the playback position reached the new stream.
     outputStreamOffsetUs = offsetUs;
-    super.onStreamChanged(formats, offsetUs);
-  }
-
-  /**
-   * Called when a decoder has been created and configured.
-   *
-   * <p>The default implementation is a no-op.
-   *
-   * @param name The name of the decoder that was initialized.
-   * @param initializedTimestampMs {@link SystemClock#elapsedRealtime()} when initialization
-   *     finished.
-   * @param initializationDurationMs The time taken to initialize the decoder, in milliseconds.
-   */
-  @CallSuper
-  protected void onDecoderInitialized(
-      String name, long initializedTimestampMs, long initializationDurationMs) {
-    eventDispatcher.decoderInitialized(name, initializedTimestampMs, initializationDurationMs);
+    super.onStreamChanged(formats, startPositionUs, offsetUs);
   }
 
   /**
@@ -331,7 +325,6 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
    */
   @CallSuper
   protected void flushDecoder() throws ExoPlaybackException {
-    waitingForKeys = false;
     buffersInCodecCount = 0;
     if (decoderReinitializationState != REINITIALIZATION_STATE_NONE) {
       releaseDecoder();
@@ -356,9 +349,10 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
     decoderReceivedBuffers = false;
     buffersInCodecCount = 0;
     if (decoder != null) {
-      decoder.release();
-      decoder = null;
       decoderCounters.decoderReleaseCount++;
+      decoder.release();
+      eventDispatcher.decoderReleased(decoder.getName());
+      decoder = null;
     }
     setDecoderDrmSession(null);
   }
@@ -370,20 +364,33 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
    * @throws ExoPlaybackException If an error occurs (re-)initializing the decoder.
    */
   @CallSuper
-  @SuppressWarnings("unchecked")
   protected void onInputFormatChanged(FormatHolder formatHolder) throws ExoPlaybackException {
     waitingForFirstSampleInFormat = true;
     Format newFormat = Assertions.checkNotNull(formatHolder.format);
-    if (formatHolder.includesDrmSession) {
-      setSourceDrmSession((DrmSession<ExoMediaCrypto>) formatHolder.drmSession);
-    } else {
-      sourceDrmSession =
-          getUpdatedSourceDrmSession(inputFormat, newFormat, drmSessionManager, sourceDrmSession);
-    }
+    setSourceDrmSession(formatHolder.drmSession);
+    Format oldFormat = inputFormat;
     inputFormat = newFormat;
-    currentPixelWidthHeightRatio = newFormat.pixelWidthHeightRatio;
 
+    if (decoder == null) {
+      maybeInitDecoder();
+      eventDispatcher.inputFormatChanged(inputFormat, /* decoderReuseEvaluation= */ null);
+      return;
+    }
+
+    DecoderReuseEvaluation evaluation;
     if (sourceDrmSession != decoderDrmSession) {
+      evaluation =
+          new DecoderReuseEvaluation(
+              decoder.getName(),
+              oldFormat,
+              newFormat,
+              REUSE_RESULT_NO,
+              DISCARD_REASON_DRM_SESSION_CHANGED);
+    } else {
+      evaluation = canReuseDecoder(decoder.getName(), oldFormat, newFormat);
+    }
+
+    if (evaluation.result == REUSE_RESULT_NO) {
       if (decoderReceivedBuffers) {
         // Signal end of stream and wait for any final output buffers before re-initialization.
         decoderReinitializationState = REINITIALIZATION_STATE_SIGNAL_END_OF_STREAM;
@@ -393,8 +400,7 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
         maybeInitDecoder();
       }
     }
-
-    eventDispatcher.inputFormatChanged(inputFormat);
+    eventDispatcher.inputFormatChanged(inputFormat, evaluation);
   }
 
   /**
@@ -509,23 +515,11 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
     droppedFrames += droppedBufferCount;
     consecutiveDroppedFrameCount += droppedBufferCount;
     decoderCounters.maxConsecutiveDroppedBufferCount =
-        Math.max(consecutiveDroppedFrameCount, decoderCounters.maxConsecutiveDroppedBufferCount);
+        max(consecutiveDroppedFrameCount, decoderCounters.maxConsecutiveDroppedBufferCount);
     if (maxDroppedFramesToNotify > 0 && droppedFrames >= maxDroppedFramesToNotify) {
       maybeNotifyDroppedFrames();
     }
   }
-
-  /**
-   * Returns the {@link Capabilities} for the given {@link Format}.
-   *
-   * @param drmSessionManager The renderer's {@link DrmSessionManager}.
-   * @param format The format, which has a video {@link Format#sampleMimeType}.
-   * @return The {@link Capabilities} for this {@link Format}.
-   * @see RendererCapabilities#supportsFormat(Format)
-   */
-  @Capabilities
-  protected abstract int supportsFormatInternal(
-      @Nullable DrmSessionManager<ExoMediaCrypto> drmSessionManager, Format format);
 
   /**
    * Creates a decoder for the given format.
@@ -534,14 +528,11 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
    * @param mediaCrypto The {@link ExoMediaCrypto} object required for decoding encrypted content.
    *     May be null and can be ignored if decoder does not handle encrypted content.
    * @return The decoder.
-   * @throws VideoDecoderException If an error occurred creating a suitable decoder.
+   * @throws DecoderException If an error occurred creating a suitable decoder.
    */
-  protected abstract SimpleDecoderDav1d<
-          VideoDecoderInputBuffer,
-          ? extends VideoDecoderOutputBuffer,
-          ? extends VideoDecoderException>
-      createDecoder(Format format, @Nullable ExoMediaCrypto mediaCrypto)
-          throws VideoDecoderException;
+  protected abstract Decoder<
+      VideoDecoderInputBuffer, ? extends VideoDecoderOutputBuffer, ? extends DecoderException>
+  createDecoder(Format format, @Nullable ExoMediaCrypto mediaCrypto) throws DecoderException;
 
   /**
    * Renders the specified output buffer.
@@ -552,11 +543,15 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
    * @param outputBuffer {@link VideoDecoderOutputBuffer} to render.
    * @param presentationTimeUs Presentation time in microseconds.
    * @param outputFormat Output {@link Format}.
-   * @throws VideoDecoderException If an error occurs when rendering the output buffer.
+   * @throws DecoderException If an error occurs when rendering the output buffer.
    */
   protected void renderOutputBuffer(
       VideoDecoderOutputBuffer outputBuffer, long presentationTimeUs, Format outputFormat)
-      throws VideoDecoderException {
+      throws DecoderException {
+    if (frameMetadataListener != null) {
+      frameMetadataListener.onVideoFrameAboutToBeRendered(
+          presentationTimeUs, System.nanoTime(), outputFormat, /* mediaFormat= */ null);
+    }
     lastRenderTimeUs = C.msToUs(SystemClock.elapsedRealtime() * 1000);
     int bufferMode = outputBuffer.mode;
     boolean renderSurface = bufferMode == C.VIDEO_OUTPUT_MODE_SURFACE_YUV && surface != null;
@@ -584,10 +579,10 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
    *
    * @param outputBuffer {@link VideoDecoderOutputBuffer} to render.
    * @param surface Output {@link Surface}.
-   * @throws VideoDecoderException If an error occurs when rendering the output buffer.
+   * @throws DecoderException If an error occurs when rendering the output buffer.
    */
   protected abstract void renderOutputBufferToSurface(
-      VideoDecoderOutputBuffer outputBuffer, Surface surface) throws VideoDecoderException;
+      VideoDecoderOutputBuffer outputBuffer, Surface surface) throws DecoderException;
 
   /**
    * Sets output surface.
@@ -609,9 +604,6 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
         // The output has been removed. We leave the outputMode of the underlying decoder unchanged
         // in anticipation that a subsequent output will likely be of the same type.
         outputMode = C.VIDEO_OUTPUT_MODE_NONE;
-        if (decoder != null) {
-          setDecoderOutputMode(outputMode);
-        }
         onOutputRemoved();
       }
     } else if (surface != null) {
@@ -656,14 +648,29 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
    */
   protected abstract void setDecoderOutputMode(@C.VideoOutputMode int outputMode);
 
+  /**
+   * Evaluates whether the existing decoder can be reused for a new {@link Format}.
+   *
+   * <p>The default implementation does not allow decoder reuse.
+   *
+   * @param oldFormat The previous format.
+   * @param newFormat The new format.
+   * @return The result of the evaluation.
+   */
+  protected DecoderReuseEvaluation canReuseDecoder(
+      String decoderName, Format oldFormat, Format newFormat) {
+    return new DecoderReuseEvaluation(
+        decoderName, oldFormat, newFormat, REUSE_RESULT_NO, DISCARD_REASON_REUSE_NOT_IMPLEMENTED);
+  }
+
   // Internal methods.
 
-  private void setSourceDrmSession(@Nullable DrmSession<ExoMediaCrypto> session) {
+  private void setSourceDrmSession(@Nullable DrmSession session) {
     DrmSession.replaceSession(sourceDrmSession, session);
     sourceDrmSession = session;
   }
 
-  private void setDecoderDrmSession(@Nullable DrmSession<ExoMediaCrypto> session) {
+  private void setDecoderDrmSession(@Nullable DrmSession session) {
     DrmSession.replaceSession(decoderDrmSession, session);
     decoderDrmSession = session;
   }
@@ -681,8 +688,8 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
       if (mediaCrypto == null) {
         DrmSessionException drmError = decoderDrmSession.getError();
         if (drmError != null) {
-          // Continue for now. We may be able to avoid failure if the session recovers, or if a new
-          // input format causes the session to be replaced before it's used.
+          // Continue for now. We may be able to avoid failure if a new input format causes the
+          // session to be replaced without it having been used.
         } else {
           // The drm session isn't open yet.
           return;
@@ -695,17 +702,17 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
       decoder = createDecoder(inputFormat, mediaCrypto);
       setDecoderOutputMode(outputMode);
       long decoderInitializedTimestamp = SystemClock.elapsedRealtime();
-      onDecoderInitialized(
+      eventDispatcher.decoderInitialized(
           decoder.getName(),
           decoderInitializedTimestamp,
           decoderInitializedTimestamp - decoderInitializingTimestamp);
       decoderCounters.decoderInitCount++;
-    } catch (VideoDecoderException e) {
+    } catch (DecoderException | OutOfMemoryError e) {
       throw createRendererException(e, inputFormat);
     }
   }
 
-  private boolean feedInputBuffer() throws VideoDecoderException, ExoPlaybackException {
+  private boolean feedInputBuffer() throws DecoderException, ExoPlaybackException {
     if (decoder == null
         || decoderReinitializationState == REINITIALIZATION_STATE_WAIT_END_OF_STREAM
         || inputStreamEnded) {
@@ -728,46 +735,36 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
       return false;
     }
 
-    int result;
     FormatHolder formatHolder = getFormatHolder();
-    if (waitingForKeys) {
-      // We've already read an encrypted sample into buffer, and are waiting for keys.
-      result = C.RESULT_BUFFER_READ;
-    } else {
-      result = readSource(formatHolder, inputBuffer, false);
+    switch (readSource(formatHolder, inputBuffer, /* formatRequired= */ false)) {
+      case C.RESULT_NOTHING_READ:
+        return false;
+      case C.RESULT_FORMAT_READ:
+        onInputFormatChanged(formatHolder);
+        return true;
+      case C.RESULT_BUFFER_READ:
+        if (inputBuffer.isEndOfStream()) {
+          inputStreamEnded = true;
+          decoder.queueInputBuffer(inputBuffer);
+          inputBuffer = null;
+          return false;
+        }
+        if (waitingForFirstSampleInFormat) {
+          formatQueue.add(inputBuffer.timeUs, inputFormat);
+          waitingForFirstSampleInFormat = false;
+        }
+        inputBuffer.flip();
+        inputBuffer.format = inputFormat;
+        onQueueInputBuffer(inputBuffer);
+        decoder.queueInputBuffer(inputBuffer);
+        buffersInCodecCount++;
+        decoderReceivedBuffers = true;
+        decoderCounters.inputBufferCount++;
+        inputBuffer = null;
+        return true;
+      default:
+        throw new IllegalStateException();
     }
-
-    if (result == C.RESULT_NOTHING_READ) {
-      return false;
-    }
-    if (result == C.RESULT_FORMAT_READ) {
-      onInputFormatChanged(formatHolder);
-      return true;
-    }
-    if (inputBuffer.isEndOfStream()) {
-      inputStreamEnded = true;
-      decoder.queueInputBuffer(inputBuffer);
-      inputBuffer = null;
-      return false;
-    }
-    boolean bufferEncrypted = inputBuffer.isEncrypted();
-    waitingForKeys = shouldWaitForKeys(bufferEncrypted);
-    if (waitingForKeys) {
-      return false;
-    }
-    if (waitingForFirstSampleInFormat) {
-      formatQueue.add(inputBuffer.timeUs, inputFormat);
-      waitingForFirstSampleInFormat = false;
-    }
-    inputBuffer.flip();
-    inputBuffer.colorInfo = inputFormat.colorInfo;
-    onQueueInputBuffer(inputBuffer);
-    decoder.queueInputBuffer(inputBuffer);
-    buffersInCodecCount++;
-    decoderReceivedBuffers = true;
-    decoderCounters.inputBufferCount++;
-    inputBuffer = null;
-    return true;
   }
 
   /**
@@ -781,7 +778,7 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
    * @throws ExoPlaybackException If an error occurs draining the output buffer.
    */
   private boolean drainOutputBuffer(long positionUs, long elapsedRealtimeUs)
-      throws ExoPlaybackException, VideoDecoderException {
+      throws ExoPlaybackException, DecoderException {
     if (outputBuffer == null) {
       outputBuffer = decoder.dequeueOutputBuffer();
       if (outputBuffer == null) {
@@ -823,7 +820,7 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
    * @throws ExoPlaybackException If an error occurs processing the output buffer.
    */
   private boolean processOutputBuffer(long positionUs, long elapsedRealtimeUs)
-      throws ExoPlaybackException, VideoDecoderException {
+      throws ExoPlaybackException, DecoderException {
     if (initialPositionUs == C.TIME_UNSET) {
       initialPositionUs = positionUs;
     }
@@ -845,10 +842,15 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
     }
 
     long elapsedRealtimeNowUs = SystemClock.elapsedRealtime() * 1000;
+    long elapsedSinceLastRenderUs = elapsedRealtimeNowUs - lastRenderTimeUs;
     boolean isStarted = getState() == STATE_STARTED;
-    if (!renderedFirstFrame
-        || (isStarted
-            && shouldForceRenderOutputBuffer(earlyUs, elapsedRealtimeNowUs - lastRenderTimeUs))) {
+    boolean shouldRenderFirstFrame =
+        !renderedFirstFrameAfterEnable
+            ? (isStarted || mayRenderFirstFrameAfterEnableIfNotStarted)
+            : !renderedFirstFrameAfterReset;
+    // TODO: We shouldn't force render while we are joining an ongoing playback.
+    if (shouldRenderFirstFrame
+        || (isStarted && shouldForceRenderOutputBuffer(earlyUs, elapsedSinceLastRenderUs))) {
       renderOutputBuffer(outputBuffer, presentationTimeUs, outputFormat);
       return true;
     }
@@ -857,6 +859,7 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
       return false;
     }
 
+    // TODO: Treat dropped buffers as skipped while we are joining an ongoing playback.
     if (shouldDropBuffersToKeyframe(earlyUs, elapsedRealtimeUs)
         && maybeDropBuffersToKeyframe(positionUs)) {
       return false;
@@ -899,19 +902,6 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
     maybeRenotifyRenderedFirstFrame();
   }
 
-  private boolean shouldWaitForKeys(boolean bufferEncrypted) throws ExoPlaybackException {
-    if (decoderDrmSession == null
-        || (!bufferEncrypted
-            && (playClearSamplesWithoutKeys || decoderDrmSession.playClearSamplesWithoutKeys()))) {
-      return false;
-    }
-    @DrmSession.State int drmSessionState = decoderDrmSession.getState();
-    if (drmSessionState == DrmSession.STATE_ERROR) {
-      throw createRendererException(decoderDrmSession.getError(), inputFormat);
-    }
-    return drmSessionState != DrmSession.STATE_OPENED_WITH_KEYS;
-  }
-
   private void setJoiningDeadlineMs() {
     joiningDeadlineMs =
         allowedJoiningTimeMs > 0
@@ -920,18 +910,19 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
   }
 
   private void clearRenderedFirstFrame() {
-    renderedFirstFrame = false;
+    renderedFirstFrameAfterReset = false;
   }
 
   private void maybeNotifyRenderedFirstFrame() {
-    if (!renderedFirstFrame) {
-      renderedFirstFrame = true;
+    renderedFirstFrameAfterEnable = true;
+    if (!renderedFirstFrameAfterReset) {
+      renderedFirstFrameAfterReset = true;
       eventDispatcher.renderedFirstFrame(surface);
     }
   }
 
   private void maybeRenotifyRenderedFirstFrame() {
-    if (renderedFirstFrame) {
+    if (renderedFirstFrameAfterReset) {
       eventDispatcher.renderedFirstFrame(surface);
     }
   }
@@ -939,16 +930,14 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
   private void clearReportedVideoSize() {
     reportedWidth = Format.NO_VALUE;
     reportedHeight = Format.NO_VALUE;
-    reportedPixelWidthHeightRatio = Format.NO_VALUE;
   }
 
   private void maybeNotifyVideoSizeChanged(int width, int height) {
-    if (reportedWidth != width || reportedHeight != height || reportedPixelWidthHeightRatio != currentPixelWidthHeightRatio) {
+    if (reportedWidth != width || reportedHeight != height) {
       reportedWidth = width;
       reportedHeight = height;
-      reportedPixelWidthHeightRatio = currentPixelWidthHeightRatio;
       eventDispatcher.videoSizeChanged(
-          width, height, /* unappliedRotationDegrees= */ 0, /* pixelWidthHeightRatio= */ currentPixelWidthHeightRatio);
+          width, height, /* unappliedRotationDegrees= */ 0, /* pixelWidthHeightRatio= */ 1);
     }
   }
 
@@ -958,7 +947,7 @@ public abstract class SimpleDecoderVideoRendererDav1d extends BaseRenderer {
           reportedWidth,
           reportedHeight,
           /* unappliedRotationDegrees= */ 0,
-          /* pixelWidthHeightRatio= */ reportedPixelWidthHeightRatio);
+          /* pixelWidthHeightRatio= */ 1);
     }
   }
 

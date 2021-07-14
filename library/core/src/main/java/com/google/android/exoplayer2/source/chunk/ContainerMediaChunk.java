@@ -121,7 +121,7 @@ public class ContainerMediaChunk extends BaseMediaChunk {
     try {
       // Create and open the input.
       DataSpec loadDataSpec = dataSpec.subrange(nextLoadPosition);
-      loadDataSpec.referDurationUs = getDurationUs();
+//      loadDataSpec.referDurationUs = getDurationUs();
       ExtractorInput input =
           new DefaultExtractorInput(
               dataSource, loadDataSpec.position, dataSource.open(loadDataSpec));

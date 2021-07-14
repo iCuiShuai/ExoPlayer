@@ -19,6 +19,8 @@ import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.Timeline;
+import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroup;
 import com.google.android.exoplayer2.source.chunk.MediaChunk;
 import com.google.android.exoplayer2.source.chunk.MediaChunkIterator;
@@ -37,7 +39,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableType;
 public class MXHybridTrackSelection extends BaseTrackSelection {
 
   /** Factory for {@link MXHybridTrackSelection} instances. */
-  public static class Factory implements TrackSelection.Factory {
+  public static class Factory implements ExoTrackSelection.Factory {
 
     @Nullable private final BandwidthMeter bandwidthMeter;
     private final int minDurationForQualityIncreaseMs;
@@ -204,12 +206,13 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
     }
 
     @Override
-    public final @NullableType TrackSelection[] createTrackSelections(
-        @NullableType Definition[] definitions, BandwidthMeter bandwidthMeter) {
+    public final @NullableType ExoTrackSelection[] createTrackSelections(
+        @NullableType Definition[] definitions, BandwidthMeter bandwidthMeter,
+        MediaSource.MediaPeriodId mediaPeriodId, Timeline timeline) {
       if (this.bandwidthMeter != null) {
         bandwidthMeter = this.bandwidthMeter;
       }
-      TrackSelection[] selections = new TrackSelection[definitions.length];
+      ExoTrackSelection[] selections = new ExoTrackSelection[definitions.length];
       int totalFixedBandwidth = 0;
       for (int i = 0; i < definitions.length; i++) {
         Definition definition = definitions[i];

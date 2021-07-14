@@ -96,8 +96,8 @@ public abstract class TrackSelector {
      */
     void onTrackSelectionsInvalidated();
 
-    void onSelectedIndexUpdated(int rendererIndex, int groupIndex, int trackIndex);
-    void onMaxVideoResolutionInAutoModeChanged(int maxVideoResolutionInAutoMode);
+    default void onSelectedIndexUpdated(int rendererIndex, int groupIndex, int trackIndex) {};
+    default void onMaxVideoResolutionInAutoModeChanged(int maxVideoResolutionInAutoMode) {};
   }
 
   @Nullable private InvalidationListener listener;

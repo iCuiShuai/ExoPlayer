@@ -815,13 +815,6 @@ import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
     }
   }
 
-  public int getPreferredQueueSize(long playbackPositionUs, List<? extends MediaChunk> queue) {
-    if (fatalError != null || trackSelection.length() < 2) {
-      return queue.size();
-    }
-    return trackSelection.evaluateQueueSize(playbackPositionUs, queue);
-  }
-
   // Private classes.
 
   /** A {@link ExoTrackSelection} to use for initialization. */
