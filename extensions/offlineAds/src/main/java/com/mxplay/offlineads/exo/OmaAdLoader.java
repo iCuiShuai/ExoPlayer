@@ -308,6 +308,25 @@ public final class OmaAdLoader
   }
 
   @Override
+  public void start(AdsMediaSource adsMediaSource, DataSpec adTagDataSpec, Object adsId, AdViewProvider adViewProvider, EventListener eventListener) {
+
+  }
+
+  @Override
+  public void stop(AdsMediaSource adsMediaSource, EventListener eventListener) {
+
+  }
+
+  @Override
+  public void handlePrepareComplete(AdsMediaSource adsMediaSource, int adGroupIndex, int adIndexInAdGroup) {
+
+  }
+
+  @Override
+  public void handlePrepareError(AdsMediaSource adsMediaSource, int adGroupIndex, int adIndexInAdGroup, IOException exception) {
+
+  }
+
   public void start(EventListener eventListener, AdViewProvider adViewProvider) {
     Assertions.checkState(
         wasSetPlayerCalled, "Set player using adsLoader.setPlayer before preparing the player.");
@@ -346,7 +365,6 @@ public final class OmaAdLoader
     }
   }
 
-  @Override
   public void stop() {
     if (player == null) {
       return;
@@ -389,7 +407,6 @@ public final class OmaAdLoader
     adsLoader.cancelAdRequest();
   }
 
-  @Override
   public void handlePrepareError(int adGroupIndex, int adIndexInAdGroup, IOException exception) {
     if (player == null) {
       return;
@@ -464,7 +481,8 @@ public final class OmaAdLoader
     if (adsManager == null) {
       // No ads were loaded, so allow playback to start without any ads.
       pendingAdRequestContext = null;
-      adPlaybackState = new AdPlaybackState();
+      //TODO IMA
+//      adPlaybackState = new AdPlaybackState();
       updateAdPlaybackState();
       adTracker.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adTracker.buildFailedParams(adGroupIndex, startRequestTime, error, getAdGroupCount()));
     } else if (isAdGroupLoadError(error)) {

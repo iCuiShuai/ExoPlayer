@@ -18,6 +18,7 @@ package com.google.android.exoplayer2.ext.vvc;
 import android.view.Surface;
 import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.C;
+import com.google.android.exoplayer2.decoder.DecoderInputBuffer;
 import com.google.android.exoplayer2.decoder.SimpleDecoderDav1d;
 import com.google.android.exoplayer2.util.Log;
 import com.google.android.exoplayer2.util.Util;
@@ -100,7 +101,7 @@ import java.nio.ByteBuffer;
 
   @Override
   protected VideoDecoderInputBuffer createInputBuffer() {
-    return new VideoDecoderInputBuffer();
+    return new VideoDecoderInputBuffer(DecoderInputBuffer.BUFFER_REPLACEMENT_MODE_DIRECT);
   }
 
   @Override
@@ -145,9 +146,9 @@ import java.nio.ByteBuffer;
     if (getFrameResult == DAV1D_DECODE_ONLY) {
       outputBuffer.addFlag(C.BUFFER_FLAG_DECODE_ONLY);
     }
-    if (!decodeOnly) {
-      outputBuffer.colorInfo = inputBuffer.colorInfo;
-    }
+//    if (!decodeOnly) {
+//      outputBuffer.colorInfo = inputBuffer.colorInfo;
+//    }
 
     return null;
   }

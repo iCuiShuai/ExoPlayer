@@ -17,6 +17,7 @@ package com.google.android.exoplayer2.ext.vvc;
 
 import static java.lang.Runtime.getRuntime;
 
+import android.annotation.SuppressLint;
 import android.os.Handler;
 import android.view.Surface;
 import androidx.annotation.Nullable;
@@ -26,6 +27,7 @@ import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.PlayerMessage.Target;
 import com.google.android.exoplayer2.RendererCapabilities;
+import com.google.android.exoplayer2.decoder.DecoderException;
 import com.google.android.exoplayer2.decoder.SimpleDecoderDav1d;
 import com.google.android.exoplayer2.drm.DrmSessionManager;
 import com.google.android.exoplayer2.drm.ExoMediaCrypto;
@@ -33,7 +35,6 @@ import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.TraceUtil;
 import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.video.DecoderVideoRendererDav1d;
-import com.google.android.exoplayer2.video.VideoDecoderException;
 import com.google.android.exoplayer2.video.VideoDecoderInputBuffer;
 import com.google.android.exoplayer2.video.VideoDecoderOutputBuffer;
 import com.google.android.exoplayer2.video.VideoDecoderOutputBufferRenderer;
@@ -129,25 +130,23 @@ public class LibVVCVideoRenderer extends DecoderVideoRendererDav1d {
         allowedJoiningTimeMs,
         eventHandler,
         eventListener,
-        maxDroppedFramesToNotify,
-        /* drmSessionManager= */ null,
-        /* playClearSamplesWithoutKeys= */ false);
+        maxDroppedFramesToNotify);
     this.threads = threads;
     this.numInputBuffers = numInputBuffers;
     this.numOutputBuffers = numOutputBuffers;
   }
 
-  @Override
   @Capabilities
   protected int supportsFormatInternal(
-      @Nullable DrmSessionManager<ExoMediaCrypto> drmSessionManager, Format format) {
+      @Nullable DrmSessionManager drmSessionManager, Format format) {
     if (!MimeTypes.VIDEO_VVC1.equalsIgnoreCase(format.sampleMimeType)
         || !VVCLibrary.isAvailable()) {
       return RendererCapabilities.create(FORMAT_UNSUPPORTED_TYPE);
     }
-    if (!supportsFormatDrm(drmSessionManager, format.drmInitData)) {
-      return RendererCapabilities.create(FORMAT_UNSUPPORTED_DRM);
-    }
+    //TODO VVC
+//    if (!supportsFormatDrm(drmSessionManager, format.drmInitData)) {
+//      return RendererCapabilities.create(FORMAT_UNSUPPORTED_DRM);
+//    }
     return RendererCapabilities.create(FORMAT_HANDLED, ADAPTIVE_SEAMLESS, TUNNELING_NOT_SUPPORTED);
   }
 
@@ -155,9 +154,9 @@ public class LibVVCVideoRenderer extends DecoderVideoRendererDav1d {
   protected SimpleDecoderDav1d<
           VideoDecoderInputBuffer,
           ? extends VideoDecoderOutputBuffer,
-          ? extends VideoDecoderException>
+          ? extends DecoderException>
       createDecoder(Format format, @Nullable ExoMediaCrypto mediaCrypto)
-          throws VideoDecoderException {
+          throws DecoderException {
     TraceUtil.beginSection("createVVCDecoder");
     int initialInputBufferSize =
         format.maxInputSize != Format.NO_VALUE ? format.maxInputSize : DEFAULT_INPUT_BUFFER_SIZE;
@@ -197,5 +196,16 @@ public class LibVVCVideoRenderer extends DecoderVideoRendererDav1d {
     } else {
       super.handleMessage(messageType, message);
     }
+  }
+
+  @Override
+  public String getName() {
+    return null;
+  }
+
+  @SuppressLint("WrongConstant")
+  @Override
+  public int supportsFormat(Format format) throws ExoPlaybackException {
+    return 0;
   }
 }
