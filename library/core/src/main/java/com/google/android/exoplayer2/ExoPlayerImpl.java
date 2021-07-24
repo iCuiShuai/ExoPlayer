@@ -29,6 +29,7 @@ import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.PlayerMessage.Target;
 import com.google.android.exoplayer2.analytics.AnalyticsCollector;
 import com.google.android.exoplayer2.metadata.Metadata;
+import com.google.android.exoplayer2.seek.SeekPreprocessor;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.MediaSource.MediaPeriodId;
 import com.google.android.exoplayer2.source.MediaSourceFactory;
@@ -99,6 +100,7 @@ import java.util.List;
   private int maskingWindowIndex;
   private int maskingPeriodIndex;
   private long maskingWindowPositionMs;
+  private SeekPreprocessor seekPreprocessor;
 
   /**
    * Constructs an instance. Must be called from a thread that has an associated {@link Looper}.
@@ -606,6 +608,11 @@ import java.util.List;
 
   @Override
   public void seekTo(int windowIndex, long positionMs) {
+    positionMs = preSeek(windowIndex, positionMs);
+    if (positionMs == -1) {
+      return;
+    }
+
     Timeline timeline = playbackInfo.timeline;
     if (windowIndex < 0 || (!timeline.isEmpty() && windowIndex >= timeline.getWindowCount())) {
       throw new IllegalSeekPositionException(timeline, windowIndex, positionMs);
@@ -640,6 +647,38 @@ import java.util.List;
         /* ignored */ PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST,
         /* seekProcessed= */ true);
   }
+
+  private long preSeek(int windowIndex, long positionMs) {
+    if (seekPreprocessor == null)
+      return positionMs;
+
+    Timeline timeline = playbackInfo.timeline;
+    if (windowIndex < 0 || (!timeline.isEmpty() && windowIndex >= timeline.getWindowCount())) {
+      throw new IllegalSeekPositionException(timeline, windowIndex, positionMs);
+    }
+    if (isPlayingAd()) {
+      return -1;
+    }
+
+    if (timeline.isEmpty()) {
+      return positionMs;
+    }
+
+    timeline.getWindow(windowIndex, window);
+    long windowPositionUs = positionMs == C.TIME_UNSET ? window.getDefaultPositionUs()
+            : C.msToUs(positionMs);
+    int periodIndex = window.firstPeriodIndex;
+    long periodPositionUs = window.getPositionInFirstPeriodUs() + windowPositionUs;
+    long periodDurationUs = timeline.getPeriod(periodIndex, period).getDurationUs();
+    while (periodDurationUs != C.TIME_UNSET && periodPositionUs >= periodDurationUs
+            && periodIndex < window.lastPeriodIndex) {
+      periodPositionUs -= periodDurationUs;
+      periodDurationUs = timeline.getPeriod(++periodIndex, period).getDurationUs();
+    }
+
+    return seekPreprocessor.onSeekTo(window.manifest, windowIndex, periodIndex, positionMs);
+  }
+
 
   @Override
   public void setPlaybackParameters(@Nullable PlaybackParameters playbackParameters) {
@@ -1426,6 +1465,10 @@ import java.util.List;
     return playbackInfo.playbackState == Player.STATE_READY
         && playbackInfo.playWhenReady
         && playbackInfo.playbackSuppressionReason == PLAYBACK_SUPPRESSION_REASON_NONE;
+  }
+
+  public void setSeekPreprocessor(SeekPreprocessor seekPreprocessor) {
+    this.seekPreprocessor = seekPreprocessor;
   }
 
   private static final class MediaSourceHolderSnapshot implements MediaSourceInfoHolder {

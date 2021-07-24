@@ -43,6 +43,7 @@ import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.extractor.ExtractorsFactory;
 import com.google.android.exoplayer2.metadata.Metadata;
 import com.google.android.exoplayer2.metadata.MetadataOutput;
+import com.google.android.exoplayer2.seek.SeekPreprocessor;
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.MediaSourceFactory;
@@ -86,6 +87,7 @@ public class SimpleExoPlayer extends BasePlayer
 
   /** The default timeout for detaching a surface from the player, in milliseconds. */
   public static final long DEFAULT_DETACH_SURFACE_TIMEOUT_MS = 2_000;
+  private SeekPreprocessor seekPreprocessor;
 
   /**
    * A builder for {@link SimpleExoPlayer} instances.
@@ -763,6 +765,20 @@ public class SimpleExoPlayer extends BasePlayer
     this.videoScalingMode = videoScalingMode;
     sendRendererMessage(C.TRACK_TYPE_VIDEO, Renderer.MSG_SET_SCALING_MODE, videoScalingMode);
   }
+
+  public void setSeekPreprocessor(SeekPreprocessor seekPreprocessor) {
+    this.seekPreprocessor = seekPreprocessor;
+    ((ExoPlayerImpl)player).setSeekPreprocessor(seekPreprocessor);
+
+  }
+
+  public SeekPreprocessor getSeekPreprocessor() {
+    return seekPreprocessor;
+  }
+
+  /**
+   * Returns the video scaling mode.
+   */
 
   @Override
   @C.VideoScalingMode
