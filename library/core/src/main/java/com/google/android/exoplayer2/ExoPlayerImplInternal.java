@@ -42,6 +42,8 @@ import com.google.android.exoplayer2.source.ShuffleOrder;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.text.TextRenderer;
 import com.google.android.exoplayer2.trackselection.ExoTrackSelection;
+import com.google.android.exoplayer2.trackselection.MXHybridTrackSelection;
+import com.google.android.exoplayer2.trackselection.TrackSelection;
 import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelectorResult;
 import com.google.android.exoplayer2.upstream.BandwidthMeter;
@@ -49,6 +51,7 @@ import com.google.android.exoplayer2.util.Assertions;
 import com.google.android.exoplayer2.util.Clock;
 import com.google.android.exoplayer2.util.HandlerWrapper;
 import com.google.android.exoplayer2.util.Log;
+import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.TraceUtil;
 import com.google.android.exoplayer2.util.Util;
 import com.google.common.base.Supplier;
@@ -148,6 +151,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
   private static final int MSG_SET_OFFLOAD_SCHEDULING_ENABLED = 24;
   private static final int MSG_ATTEMPT_ERROR_RECOVERY = 25;
 
+  private static final int MSG_UPDATE_SELECTED_INDEX = 30;
+  private static final int MSG_MAX_VIDEO_RESOLUTION_IN_AUTO_MODE_CHANGED = 31;
   private static final int ACTIVE_INTERVAL_MS = 10;
   private static final int IDLE_INTERVAL_MS = 1000;
   /**
@@ -443,6 +448,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
     handler.sendEmptyMessage(MSG_TRACK_SELECTION_INVALIDATED);
   }
 
+  @Override
+  public void onSelectedIndexUpdated(int rendererIndex, int groupIndex, int trackIndex) {
+    handler.obtainMessage(MSG_UPDATE_SELECTED_INDEX, rendererIndex, groupIndex, trackIndex).sendToTarget();
+  }
+
+  @Override
+  public void onMaxVideoResolutionInAutoModeChanged(int maxVideoResolutionInAutoMode){
+    handler.obtainMessage(MSG_MAX_VIDEO_RESOLUTION_IN_AUTO_MODE_CHANGED, maxVideoResolutionInAutoMode).sendToTarget();
+  }
+
+
   // DefaultMediaClock.PlaybackParametersListener implementation.
 
   @Override
@@ -537,6 +553,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
           break;
         case MSG_ATTEMPT_ERROR_RECOVERY:
           attemptErrorRecovery((ExoPlaybackException) msg.obj);
+          break;
+        case MSG_UPDATE_SELECTED_INDEX:
+          updateSelectedIndex(msg.arg1, msg.arg2, (int) msg.obj);
+          break;
+        case MSG_MAX_VIDEO_RESOLUTION_IN_AUTO_MODE_CHANGED:
+          updateMaxVideoResolutionInAutoMode((int) msg.obj);
           break;
         case MSG_RELEASE:
           releaseInternal();
@@ -2929,6 +2951,42 @@ import java.util.concurrent.atomic.AtomicBoolean;
       this.toIndex = toIndex;
       this.newFromIndex = newFromIndex;
       this.shuffleOrder = shuffleOrder;
+    }
+  }
+  private void updateSelectedIndex(int rendererIndex, int groupIndex, int trackIndex)
+          throws ExoPlaybackException {
+    int targetTrackType = rendererCapabilities[rendererIndex].getTrackType();
+    MediaPeriodHolder periodHolder = queue.getPlayingPeriod();
+    while (periodHolder != null) {
+      ExoTrackSelection[] trackSelections = periodHolder.getTrackSelectorResult().selections;
+      for (TrackSelection trackSelection : trackSelections) {
+        if (trackSelection != null && trackSelection.length() > 0) {
+          int trackType = MimeTypes.getTrackType(trackSelection.getFormat(0).sampleMimeType);
+          if (trackType == targetTrackType) {
+            if (trackSelection instanceof MXHybridTrackSelection) {
+              ((MXHybridTrackSelection)trackSelection).setSelectedIndex(trackIndex);
+            }
+          }
+        }
+      }
+      periodHolder = periodHolder.getNext();
+    }
+  }
+
+  private void updateMaxVideoResolutionInAutoMode(int maxVideoResolutionInAutoMode) {
+    MediaPeriodHolder periodHolder = queue.getPlayingPeriod();
+    while (periodHolder != null) {
+      ExoTrackSelection[] trackSelections = periodHolder.getTrackSelectorResult().selections;
+      for (TrackSelection trackSelection : trackSelections) {
+        /*
+         * TODO:1.Need find a graceful way to handle adaptive stream switch seamless and gracefully.
+         * 2.Improve the performance
+         */
+        if (trackSelection instanceof MXHybridTrackSelection) {
+          ((MXHybridTrackSelection)trackSelection).setMaxVideoResolutionInAutoMode(maxVideoResolutionInAutoMode);
+        }
+      }
+      periodHolder = periodHolder.getNext();
     }
   }
 }
