@@ -387,6 +387,12 @@ public final class DataSpec {
    *
    * @param uri {@link #uri}.
    */
+
+  // MX Custom
+  /**
+   * a refer value for segment duration
+   */
+  public long referDurationUs = -1L;
   public DataSpec(Uri uri) {
     this(uri, /* position= */ 0, /* length= */ C.LENGTH_UNSET);
   }
