@@ -1,0 +1,57 @@
+apply from: '../../constants.gradle'
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+
+android {
+    compileSdkVersion project.ext.compileSdkVersion
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    defaultConfig {
+        minSdkVersion project.ext.minSdkVersion
+        targetSdkVersion project.ext.targetSdkVersion
+        versionName project.ext.releaseVersion
+        consumerProguardFiles 'proguard-rules.txt'
+    }
+
+    testOptions.unitTests.includeAndroidResources = true
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar', '*.aar'], dir: 'libs')
+    api project(path: modulePrefix+'extension-adloader-core')
+    implementation project(modulePrefix + 'library-core')
+    implementation 'androidx.annotation:annotation:' + androidxAnnotationVersion
+    // https://mvnrepository.com/artifact/com.google.guava/guava
+    implementation group: 'com.google.guava', name: 'guava', version: '27.1-android'
+    implementation "androidx.core:core-ktx:$ktxVersion"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutineVersion"
+    api 'com.squareup.okhttp3:okhttp:3.12.8'
+    api ('com.squareup.okhttp3:logging-interceptor:3.12.8')
+
+    testImplementation "junit:junit:${junitVersion}"
+    testImplementation "org.robolectric:robolectric:${robolectricVersion}"
+    testImplementation "org.mockito:mockito-android:${mockitoVersion}"
+    testImplementation "org.mockito.kotlin:mockito-kotlin:${mockito_kotlin}"
+
+
+}
+
+ext {
+    javadocTitle = 'OMA extension'
+}
+apply from: '../../javadoc_library.gradle'
+
+ext {
+    releaseArtifact = 'extension-offineAds'
+    releaseDescription = 'Offline Media Ads extension for ExoPlayer.'
+}
+apply from: '../../publish.gradle'
+repositories {
+    mavenCentral()
+}

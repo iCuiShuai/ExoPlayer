@@ -39,6 +39,7 @@ include modulePrefix + 'extension-ffmpeg'
 include modulePrefix + 'extension-flac'
 include modulePrefix + 'extension-gvr'
 include modulePrefix + 'extension-ima'
+include modulePrefix + 'extension-mxInteractiveMediaAds'
 include modulePrefix + 'extension-offlineAds'
 include modulePrefix + 'extension-cast'
 include modulePrefix + 'extension-cronet'
@@ -73,6 +74,7 @@ project(modulePrefix + 'extension-vvc').projectDir = new File(rootDir, 'extensio
 project(modulePrefix + 'extension-ffmpeg').projectDir = new File(rootDir, 'extensions/ffmpeg')
 project(modulePrefix + 'extension-flac').projectDir = new File(rootDir, 'extensions/flac')
 project(modulePrefix + 'extension-gvr').projectDir = new File(rootDir, 'extensions/gvr')
+project(modulePrefix + 'extension-mxInteractiveMediaAds').projectDir = new File(rootDir, 'extensions/mxInteractiveMediaAds')
 project(modulePrefix + 'extension-ima').projectDir = new File(rootDir, 'extensions/ima')
 project(modulePrefix + 'extension-offlineAds').projectDir = new File(rootDir, 'extensions/offlineAds')
 project(modulePrefix + 'extension-cast').projectDir = new File(rootDir, 'extensions/cast')
