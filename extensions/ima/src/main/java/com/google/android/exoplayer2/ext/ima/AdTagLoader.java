@@ -65,6 +65,8 @@ import com.google.android.exoplayer2.util.Log;
 import com.google.android.exoplayer2.util.Util;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.mxplay.adloader.AdsBehaviour;
+
 import java.io.IOException;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -74,7 +76,7 @@ import java.util.List;
 import java.util.Map;
 
 /** Handles loading and playback of a single ad tag. */
-/* package */ final class AdTagLoader implements Player.EventListener {
+/* package */ final class AdTagLoader implements Player.EventListener, AdsBehaviour.AdPlaybackStateHost {
 
   private static final String TAG = "AdTagLoader";
 
@@ -138,6 +140,7 @@ import java.util.Map;
   private final BiMap<AdMediaInfo, AdInfo> adInfoByAdMediaInfo;
   private final AdDisplayContainer adDisplayContainer;
   private final AdsLoader adsLoader;
+  private final AdsBehaviour adsBehaviour;
 
   @Nullable private Object pendingAdRequestContext;
   @Nullable private Player player;
@@ -261,6 +264,8 @@ import java.util.Map;
     if (configuration.companionAdSlots != null) {
       adDisplayContainer.setCompanionSlots(configuration.companionAdSlots);
     }
+    adsBehaviour = configuration.adsBehaviour;
+    adsBehaviour.setAdPlaybackStateHost(this);
     adsLoader = requestAds(context, imaSdkSettings, adDisplayContainer);
   }
 
@@ -457,6 +462,7 @@ import java.util.Map;
     Player player = checkNotNull(this.player);
     long contentDurationUs = timeline.getPeriod(player.getCurrentPeriodIndex(), period).durationUs;
     contentDurationMs = C.usToMs(contentDurationUs);
+    adsBehaviour.setContentDurationMs(contentDurationMs);
     if (contentDurationUs != adPlaybackState.contentDurationUs) {
       adPlaybackState = adPlaybackState.withContentDurationUs(contentDurationUs);
       updateAdPlaybackState();
@@ -469,6 +475,9 @@ import java.util.Map;
   @Override
   public void onPositionDiscontinuity(@Player.DiscontinuityReason int reason) {
     handleTimelineOrPositionChanged();
+    if (reason == Player.DISCONTINUITY_REASON_SEEK || reason == Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT){
+      adsBehaviour.handleTimelineOrPositionChanged(player, timeline, period);
+    }
   }
 
   @Override
@@ -595,7 +604,8 @@ import java.util.Map;
     if (configuration.adUiElements != null) {
       adsRenderingSettings.setUiElements(configuration.adUiElements);
     }
-
+    boolean isSetupDone = adsBehaviour.doSetupAdsRendering(contentPositionMs, contentDurationMs);
+    if (isSetupDone) return adsRenderingSettings;
     // Skip ads based on the start position as required.
     long[] adGroupTimesUs = adPlaybackState.adGroupTimesUs;
     int adGroupForPositionIndex =
@@ -651,7 +661,7 @@ import java.util.Map;
       long elapsedSinceEndMs = SystemClock.elapsedRealtime() - fakeContentProgressElapsedRealtimeMs;
       contentPositionMs = fakeContentProgressOffsetMs + elapsedSinceEndMs;
     } else if (imaAdState == IMA_AD_STATE_NONE && !playingAd && hasContentDuration) {
-      contentPositionMs = getContentPeriodPositionMs(player, timeline, period);
+      contentPositionMs = adsBehaviour.getContentPositionMs(player, timeline, period);
     } else {
       return VideoProgressUpdate.VIDEO_TIME_NOT_READY;
     }
@@ -903,7 +913,7 @@ import java.util.Map;
       return;
     }
 
-    int adGroupIndex = getAdGroupIndexForAdPod(adPodInfo);
+    int adGroupIndex = adsBehaviour.getAdGroupIndexForAdPod(adPodInfo.getPodIndex(), adPodInfo.getTimeOffset(), player, timeline, period);
     int adIndexInAdGroup = adPodInfo.getAdPosition() - 1;
     AdInfo adInfo = new AdInfo(adGroupIndex, adIndexInAdGroup);
     // The ad URI may already be known, so force put to update it if needed.
@@ -1298,7 +1308,7 @@ import java.util.Map;
       }
       try {
         adPlaybackState =
-            new AdPlaybackState(adsId, getAdGroupTimesUsForCuePoints(adsManager.getAdCuePoints()));
+                adsBehaviour.createAdPlaybackState(adsId, getAdGroupTimesUsForCuePoints(adsManager.getAdCuePoints()));
         updateAdPlaybackState();
       } catch (RuntimeException e) {
         maybeNotifyInternalError("onAdsManagerLoaded", e);
@@ -1440,6 +1450,17 @@ import java.util.Map;
     public void release() {
       // Do nothing.
     }
+  }
+
+  @Override
+  public AdPlaybackState getAdPlaybackState() {
+    return adPlaybackState;
+  }
+
+  @Override
+  public void updateAdPlaybackState(AdPlaybackState adPlaybackState) {
+      this.adPlaybackState = adPlaybackState;
+      updateAdPlaybackState();
   }
 
   // TODO: Consider moving this into AdPlaybackState.
