@@ -20,7 +20,7 @@ public abstract class AdsBehaviour {
     protected boolean debug = false;
     protected @NonNull AdPlaybackStateHost adPlaybackStateHost;
     protected long contentDurationMs = C.TIME_UNSET;
-
+    private VideoAdsTracker videoAdsTracker;
 
     public AdsBehaviour() {
     }
@@ -31,6 +31,14 @@ public abstract class AdsBehaviour {
 
     public void setAdPlaybackStateHost(@NonNull AdPlaybackStateHost adPlaybackStateHost){
         this.adPlaybackStateHost = adPlaybackStateHost;
+    }
+
+    public void setVideoAdsTracker(VideoAdsTracker videoAdsTracker) {
+        this.videoAdsTracker = videoAdsTracker;
+    }
+
+    public void onAllAdsRequested(){
+
     }
 
     public abstract AdPlaybackState createAdPlaybackState(Object objectId, long[] adGroupTimesUs);

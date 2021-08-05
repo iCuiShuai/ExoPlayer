@@ -1,5 +1,8 @@
 package com.mxplay.interactivemedia.api;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public final class AdError extends Exception {
     private final AdError.AdErrorCode adErrorCode;
     private final AdError.AdErrorType adErrorType;
@@ -24,6 +27,14 @@ public final class AdError extends Exception {
 
     public final String getMessage() {
         return super.getMessage();
+    }
+
+    public final Map<String, String> convertToData() {
+        Map<String, String> data = new HashMap<>();
+        data.put("errorMessage", getMessage());
+        data.put("errorCode", String.valueOf(getErrorCode().getErrorNumber()));
+        data.put("type", adErrorType.name().toLowerCase());
+        return data;
     }
 
     public final String toString() {

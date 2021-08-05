@@ -222,7 +222,8 @@ class ActiveAdBreak(val adBreak: AdBreak, private val loader : AdBreakLoader, pr
                         is TimeoutCancellationException -> code  =  AdError.AdErrorCode.VAST_LOAD_TIMEOUT
                         is ProtocolException -> code = e.error.errorCode
                     }
-                    onErrorListener.onAdError(AdErrorEvent(AdError(AdError.AdErrorType.LOAD, code, e.message), null))
+                    adEventListener.onAdEvent(AdEventImpl(AdEvent.AdEventType.LOG, null, AdError(AdError.AdErrorType.LOAD, code, e.message).convertToData()))
+                    adEventListener.onAdEvent(AdEventImpl(AdEvent.AdEventType.AD_BREAK_FETCH_ERROR, null, mutableMapOf(Pair("adBreakTime", adBreak.startTimeSec.toString()))))
                     adEventListener.onAdEvent(AdEventImpl(AdEvent.AdEventType.CONTENT_RESUME_REQUESTED, null, null))
                     adEventListener.onAdEvent(AdEventImpl(AdEvent.AdEventType.ALL_ADS_COMPLETED, null, null))
                 }else{

@@ -40,7 +40,6 @@ include modulePrefix + 'extension-flac'
 include modulePrefix + 'extension-gvr'
 include modulePrefix + 'extension-ima'
 include modulePrefix + 'extension-mxInteractiveMediaAds'
-include modulePrefix + 'extension-offlineAds'
 include modulePrefix + 'extension-cast'
 include modulePrefix + 'extension-cronet'
 include modulePrefix + 'extension-mediasession'
@@ -76,7 +75,6 @@ project(modulePrefix + 'extension-flac').projectDir = new File(rootDir, 'extensi
 project(modulePrefix + 'extension-gvr').projectDir = new File(rootDir, 'extensions/gvr')
 project(modulePrefix + 'extension-mxInteractiveMediaAds').projectDir = new File(rootDir, 'extensions/mxInteractiveMediaAds')
 project(modulePrefix + 'extension-ima').projectDir = new File(rootDir, 'extensions/ima')
-project(modulePrefix + 'extension-offlineAds').projectDir = new File(rootDir, 'extensions/offlineAds')
 project(modulePrefix + 'extension-cast').projectDir = new File(rootDir, 'extensions/cast')
 project(modulePrefix + 'extension-cronet').projectDir = new File(rootDir, 'extensions/cronet')
 project(modulePrefix + 'extension-mediasession').projectDir = new File(rootDir, 'extensions/mediasession')
