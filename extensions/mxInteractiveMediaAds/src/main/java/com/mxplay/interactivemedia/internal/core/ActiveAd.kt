@@ -3,6 +3,7 @@ package com.mxplay.interactivemedia.internal.core
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import android.view.View
 import ccom.mxplay.offlineads.exo.R
 import com.mxplay.interactivemedia.api.*
@@ -41,7 +42,9 @@ class ActiveAd(val ad: Ad, private val player: VideoAdPlayer?, @AdState private 
 
 
        private fun onAdStateChanged(@AdState newState : Int){
+           if(state == newState) return
             stateChangeListener(this, newState)
+            Log.d("ActiveAd", " Ad state changed $state new state $newState")
             state = newState
             when (newState) {
                 AdState.LOADED -> {

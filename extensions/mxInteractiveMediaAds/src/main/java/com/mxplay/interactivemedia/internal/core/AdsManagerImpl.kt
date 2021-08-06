@@ -25,7 +25,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
                      private val adCompanionManager: CompanionAdManager)   : AdsManager {
 
     companion object{
-        private const val DELAY_MILLIS = 1000L
+        private const val DELAY_MILLIS = 300L
         private const val PROXIMITY_THRESHOLD_MILLIS = DELAY_MILLIS - 200
         private const val PRELOAD_TIME_OFFSET = 8000L
         private const val DEBUG = true
@@ -133,7 +133,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
 
 
     override fun start() {
-        scheduleUpdate(DELAY_MILLIS)
+        handler.post(updateRunnable);
     }
 
 
@@ -175,16 +175,6 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
             if (next.startTimeSec != AdBreak.POST_ROLL_START_TIME && next.startTimeSec < playAdsAfterTime) {
                 iterator.remove()
             }
-        }
-        val contentPosition: Long
-        val contentProgress: VideoProgressUpdate = contentProgressProvider.contentProgress
-        contentPosition = if (contentProgress !== VideoProgressUpdate.VIDEO_TIME_NOT_READY) {
-            contentProgress.currentTimeMs
-        } else {
-            (adsRenderingSettings.playAdsAfterTime * C.MILLIS_PER_SECOND).toLong()
-        }
-        if (!processNextAd(contentPosition)){
-            onEvent(AdEventImpl(AdEvent.AdEventType.CONTENT_RESUME_REQUESTED, null, null))
         }
 
     }
