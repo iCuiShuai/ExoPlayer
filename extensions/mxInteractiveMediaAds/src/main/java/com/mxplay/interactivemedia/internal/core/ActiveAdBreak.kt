@@ -93,8 +93,7 @@ class ActiveAdBreak(val adBreak: AdBreak, private val loader : AdBreakLoader, pr
             if (activeAd == null || progress == VideoProgressUpdate.VIDEO_TIME_NOT_READY || !isActive) return
             val player = displayContainer.getPlayer() ?: return
             //Log.d(TAG, " onProgressUpdate "+ (adBreak.startTimeSec * 1000 - progress.currentTimeMs))
-            if (adBreak.startTimeSec * 1000 - progress.currentTimeMs < proximityThreshold
-                    && !activeAd!!.waitingMediaTimeout
+            if (adBreak.startTimeSec * 1000 <= progress.currentTimeMs && !activeAd!!.waitingMediaTimeout
                     && activeAd!!.currentState() == AdState.LOADED){
                 if (activeAd!!.ad.getAdPodInfo().adPosition == 1){
                     adEventListener.onAdEvent(AdEventImpl(AdEvent.AdEventType.CONTENT_PAUSE_REQUESTED, activeAd!!.ad, null))
@@ -122,12 +121,12 @@ class ActiveAdBreak(val adBreak: AdBreak, private val loader : AdBreakLoader, pr
 
 
             if (nextAd != null && nextAd.currentState() == AdState.NONE){
-                stateCallback(nextAd, AdState.LOADED)
                 val player = displayContainer.getPlayer()
                 (nextAd.ad as IMediaFilesProvider).run {
                     if (getAdMediaInfo() == null)
                         setAdMediaInfo(AdMediaInfo(mediaFileSelector.selectMediaFile(this).url!!))
                 }
+                nextAd.onLoaded(nextAd.ad.getMediaInfo())
                 player?.loadAd(nextAd.ad.getMediaInfo(), nextAd.ad.getAdPodInfo())
                 return nextAd
             }

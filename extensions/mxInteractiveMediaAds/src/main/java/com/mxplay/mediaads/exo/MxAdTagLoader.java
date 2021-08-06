@@ -356,6 +356,9 @@ import java.util.Map;
         adsManager.resume();
       }
     }
+    if (configuration.getDebugModeEnabled()){
+      Log.d(TAG, " activate ad tag loader "+ player);
+    }
   }
 
   /** Deactivates playback. */
@@ -461,13 +464,11 @@ import java.util.Map;
     handleTimelineOrPositionChanged();
   }
 
-//  @Override
-//  public void onPositionDiscontinuity(
-//      Player.PositionInfo oldPosition,
-//      Player.PositionInfo newPosition,
-//      @Player.DiscontinuityReason int reason) {
-//    handleTimelineOrPositionChanged();
-//  }
+  @Override
+  public void onPositionDiscontinuity(@Player.DiscontinuityReason int reason) {
+    if (configuration.getDebugModeEnabled()) Log.d(TAG, " onPositionDiscontinuity "+ playingAd + "  reason "+ reason);
+    handleTimelineOrPositionChanged();
+  }
 
   @Override
   public void onPlaybackStateChanged(@Player.State int playbackState) {
@@ -881,6 +882,9 @@ import java.util.Map;
           fakeContentProgressOffsetMs = contentDurationMs;
         }
       }
+    }
+    if (configuration.getDebugModeEnabled()){
+      Log.d(TAG, " handleTimelineOrPositionChanged "+ playingAd + "  fakeContentProgressElapsedRealtimeMs "+ fakeContentProgressElapsedRealtimeMs);
     }
   }
 
