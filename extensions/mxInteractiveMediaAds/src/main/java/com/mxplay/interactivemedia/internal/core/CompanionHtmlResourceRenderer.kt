@@ -37,7 +37,6 @@ class CompanionHtmlResourceRenderer(val ioOpsScope: CoroutineScope, private val 
             if (it.resourceType == CompanionAdData.TAG_HTML_RESOURCE) {
                 render(it)
             }
-            render(it)
         }
     }
 
