@@ -12,6 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 class CompanionAdManager(ioOpsScope: CoroutineScope, remoteDataSource: RemoteDataSource, trackersHandler: ITrackersHandler?): ICompanionSelector, ICompanionRenderer {
     private val companionSelector = CompanionSelector()
     private val staticResRenderer = CompanionStaticResourceRenderer(ioOpsScope, remoteDataSource, trackersHandler)
+    private val htmlResourceRenderer = CompanionHtmlResourceRenderer(ioOpsScope, remoteDataSource, trackersHandler)
 
     override fun pickBestCompanions(displayContainer: AdDisplayContainer, companionAds: List<CompanionAd>?): List<AdCompanionInfo>? {
         return companionSelector.pickBestCompanions(displayContainer, companionAds)
@@ -19,10 +20,12 @@ class CompanionAdManager(ioOpsScope: CoroutineScope, remoteDataSource: RemoteDat
 
     override fun render(companionAdInfo: List<AdCompanionInfo>?) {
         staticResRenderer.render(companionAdInfo)
+        htmlResourceRenderer.render(companionAdInfo)
     }
 
     override fun load(companionAdInfo: List<AdCompanionInfo>?) {
         staticResRenderer.load(companionAdInfo)
+        htmlResourceRenderer.load(companionAdInfo)
     }
 
     override fun release(companionAdSlots: List<CompanionAdSlot>?) {

@@ -163,7 +163,7 @@ class RemoteDataSource(val configuration: Configuration) : IDataSource{
     @Throws(IOException::class)
     fun fetchCompanionResource(url: String): Response {
         val requestBuilder: Request.Builder = Request.Builder().url(url)
-        requestBuilder.headers(Headers.of())
+        requestBuilder.headers(Headers.of(CacheOverWriteInterceptor.FORCE_RESPONSE_CACHE, "3600")) // 1 hour
         return okHttpClient.newCall(requestBuilder.build()).execute()
     }
 

@@ -10,6 +10,8 @@ class CompanionAdData : CompanionAd , ITrackersProvider {
     var _width: Int = 0
     var _height: Int = 0
     var staticResource : StaticResource? = null
+    var htmlResource: HTMLResource? = null
+    var resourceType: String = TAG_NO_RESOURCE
     var trackingEvents: MutableMap<EventName, TrackingEvent>? = null
 
 
@@ -18,13 +20,22 @@ class CompanionAdData : CompanionAd , ITrackersProvider {
         var url: String? = null
     }
 
+    class HTMLResource {
+        var url: String? = null
+    }
+
     companion object{
         const val TAG_STATIC_RESOURCE = "StaticResource"
-
+        const val TAG_HTML_RESOURCE = "HTMLResource"
+        const val TAG_NO_RESOURCE = "NoResouceFound"
     }
 
     override fun getResourceValue(): String {
-        return staticResource!!.url!!
+        return when(resourceType) {
+            TAG_STATIC_RESOURCE -> staticResource!!.url!!
+            TAG_HTML_RESOURCE -> htmlResource!!.url!!
+            else -> TAG_NO_RESOURCE
+        }
     }
 
     override fun getHeight(): Int {

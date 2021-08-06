@@ -417,7 +417,14 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
                         val staticResource = CompanionAdData.StaticResource()
                         staticResource.creativeType = readAttr(pullParser, CompanionCreative.ATTR_CREATIVE_TYPE)!!
                         staticResource.url = readText(pullParser)
+                        companionAdData.resourceType = CompanionAdData.TAG_STATIC_RESOURCE
                         companionAdData.staticResource = staticResource
+                    }
+                    CompanionAdData.TAG_HTML_RESOURCE -> {
+                        val htmlResource = CompanionAdData.HTMLResource()
+                        htmlResource.url = readText(pullParser)
+                        companionAdData.resourceType = CompanionAdData.TAG_HTML_RESOURCE
+                        companionAdData.htmlResource = htmlResource
                     }
                     TrackingEvent.TRACKING_EVENTS_XML_TAG -> {
                         companionAdData.trackingEvents = readTrackingEvents(pullParser)
