@@ -1,4 +1,4 @@
-package com.google.android.exoplayer2.ext.ima;
+package com.mxplay.adloader;
 
 import android.net.Uri;
 

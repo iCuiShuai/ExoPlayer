@@ -1,6 +1,9 @@
 package com.mxplay.adloader;
 
+import android.net.Uri;
+
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.Player;
@@ -15,14 +18,49 @@ public abstract class AdsBehaviour {
     public interface AdPlaybackStateHost{
         AdPlaybackState getAdPlaybackState();
         void updateAdPlaybackState(AdPlaybackState adPlaybackState);
+        int getPlayingAdGroupIndex();
     }
 
     protected boolean debug = false;
     protected @NonNull AdPlaybackStateHost adPlaybackStateHost;
     protected long contentDurationMs = C.TIME_UNSET;
     private VideoAdsTracker videoAdsTracker;
+    private boolean isPipModeActive = false;
+    private @Nullable IAdTagProvider adTagProvider;
 
     public AdsBehaviour() {
+    }
+
+    public void setAdTagProvider(@Nullable IAdTagProvider adTagProvider) {
+        this.adTagProvider = adTagProvider;
+    }
+
+    public void handleAudioAdLoaded(int podIndex, int adPosition) {
+        if (isPipModeActive){
+            AdPlaybackState adPlaybackState = adPlaybackStateHost.getAdPlaybackState();
+            adPlaybackStateHost.updateAdPlaybackState(adPlaybackState.withAdLoadError(podIndex, adPosition - 1));
+        }
+    }
+
+    public void provideAdTagUri(Uri actualUri, @NonNull IAdTagProvider.Listener listener) {
+        if (adTagProvider != null){
+            adTagProvider.registerTagListener(listener);
+        }
+        listener.onTagReceived(actualUri);
+    }
+
+    public void setPipMode(boolean isPip) {
+        isPipModeActive = isPip;
+        if (isPipModeActive){
+            int playingAdGroupIndex = adPlaybackStateHost.getPlayingAdGroupIndex();
+            if (playingAdGroupIndex == C.INDEX_UNSET) return;
+            AdPlaybackState adPlaybackState = adPlaybackStateHost.getAdPlaybackState();
+            adPlaybackStateHost.updateAdPlaybackState(adPlaybackState.withSkippedAdGroup(playingAdGroupIndex));
+        }
+    }
+
+    public boolean isPipModeActive() {
+        return isPipModeActive;
     }
 
     public void setContentDurationMs(long contentDurationMs) {
@@ -38,7 +76,7 @@ public abstract class AdsBehaviour {
     }
 
     public void onAllAdsRequested(){
-
+        videoAdsTracker.onAdManagerRequested();
     }
 
     public abstract AdPlaybackState createAdPlaybackState(Object objectId, long[] adGroupTimesUs);

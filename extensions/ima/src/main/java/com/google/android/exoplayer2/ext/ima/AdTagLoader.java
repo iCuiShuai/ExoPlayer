@@ -66,6 +66,7 @@ import com.google.android.exoplayer2.util.Util;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.mxplay.adloader.AdsBehaviour;
+import com.mxplay.adloader.IAdTagProvider;
 
 import java.io.IOException;
 import java.lang.annotation.Documented;
@@ -76,7 +77,7 @@ import java.util.List;
 import java.util.Map;
 
 /** Handles loading and playback of a single ad tag. */
-/* package */ final class AdTagLoader implements Player.EventListener, AdsBehaviour.AdPlaybackStateHost {
+/* package */ final class AdTagLoader implements Player.EventListener {
 
   private static final String TAG = "AdTagLoader";
 
@@ -265,9 +266,27 @@ import java.util.Map;
       adDisplayContainer.setCompanionSlots(configuration.companionAdSlots);
     }
     adsBehaviour = configuration.adsBehaviour;
-    adsBehaviour.setAdPlaybackStateHost(this);
+    adsBehaviour.setAdPlaybackStateHost(adPlaybackStateHost);
     adsLoader = requestAds(context, imaSdkSettings, adDisplayContainer);
   }
+
+  private final AdsBehaviour.AdPlaybackStateHost adPlaybackStateHost = new AdsBehaviour.AdPlaybackStateHost() {
+    @Override
+    public AdPlaybackState getAdPlaybackState() {
+      return AdTagLoader.this.adPlaybackState;
+    }
+
+    @Override
+    public void updateAdPlaybackState(AdPlaybackState adPlaybackState) {
+      AdTagLoader.this.adPlaybackState = adPlaybackState;
+      AdTagLoader.this.updateAdPlaybackState();
+    }
+
+    @Override
+    public int getPlayingAdGroupIndex() {
+      return imaAdState == IMA_AD_STATE_PLAYING && imaAdInfo != null ? imaAdInfo.adGroupIndex : C.INDEX_UNSET;
+    }
+  };
 
   /** Returns the underlying IMA SDK ads loader. */
   public AdsLoader getAdsLoader() {
@@ -556,7 +575,14 @@ import java.util.Map;
       request.setVastLoadTimeout(configuration.vastLoadTimeoutMs);
     }
     request.setContentProgressProvider(componentListener);
-    adsLoader.requestAds(request);
+    if (request.getAdTagUrl() != null) {
+      adsBehaviour.provideAdTagUri(Uri.parse(request.getAdTagUrl()), adTag -> {
+        request.setAdTagUrl(adTag.toString());
+        adsLoader.requestAds(request);
+      });
+    }else
+      adsLoader.requestAds(request);
+
     return adsLoader;
   }
 
@@ -763,6 +789,12 @@ import java.util.Map;
         Map<String, String> adData = adEvent.getAdData();
         String message = "AdEvent: " + adData;
         Log.i(TAG, message);
+        break;
+      case LOADED:
+        if (adEvent.getAd().getVastMediaWidth() <= 1 && adEvent.getAd().getVastMediaHeight() <= 1){
+          AdPodInfo adPodInfo = adEvent.getAd().getAdPodInfo();
+          adsBehaviour.handleAudioAdLoaded(adPodInfo.getPodIndex(), adPodInfo.getAdPosition());
+        }
         break;
       default:
         break;
@@ -1452,16 +1484,7 @@ import java.util.Map;
     }
   }
 
-  @Override
-  public AdPlaybackState getAdPlaybackState() {
-    return adPlaybackState;
-  }
 
-  @Override
-  public void updateAdPlaybackState(AdPlaybackState adPlaybackState) {
-      this.adPlaybackState = adPlaybackState;
-      updateAdPlaybackState();
-  }
 
   // TODO: Consider moving this into AdPlaybackState.
   private static final class AdInfo {

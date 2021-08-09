@@ -1,7 +1,5 @@
 package com.mxplay.adloader;
 
-import androidx.annotation.NonNull;
-
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.Timeline;
@@ -19,19 +17,19 @@ public class AdsBehaviourFakeCuepoints extends AdsBehaviourDefault {
     private static final int FAKE_CUEPOINTS_DISTANCE = 10; // in secs
     public static final int NEXT_FAKE_CUEPOINTS_DISTANCE_THRESHOLD = 8000; // 8 sec
     public static final int NEXT_AD_DISTANCE_THRESHOLD = 3000; // 3 sec
+    private final long contentDurationMs;
 
 
-
-    public AdsBehaviourFakeCuepoints() {
+    public AdsBehaviourFakeCuepoints(long contentDurationSec) {
         super();
+        this.contentDurationMs =  Math.round(C.MICROS_PER_SECOND * contentDurationSec);;
     }
 
     private long[] generateFakeAdGroupsTimesUs(long[] adGroupTimesUs) {
-        long duration = Math.round(C.MICROS_PER_SECOND * 3600);
         List<Long> fakeCuePoints = new ArrayList<>();
         long distance = Math.round(C.MICROS_PER_SECOND * FAKE_CUEPOINTS_DISTANCE);
         long start = distance; // 10
-        for (int i = 0; i < duration / distance + 1; i++) {  // 3 < 2
+        for (int i = 0; i < contentDurationMs / distance + 1; i++) {  // 3 < 2
             fakeCuePoints.add(start);
             start += distance;
         }
