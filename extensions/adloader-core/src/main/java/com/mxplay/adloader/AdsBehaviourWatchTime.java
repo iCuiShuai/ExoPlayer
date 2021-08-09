@@ -19,8 +19,8 @@ public class AdsBehaviourWatchTime extends AdsBehaviourFakeCuepoints{
     private final @NonNull PlaybackStatsListener playbackStatsListener;
     private @Nullable Player player;
 
-    public AdsBehaviourWatchTime() {
-        super();
+    public AdsBehaviourWatchTime(long durationSec) {
+        super(durationSec);
         playbackStatsListener = new PlaybackStatsListener(true, null);
     }
 
