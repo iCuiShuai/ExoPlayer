@@ -23,7 +23,6 @@ buildscript {
         classpath 'com.android.tools.build:gradle:4.0.1'
         classpath 'com.google.android.gms:strict-version-matcher-plugin:1.2.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "org.jetbrains.kotlin:kotlin-android-extensions:$kotlin_version"
     }
 }
 allprojects {

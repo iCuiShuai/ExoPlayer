@@ -1,6 +1,7 @@
 package com.mxplay.adloader;
 
 import android.net.Uri;
+import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -20,7 +21,7 @@ public abstract class AdsBehaviour {
     public interface AdPlaybackStateHost{
         AdPlaybackState getAdPlaybackState();
         void updateAdPlaybackState(AdPlaybackState adPlaybackState);
-        int getPlayingAdGroupIndex();
+        @Nullable Pair<Integer, Integer> getPlayingAdInfo();
         int getAdGroupCount();
     }
 
@@ -30,6 +31,8 @@ public abstract class AdsBehaviour {
     private VideoAdsTracker videoAdsTracker;
     private boolean isPipModeActive = false;
     private @Nullable IAdTagProvider adTagProvider;
+    private int audioAdPodIndex = C.INDEX_UNSET;
+    private int audioAdPosition = C.INDEX_UNSET;
 
     protected long startLoadMediaTime;
     protected long startRequestTime = 0;
@@ -48,6 +51,9 @@ public abstract class AdsBehaviour {
         if (isPipModeActive){
             AdPlaybackState adPlaybackState = adPlaybackStateHost.getAdPlaybackState();
             adPlaybackStateHost.updateAdPlaybackState(adPlaybackState.withAdLoadError(podIndex, adPosition - 1));
+        }else {
+            audioAdPodIndex = podIndex;
+            audioAdPosition = adPosition;
         }
     }
 
@@ -61,10 +67,12 @@ public abstract class AdsBehaviour {
     public void setPipMode(boolean isPip) {
         isPipModeActive = isPip;
         if (isPipModeActive){
-            int playingAdGroupIndex = adPlaybackStateHost.getPlayingAdGroupIndex();
-            if (playingAdGroupIndex == C.INDEX_UNSET) return;
-            AdPlaybackState adPlaybackState = adPlaybackStateHost.getAdPlaybackState();
-            adPlaybackStateHost.updateAdPlaybackState(adPlaybackState.withSkippedAdGroup(playingAdGroupIndex));
+            Pair<Integer, Integer> playingAdInfo = adPlaybackStateHost.getPlayingAdInfo();
+            if (playingAdInfo == null) return;
+            if (playingAdInfo.first == audioAdPodIndex && playingAdInfo.second == audioAdPosition){
+                AdPlaybackState adPlaybackState = adPlaybackStateHost.getAdPlaybackState();
+                adPlaybackStateHost.updateAdPlaybackState(adPlaybackState.withSkippedAd(audioAdPodIndex, audioAdPosition));
+            }
         }
     }
 
