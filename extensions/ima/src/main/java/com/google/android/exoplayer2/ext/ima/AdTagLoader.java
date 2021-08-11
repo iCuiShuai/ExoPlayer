@@ -27,6 +27,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.util.Pair;
 import android.view.ViewGroup;
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
@@ -283,8 +284,8 @@ import java.util.Map;
     }
 
     @Override
-    public int getPlayingAdGroupIndex() {
-      return imaAdState == IMA_AD_STATE_PLAYING && imaAdInfo != null ? imaAdInfo.adGroupIndex : C.INDEX_UNSET;
+    public @Nullable Pair<Integer, Integer> getPlayingAdInfo() {
+      return imaAdState == IMA_AD_STATE_PLAYING && imaAdInfo != null ? new Pair<Integer, Integer>(imaAdInfo.adGroupIndex, imaAdInfo.adIndexInAdGroup) : null;
     }
   };
 
@@ -451,6 +452,10 @@ import java.util.Map;
     if (adMediaInfo != null) {
       for (int i = 0; i < adCallbacks.size(); i++) {
         adCallbacks.get(i).onLoaded(adMediaInfo);
+      }
+      @Nullable AdInfo activeAdInfo = adInfoByAdMediaInfo.get(adMediaInfo);
+      if (activeAdInfo != null){
+        activeAdInfo.isPrepareComplete = true;
       }
     } else {
       Log.w(TAG, "Unexpected prepared ad " + adInfo);
@@ -698,9 +703,9 @@ import java.util.Map;
   private VideoProgressUpdate getAdVideoProgressUpdate() {
     if (player == null) {
       return lastAdProgress;
-    } else if (imaAdState != IMA_AD_STATE_NONE && playingAd) {
+    } else if (imaAdState != IMA_AD_STATE_NONE && playingAd && imaAdInfo != null && imaAdInfo.isPrepareComplete) {
       long adDuration = player.getDuration();
-      return adDuration == C.TIME_UNSET
+      return adDuration == C.TIME_UNSET || player.getCurrentPosition() > adDuration + 500
           ? VideoProgressUpdate.VIDEO_TIME_NOT_READY
           : new VideoProgressUpdate(player.getCurrentPosition(), adDuration);
     } else {
@@ -1491,6 +1496,7 @@ import java.util.Map;
 
     public final int adGroupIndex;
     public final int adIndexInAdGroup;
+    public boolean isPrepareComplete;
 
     public AdInfo(int adGroupIndex, int adIndexInAdGroup) {
       this.adGroupIndex = adGroupIndex;
