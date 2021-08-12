@@ -4,7 +4,7 @@ import com.mxplay.interactivemedia.api.CompanionAd
 import com.mxplay.interactivemedia.api.CompanionAdSlot
 import com.mxplay.interactivemedia.internal.data.model.ICompanionResource
 
-class AdCompanionInfo(val companionAdSlot: CompanionAdSlot, val companionAd: CompanionAd) {
+class AdCompanionInfo(val companionAdSlot: CompanionAdSlot, val companionAd: CompanionAd, val resourceType: String) {
     private var resource: ICompanionResource? = null
 
     fun getResource(): ICompanionResource? {

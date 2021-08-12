@@ -68,6 +68,7 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.mxplay.adloader.AdsBehaviour;
 import com.mxplay.adloader.IAdTagProvider;
+import com.mxplay.adloader.VideoAdsTracker;
 
 import java.io.IOException;
 import java.lang.annotation.Documented;
@@ -580,6 +581,7 @@ import java.util.Map;
       request.setVastLoadTimeout(configuration.vastLoadTimeoutMs);
     }
     request.setContentProgressProvider(componentListener);
+    adsBehaviour.onAllAdsRequested();
     if (request.getAdTagUrl() != null) {
       adsBehaviour.provideAdTagUri(Uri.parse(request.getAdTagUrl()), adTag -> {
         request.setAdTagUrl(adTag.toString());
@@ -682,6 +684,7 @@ import java.util.Map;
 
   private VideoProgressUpdate getContentVideoProgressUpdate() {
     boolean hasContentDuration = contentDurationMs != C.TIME_UNSET;
+    long contentDurationMs = hasContentDuration ? this.contentDurationMs : IMA_DURATION_UNSET;
     long contentPositionMs;
     if (pendingContentPositionMs != C.TIME_UNSET) {
       sentPendingContentPositionMs = true;
@@ -692,11 +695,10 @@ import java.util.Map;
       long elapsedSinceEndMs = SystemClock.elapsedRealtime() - fakeContentProgressElapsedRealtimeMs;
       contentPositionMs = fakeContentProgressOffsetMs + elapsedSinceEndMs;
     } else if (imaAdState == IMA_AD_STATE_NONE && !playingAd && hasContentDuration) {
-      contentPositionMs = adsBehaviour.getContentPositionMs(player, timeline, period);
+      contentPositionMs = adsBehaviour.getContentPositionMs(player, timeline, period, contentDurationMs);
     } else {
       return VideoProgressUpdate.VIDEO_TIME_NOT_READY;
     }
-    long contentDurationMs = hasContentDuration ? this.contentDurationMs : IMA_DURATION_UNSET;
     return new VideoProgressUpdate(contentPositionMs, contentDurationMs);
   }
 
@@ -768,6 +770,7 @@ import java.util.Map;
             adGroupTimeSeconds == -1.0
                 ? adPlaybackState.adGroupCount - 1
                 : getAdGroupIndexForCuePointTimeSeconds(adGroupTimeSeconds);
+        adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adGroupIndex, new Exception("Fetch error for ad "));
         markAdGroupInErrorStateAndClearPendingContentPosition(adGroupIndex);
         break;
       case CONTENT_PAUSE_REQUESTED:
@@ -980,6 +983,7 @@ import java.util.Map;
     }
 
     Uri adUri = Uri.parse(adMediaInfo.getUrl());
+    adsBehaviour.onAdLoad(adGroupIndex, adIndexInAdGroup, adUri);
     adPlaybackState =
         adPlaybackState.withAdUri(adInfo.adGroupIndex, adInfo.adIndexInAdGroup, adUri);
     updateAdPlaybackState();
@@ -1015,6 +1019,8 @@ import java.util.Map;
         for (int i = 0; i < adCallbacks.size(); i++) {
           adCallbacks.get(i).onError(adMediaInfo);
         }
+      } else {
+        adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_SUCCESS, imaAdInfo.adGroupIndex, null);
       }
       updateAdProgress();
     } else {
@@ -1102,6 +1108,7 @@ import java.util.Map;
       Log.w(TAG, "Unable to determine ad group index for ad group load error", error);
       return;
     }
+    adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adGroupIndex, error);
     markAdGroupInErrorStateAndClearPendingContentPosition(adGroupIndex);
     if (pendingAdLoadError == null) {
       pendingAdLoadError = AdLoadException.createForAdGroup(error, adGroupIndex);
@@ -1164,6 +1171,7 @@ import java.util.Map;
     }
     adPlaybackState = adPlaybackState.withAdLoadError(adGroupIndex, adIndexInAdGroup);
     updateAdPlaybackState();
+    adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adGroupIndex, adIndexInAdGroup, exception);
   }
 
   private void ensureSentContentCompleteIfAtEndOfStream() {
@@ -1333,6 +1341,7 @@ import java.util.Map;
         adsManager.destroy();
         return;
       }
+      adsBehaviour.onAdsManagerLoaded(adsManager.getAdCuePoints().size());
       pendingAdRequestContext = null;
       AdTagLoader.this.adsManager = adsManager;
       adsManager.addAdErrorListener(this);
@@ -1394,6 +1403,11 @@ import java.util.Map;
       }
       try {
         handleAdEvent(adEvent);
+        if (adEventType == AdEventType.STARTED || adEventType == AdEventType.COMPLETED){
+          @Nullable String creativeId = adEvent.getAd() != null ? adEvent.getAd().getCreativeId() : null;
+          @Nullable String advertiser = adEvent.getAd() != null ? adEvent.getAd().getAdvertiserName() : null;
+          adsBehaviour.onAdEvent(adEventType.name(), creativeId, advertiser);
+        }
       } catch (RuntimeException e) {
         maybeNotifyInternalError("onAdEvent", e);
       }
@@ -1412,6 +1426,7 @@ import java.util.Map;
         pendingAdRequestContext = null;
         adPlaybackState = new AdPlaybackState(adsId);
         updateAdPlaybackState();
+        adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, -1, error);
       } else if (ImaUtil.isAdGroupLoadError(error)) {
         try {
           handleAdGroupLoadError(error);

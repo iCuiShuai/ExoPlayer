@@ -1,12 +1,10 @@
 package com.mxplay.interactivemedia.internal.core
 
-import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
-import android.util.TypedValue
 import android.widget.ImageView
 import com.mxplay.interactivemedia.api.AdEvent
 import com.mxplay.interactivemedia.api.CompanionAdSlot
@@ -39,7 +37,9 @@ class CompanionStaticResourceRenderer (val ioOpsScope: CoroutineScope, private v
             return
         }
         companionAdInfo.forEach {
-            render(it)
+            if (it.resourceType == CompanionAdData.TAG_STATIC_RESOURCE) {
+                render(it)
+            }
         }
     }
 
@@ -60,16 +60,9 @@ class CompanionStaticResourceRenderer (val ioOpsScope: CoroutineScope, private v
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
                 companionContainer.context.startActivity(intent)
-                onEvent(CompanionAdEvent(AdEventImpl(AdEvent.AdEventType.CLICKED, null, null), companionAd!!))
+                onEvent(CompanionAdEvent(AdEventImpl(AdEvent.AdEventType.CLICKED, null, null), companionAd))
             }
         }
-    }
-
-    private fun px2dp(px: Float, context: Context): Int {
-        return TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                px,
-                context.resources.displayMetrics).toInt()
     }
 
     override fun load(companionAdInfo: List<AdCompanionInfo>?) {
@@ -77,7 +70,9 @@ class CompanionStaticResourceRenderer (val ioOpsScope: CoroutineScope, private v
             return
         }
         companionAdInfo.forEach {
-            load(it)
+            if(it.resourceType == CompanionAdData.TAG_STATIC_RESOURCE) {
+                load(it)
+            }
         }
     }
 
@@ -88,8 +83,8 @@ class CompanionStaticResourceRenderer (val ioOpsScope: CoroutineScope, private v
                     val response = remoteDataSource.fetchCompanionResource(companionInfo.companionAd.resourceValue)
                     if (response.isSuccessful){
                         val context = companionInfo.companionAdSlot.container.context
-                        val width = px2dp(companionInfo.companionAd.width * 1F, context)
-                        val height = px2dp(companionInfo.companionAd.height * 1F, context)
+                        val width = px2dp(companionInfo.companionAd.width, context)
+                        val height = px2dp(companionInfo.companionAd.height, context)
                         val scaledBitmap = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(response.body()?.byteStream()), width, height, false)
                         companionInfo.setResource(StaticCompanionResource(BitmapDrawable(context.resources, scaledBitmap)))
                     }
@@ -103,7 +98,6 @@ class CompanionStaticResourceRenderer (val ioOpsScope: CoroutineScope, private v
         companionAdSlots?.forEach {
             val container = it.container
             container.removeAllViews()
-            container.setOnClickListener(null)
         }
     }
 
