@@ -302,12 +302,9 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
         adBreaks!!.forEach {
             if (it.hasUnplayedAds) unPlayedAds++
         }
-        return if (unPlayedAds > 0) {
-            processedAdBreaks = adBreaks.size - unPlayedAds
-            true
-        } else false
+        processedAdBreaks = adBreaks.size - unPlayedAds
+        return unPlayedAds > 0
     }
-
 
     override val adCuePoints: List<Float?>
         get() = cuePoints
