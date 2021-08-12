@@ -212,6 +212,7 @@ public abstract class AdsBehaviour {
         }
         AdPlaybackState adPlaybackState = adPlaybackStateHost.getAdPlaybackState();
         int adGroupIndex = getLoadingAdGroupIndexForReporting(adPlaybackState, C.msToUs(contentDurationMs));
+        if (adGroupIndex == C.INDEX_UNSET) return;
         long contentPosition = TimeUnit.MILLISECONDS.toSeconds(contentPositionMs);
         int realStartTime;
         long startTime = TimeUnit.MICROSECONDS.toSeconds(adPlaybackState.adGroupTimesUs[adGroupIndex]);
@@ -222,12 +223,12 @@ public abstract class AdsBehaviour {
         }
         if (realStartTime == contentPosition && lastRealStartTime != realStartTime) {
             lastRealStartTime = realStartTime;
-            updateStartRequestTime(adGroupIndex, true);
+            updateStartRequestTime(adGroupIndex);
         }
     }
 
-    private void updateStartRequestTime(int adGroupIndex, boolean force) {
-        if (lastStartRequestAdGroupIndex != adGroupIndex && (adGroupIndex != C.INDEX_UNSET || force)) {
+    private void updateStartRequestTime(int adGroupIndex) {
+        if (lastStartRequestAdGroupIndex != adGroupIndex && (adGroupIndex != C.INDEX_UNSET)) {
             lastStartRequestAdGroupIndex = adGroupIndex;
             startRequestTime = System.currentTimeMillis();
         }
