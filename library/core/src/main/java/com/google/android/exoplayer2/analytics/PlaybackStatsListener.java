@@ -36,6 +36,7 @@ import com.google.android.exoplayer2.source.MediaLoadData;
 import com.google.android.exoplayer2.source.MediaSource.MediaPeriodId;
 import com.google.android.exoplayer2.trackselection.TrackSelection;
 import com.google.android.exoplayer2.util.Assertions;
+import com.google.android.exoplayer2.util.Log;
 import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.Util;
 import java.io.IOException;
@@ -146,9 +147,10 @@ public final class PlaybackStatsListener
                 : null;
     return activeStatsTracker == null ? null : activeStatsTracker.build(/* isFinal= */ false);
   }
-  
+  private @Nullable String contentSessionFirst = null;
   public  long getContentTotalPlayTimeMs(){
-    PlaybackStatsTracker  tracker = activeContentPlayback != null ? playbackStatsTrackers.get(activeContentPlayback) : null;
+    if (contentSessionFirst == null && activeContentPlayback != null) contentSessionFirst = activeContentPlayback;
+    PlaybackStatsTracker  tracker = contentSessionFirst != null ? playbackStatsTrackers.get(contentSessionFirst) : null;
     return tracker == null ? 0 : tracker.getTotalPlayTimeMs(/* isFinal= */ );
   }
 

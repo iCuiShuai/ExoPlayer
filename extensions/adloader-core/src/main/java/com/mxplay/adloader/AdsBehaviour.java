@@ -48,6 +48,9 @@ public abstract class AdsBehaviour {
         }
     }
 
+    public int getMediaLoadTimeout(int defaultTimout){
+        return defaultTimout;
+    }
     public void provideAdTagUri(Uri actualUri, @NonNull IAdTagProvider.Listener listener) {
         if (adTagProvider != null){
             adTagProvider.registerTagListener(listener);

@@ -67,6 +67,8 @@ import com.google.android.exoplayer2.util.Util;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.mxplay.adloader.AdsBehaviour;
+import com.mxplay.adloader.AdsBehaviourFakeCuepoints;
+import com.mxplay.adloader.AdsBehaviourWatchTime;
 import com.mxplay.adloader.IAdTagProvider;
 
 import java.io.IOException;
@@ -268,6 +270,7 @@ import java.util.Map;
     }
     adsBehaviour = configuration.adsBehaviour;
     adsBehaviour.setAdPlaybackStateHost(adPlaybackStateHost);
+    adsBehaviour.setDebug(configuration.debugModeEnabled);
     adsLoader = requestAds(context, imaSdkSettings, adDisplayContainer);
   }
 
@@ -363,7 +366,7 @@ import java.util.Map;
   public void activate(Player player) {
     this.player = player;
     player.addListener(this);
-
+    adsBehaviour.setPlayer(player);
     boolean playWhenReady = player.getPlayWhenReady();
     onTimelineChanged(player.getCurrentTimeline(), Player.TIMELINE_CHANGE_REASON_SOURCE_UPDATE);
     @Nullable AdsManager adsManager = this.adsManager;
@@ -624,8 +627,9 @@ import java.util.Map;
         configuration.adMediaMimeTypes != null
             ? configuration.adMediaMimeTypes
             : supportedMimeTypes);
-    if (configuration.mediaLoadTimeoutMs != TIMEOUT_UNSET) {
-      adsRenderingSettings.setLoadVideoTimeout(configuration.mediaLoadTimeoutMs);
+    int mediaLoadTimeout = adsBehaviour.getMediaLoadTimeout(configuration.mediaLoadTimeoutMs);
+    if (mediaLoadTimeout != TIMEOUT_UNSET) {
+      adsRenderingSettings.setLoadVideoTimeout(mediaLoadTimeout);
     }
     if (configuration.mediaBitrate != BITRATE_UNSET) {
       adsRenderingSettings.setBitrateKbps(configuration.mediaBitrate / 1000);
@@ -683,6 +687,7 @@ import java.util.Map;
   private VideoProgressUpdate getContentVideoProgressUpdate() {
     boolean hasContentDuration = contentDurationMs != C.TIME_UNSET;
     long contentPositionMs;
+    resetFlagsIfRequired();
     if (pendingContentPositionMs != C.TIME_UNSET) {
       sentPendingContentPositionMs = true;
       contentPositionMs = pendingContentPositionMs;
@@ -698,6 +703,13 @@ import java.util.Map;
     }
     long contentDurationMs = hasContentDuration ? this.contentDurationMs : IMA_DURATION_UNSET;
     return new VideoProgressUpdate(contentPositionMs, contentDurationMs);
+  }
+
+  private void resetFlagsIfRequired() {
+    if (adsBehaviour instanceof AdsBehaviourWatchTime  && contentDurationMs != C.TIME_UNSET){
+      pendingContentPositionMs = C.TIME_UNSET;
+      fakeContentProgressElapsedRealtimeMs = C.TIME_UNSET;
+    }
   }
 
   private VideoProgressUpdate getAdVideoProgressUpdate() {

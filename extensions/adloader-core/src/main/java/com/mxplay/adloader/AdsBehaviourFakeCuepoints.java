@@ -16,13 +16,18 @@ public class AdsBehaviourFakeCuepoints extends AdsBehaviourDefault {
 
     private static final int FAKE_CUEPOINTS_DISTANCE = 10; // in secs
     public static final int NEXT_FAKE_CUEPOINTS_DISTANCE_THRESHOLD = 8000; // 8 sec
-    public static final int NEXT_AD_DISTANCE_THRESHOLD = 3000; // 3 sec
     private final long contentDurationMs;
+    private int totalAdLoads;
 
 
     public AdsBehaviourFakeCuepoints(long contentDurationSec) {
         super();
         this.contentDurationMs =  Math.round(C.MICROS_PER_SECOND * contentDurationSec);;
+    }
+
+    @Override
+    public int getMediaLoadTimeout(int defaultTimout) {
+        return 2 * NEXT_FAKE_CUEPOINTS_DISTANCE_THRESHOLD;
     }
 
     private long[] generateFakeAdGroupsTimesUs(long[] adGroupTimesUs) {
@@ -52,7 +57,7 @@ public class AdsBehaviourFakeCuepoints extends AdsBehaviourDefault {
     @Override
     public AdPlaybackState createAdPlaybackState(Object adId, long[] adGroupTimesUs) {
         long[] fakeAdGroupTimesUs = generateFakeAdGroupsTimesUs(adGroupTimesUs);
-        return new MxAdPlaybackState(adId, adGroupTimesUs, fakeAdGroupTimesUs);
+        return new MxAdPlaybackState(adId, fakeAdGroupTimesUs, adGroupTimesUs);
     }
 
     @Override
@@ -83,15 +88,6 @@ public class AdsBehaviourFakeCuepoints extends AdsBehaviourDefault {
                     Log.d(TAG, "Ad skipped on user seek onTimelineChanged/onPositionDiscontinuity " + newAdGroupIndex);
                 }
             }
-            int newFakeAdGroupIndex = adPlaybackState.getAdGroupIndexForPositionUs(C.msToUs(positionMs), C.msToUs(contentDurationMs));
-            if (newFakeAdGroupIndex != C.INDEX_UNSET &&  newFakeAdGroupIndex > newAdGroupIndex && adPlaybackState.adGroups[newFakeAdGroupIndex].count < 0) {
-                adPlaybackState = adPlaybackState.withSkippedAdGroup(newFakeAdGroupIndex);
-                updateState = true;
-                if (debug) {
-                    Log.d(TAG, "Re-enabled cuepoint Ad skipped on user seek onTimelineChanged/onPositionDiscontinuity " + newFakeAdGroupIndex);
-                }
-            }
-
             if (updateState) adPlaybackStateHost.updateAdPlaybackState(adPlaybackState);
         }
     }
@@ -100,30 +96,41 @@ public class AdsBehaviourFakeCuepoints extends AdsBehaviourDefault {
     public long getContentPositionMs(Player player, Timeline timeline, Timeline.Period period) {
         boolean hasContentDuration = contentDurationMs != C.INDEX_UNSET;
         if (hasContentDuration) {
-            AdPlaybackState adPlaybackState = adPlaybackStateHost.getAdPlaybackState();
-            long positionUs =
-                    C.msToUs(getContentPeriodPositionMs(Assertions.checkNotNull(player), timeline, period));
-            int adGroupIndexAfterPositionUs = adPlaybackState.getAdGroupIndexAfterPositionUs(positionUs, C.msToUs(contentDurationMs));
-            if (adGroupIndexAfterPositionUs != C.INDEX_UNSET && adPlaybackState.adGroups[adGroupIndexAfterPositionUs].count < 0) {
-                long nextAdTimeOffsetMs = C.usToMs(adPlaybackState.adGroupTimesUs[adGroupIndexAfterPositionUs] - positionUs);
-                if (nextAdTimeOffsetMs < NEXT_AD_DISTANCE_THRESHOLD) {
-                    adPlaybackState = adPlaybackState.withSkippedAdGroup(adGroupIndexAfterPositionUs);
-                    adPlaybackStateHost.updateAdPlaybackState(adPlaybackState);
-                    if (debug)
-                        Log.d(TAG, " Skipped fake cuepoint " + adGroupIndexAfterPositionUs + " -- pos: " + C.usToMs(adPlaybackState.adGroupTimesUs[adGroupIndexAfterPositionUs]));
-                }
-            }
-
+            cleanUnusedCuePoints(player, timeline, period);
         }
         return super.getContentPositionMs(player, timeline, period);
 
     }
 
+    private void cleanUnusedCuePoints(Player player, Timeline timeline, Timeline.Period period) {
+        AdPlaybackState adPlaybackState = adPlaybackStateHost.getAdPlaybackState();
+        long positionUs =
+                C.msToUs(getContentPeriodPositionMs(Assertions.checkNotNull(player), timeline, period));
+        boolean shouldUpdatePlaybackState = false;
+        while (true){
+            int adGroupIndexAfterPositionUs = adPlaybackState.getAdGroupIndexAfterPositionUs(positionUs, C.msToUs(contentDurationMs));
+            if (adGroupIndexAfterPositionUs != C.INDEX_UNSET && adPlaybackState.adGroups[adGroupIndexAfterPositionUs].count < 0) {
+                long nextAdTimeOffsetMs = C.usToMs(adPlaybackState.adGroupTimesUs[adGroupIndexAfterPositionUs] - positionUs);
+                if (nextAdTimeOffsetMs < NEXT_FAKE_CUEPOINTS_DISTANCE_THRESHOLD) {
+                    adPlaybackState = adPlaybackState.withSkippedAdGroup(adGroupIndexAfterPositionUs);
+                    shouldUpdatePlaybackState = true;
+                    if (debug) Log.d(TAG, " Skipped fake cuepoint " + adGroupIndexAfterPositionUs + " -- pos: " + C.usToMs(adPlaybackState.adGroupTimesUs[adGroupIndexAfterPositionUs]));
+                }else
+                    break;
+            } else break;
+
+        }
+        if (shouldUpdatePlaybackState) adPlaybackStateHost.updateAdPlaybackState(adPlaybackState);
+    }
+
     @Override
     public int getAdGroupIndexForAdPod(int podIndex, double podTimeOffset, Player player, Timeline timeline, Timeline.Period period) {
+        totalAdLoads++;
         AdPlaybackState adPlaybackState = adPlaybackStateHost.getAdPlaybackState();
+        boolean allAdsDone =  (((MxAdPlaybackState)adPlaybackState).actualAdGroupCount == totalAdLoads);
         if (podIndex == -1) {
             // This is a postroll ad.
+            if (allAdsDone) skipAllFakeCuePoints(adPlaybackState, adPlaybackState.adGroupCount - 1);
             return adPlaybackState.adGroupCount - 1;
         }
 
@@ -133,6 +140,7 @@ public class AdsBehaviourFakeCuepoints extends AdsBehaviourDefault {
             Log.d(TAG, " Player position " + C.usToMs(positionUs));
         }
         int adGroupIndex = getFakeCuepointForLoadingAd(positionUs, adPlaybackState);
+        if (allAdsDone) skipAllFakeCuePoints(adPlaybackState, adGroupIndex);
         if (adGroupIndex != C.INDEX_UNSET) return adGroupIndex;
 
         throw new IllegalStateException("Failed to find cue point");
@@ -177,5 +185,20 @@ public class AdsBehaviourFakeCuepoints extends AdsBehaviourDefault {
         return adGroupIndex;
     }
 
+    private void skipAllFakeCuePoints(AdPlaybackState adPlaybackState, int keepAdGroupIndex) {
+        // skip all ads
+        try {
+            for (int i = 0; i < adPlaybackState.adGroupTimesUs.length; i++) {
+                if (keepAdGroupIndex == i) continue;
+                adPlaybackState = adPlaybackState.withSkippedAdGroup(i);
+            }
+            adPlaybackStateHost.updateAdPlaybackState(adPlaybackState);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (debug) {
+            Log.d(TAG, " skipped all fake cue points ");
+        }
+    }
 
 }
