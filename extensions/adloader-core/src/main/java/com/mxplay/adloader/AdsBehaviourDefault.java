@@ -1,10 +1,5 @@
 package com.mxplay.adloader;
 
-import android.net.Uri;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import com.google.android.exoplayer2.source.ads.AdPlaybackState;
 
 public class AdsBehaviourDefault extends AdsBehaviour{
@@ -16,5 +11,10 @@ public class AdsBehaviourDefault extends AdsBehaviour{
     @Override
     public AdPlaybackState createAdPlaybackState(Object adId, long[] adGroupTimesUs) {
         return new AdPlaybackState(adId, adGroupTimesUs);
+    }
+
+    @Override
+    public String getTrackerName() {
+        return VideoAdsTracker.IMA_DEFAULT_AD_LOADER;
     }
 }

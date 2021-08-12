@@ -67,9 +67,7 @@ import com.google.android.exoplayer2.util.Util;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.mxplay.adloader.AdsBehaviour;
-import com.mxplay.adloader.AdsBehaviourFakeCuepoints;
 import com.mxplay.adloader.AdsBehaviourWatchTime;
-import com.mxplay.adloader.IAdTagProvider;
 import com.mxplay.adloader.VideoAdsTracker;
 
 import java.io.IOException;
@@ -995,9 +993,9 @@ import java.util.Map;
     }
 
     Uri adUri = Uri.parse(adMediaInfo.getUrl());
-    adsBehaviour.onAdLoad(adGroupIndex, adIndexInAdGroup, adUri);
     adPlaybackState =
         adPlaybackState.withAdUri(adInfo.adGroupIndex, adInfo.adIndexInAdGroup, adUri);
+    adsBehaviour.onAdLoad(adGroupIndex, adIndexInAdGroup, adUri);
     updateAdPlaybackState();
   }
 

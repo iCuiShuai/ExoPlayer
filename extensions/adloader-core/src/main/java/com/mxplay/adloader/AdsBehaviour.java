@@ -17,6 +17,8 @@ public abstract class AdsBehaviour {
 
     public static final long THRESHOLD_AD_MATCH_US = 1000;
 
+    public abstract String getTrackerName();
+
 
     public interface AdPlaybackStateHost{
         AdPlaybackState getAdPlaybackState();
@@ -30,8 +32,8 @@ public abstract class AdsBehaviour {
     private VideoAdsTracker videoAdsTracker;
     private boolean isPipModeActive = false;
     private @Nullable IAdTagProvider adTagProvider;
-    private int audioAdPodIndex = C.INDEX_UNSET;
-    private int audioAdPosition = C.INDEX_UNSET;
+    protected int audioAdPodIndex = C.INDEX_UNSET;
+    protected int audioAdPosition = C.INDEX_UNSET;
 
     protected long startLoadMediaTime;
     protected long startRequestTime = 0;
@@ -42,31 +44,33 @@ public abstract class AdsBehaviour {
     public AdsBehaviour() {
     }
 
-    public void setAdTagProvider(@Nullable IAdTagProvider adTagProvider) {
+    public final void setAdTagProvider(@Nullable IAdTagProvider adTagProvider) {
         this.adTagProvider = adTagProvider;
     }
 
-    public void handleAudioAdLoaded(int podIndex, int adPosition) {
+    public boolean handleAudioAdLoaded(int podIndex, int adPosition) {
         if (isPipModeActive){
             AdPlaybackState adPlaybackState = adPlaybackStateHost.getAdPlaybackState();
             adPlaybackStateHost.updateAdPlaybackState(adPlaybackState.withAdLoadError(podIndex, adPosition - 1));
+            return true;
         }else {
             audioAdPodIndex = podIndex;
             audioAdPosition = adPosition;
         }
+        return false;
     }
 
     public int getMediaLoadTimeout(int defaultTimout){
         return defaultTimout;
     }
-    public void provideAdTagUri(Uri actualUri, @NonNull IAdTagProvider.Listener listener) {
+    public final void provideAdTagUri(Uri actualUri, @NonNull IAdTagProvider.Listener listener) {
         if (adTagProvider != null){
             adTagProvider.registerTagListener(listener);
         }
         listener.onTagReceived(actualUri);
     }
 
-    public void setPipMode(boolean isPip) {
+    public final void setPipMode(boolean isPip) {
         isPipModeActive = isPip;
         if (isPipModeActive){
             Pair<Integer, Integer> playingAdInfo = adPlaybackStateHost.getPlayingAdInfo();
@@ -78,23 +82,23 @@ public abstract class AdsBehaviour {
         }
     }
 
-    public boolean isPipModeActive() {
+    public final boolean isPipModeActive() {
         return isPipModeActive;
     }
 
-    public void setContentDurationMs(long contentDurationMs) {
+    public final void setContentDurationMs(long contentDurationMs) {
         this.contentDurationMs = contentDurationMs;
     }
 
-    public void setAdPlaybackStateHost(@NonNull AdPlaybackStateHost adPlaybackStateHost){
+    public final void setAdPlaybackStateHost(@NonNull AdPlaybackStateHost adPlaybackStateHost){
         this.adPlaybackStateHost = adPlaybackStateHost;
     }
 
-    public void setVideoAdsTracker(VideoAdsTracker videoAdsTracker) {
+    public final void setVideoAdsTracker(VideoAdsTracker videoAdsTracker) {
         this.videoAdsTracker = videoAdsTracker;
     }
 
-    public void onAllAdsRequested(){
+    public final void onAllAdsRequested(){
         videoAdsTracker.onAdManagerRequested();
         startRequestTime = System.currentTimeMillis();
     }
@@ -109,7 +113,7 @@ public abstract class AdsBehaviour {
 
     }
 
-    public void setDebug(boolean debug) {
+    public final void setDebug(boolean debug) {
         this.debug = debug;
     }
 
@@ -163,24 +167,24 @@ public abstract class AdsBehaviour {
         throw new IllegalStateException("Failed to find cue point");
     }
 
-    public void onAdsManagerLoaded(int groupCount) {
+    public final void onAdsManagerLoaded(int groupCount) {
         videoAdsTracker.onAdsManagerLoaded(groupCount);
     }
 
-    public void onAdLoad(int adGroupIndex, int adIndexInGroup, Uri adUri) {
+    public final void onAdLoad(int adGroupIndex, int adIndexInGroup, Uri adUri) {
         videoAdsTracker.onAdLoad(adGroupIndex, adIndexInGroup, adUri);
         updateStartLoadMediaTime();
     }
 
-    public void onAdEvent(String name, @Nullable String creativeId, @Nullable String advertiser) {
+    public final void onAdEvent(String name, @Nullable String creativeId, @Nullable String advertiser) {
         videoAdsTracker.onAdEvent(name, creativeId, advertiser);
     }
 
-    public void trackEvent(@NonNull String eventName, int adGroupIndex, Exception exception) {
+    public final void trackEvent(@NonNull String eventName, int adGroupIndex, Exception exception) {
         trackEvent(eventName, adGroupIndex, -1, exception);
     }
 
-    public void trackEvent(@NonNull String eventName, int adGroupIndex, int adIndexInAdGroup, Exception exception) {
+    public final void trackEvent(@NonNull String eventName, int adGroupIndex, int adIndexInAdGroup, Exception exception) {
         AdPlaybackState adPlaybackState = adPlaybackStateHost.getAdPlaybackState();
         int adGroupCount = adPlaybackState.adGroupCount;
         switch (eventName) {
@@ -207,10 +211,7 @@ public abstract class AdsBehaviour {
             return;
         }
         AdPlaybackState adPlaybackState = adPlaybackStateHost.getAdPlaybackState();
-        int adGroupIndex = getAdGroupIndexForPositionUs(adPlaybackState.adGroups, adPlaybackState.adGroupTimesUs, C.msToUs(contentPositionMs), C.msToUs(contentDurationMs));
-        if (adGroupIndex == C.INDEX_UNSET){
-            adGroupIndex = getAdGroupIndexAfterPositionUs(adPlaybackState.adGroups, adPlaybackState.adGroupTimesUs, C.msToUs(contentPositionMs), C.msToUs(contentDurationMs));
-        }
+        int adGroupIndex = getLoadingAdGroupIndexForReporting(adPlaybackState, C.msToUs(contentDurationMs));
         long contentPosition = TimeUnit.MILLISECONDS.toSeconds(contentPositionMs);
         int realStartTime;
         long startTime = TimeUnit.MICROSECONDS.toSeconds(adPlaybackState.adGroupTimesUs[adGroupIndex]);
@@ -232,44 +233,26 @@ public abstract class AdsBehaviour {
         }
     }
 
-    public int getAdGroupIndexForPositionUs(AdPlaybackState.AdGroup[] adGroups, long[] adGroupTimesUs, long positionUs, long periodDurationUs) {
-        // Use a linear search as the array elements may not be increasing due to TIME_END_OF_SOURCE.
-        // In practice we expect there to be few ad groups so the search shouldn't be expensive.
-        int index = adGroupTimesUs.length - 1;
-        while (index >= 0 && isPositionBeforeAdGroup(adGroupTimesUs, positionUs, periodDurationUs, index)) {
-            index--;
+    protected int getLoadingAdGroupIndexForReporting(AdPlaybackState adPlaybackState, long playerPositionUs){
+        return getLoadingAdGroupIndex(adPlaybackState, playerPositionUs);
+    }
+    
+    /**
+     * Returns the index of the ad group that will preload next, or {@link C#INDEX_UNSET} if there is
+     * no such ad group.
+     */
+    protected final int getLoadingAdGroupIndex(AdPlaybackState adPlaybackState, long playerPositionUs) {
+        int adGroupIndex =
+                adPlaybackState.getAdGroupIndexForPositionUs(playerPositionUs, C.msToUs(contentDurationMs));
+        if (adGroupIndex == C.INDEX_UNSET) {
+            adGroupIndex =
+                    adPlaybackState.getAdGroupIndexAfterPositionUs(
+                            playerPositionUs, C.msToUs(contentDurationMs));
         }
-        return index >= 0 && adGroups[index].hasUnplayedAds() ? index : C.INDEX_UNSET;
+        return adGroupIndex;
     }
 
-    public int getAdGroupIndexAfterPositionUs(AdPlaybackState.AdGroup[] adGroups, long[] adGroupTimesUs, long positionUs, long periodDurationUs) {
-        if (positionUs == C.TIME_END_OF_SOURCE
-                || (periodDurationUs != C.TIME_UNSET && positionUs >= periodDurationUs)) {
-            return C.INDEX_UNSET;
-        }
-        // Use a linear search as the array elements may not be increasing due to TIME_END_OF_SOURCE.
-        // In practice we expect there to be few ad groups so the search shouldn't be expensive.
-        int index = 0;
-        while (index < adGroupTimesUs.length
-                && adGroupTimesUs[index] != C.TIME_END_OF_SOURCE
-                && (positionUs >= adGroupTimesUs[index] || !adGroups[index].hasUnplayedAds())) {
-            index++;
-        }
-        return index < adGroupTimesUs.length ? index : C.INDEX_UNSET;
-    }
-
-    private boolean isPositionBeforeAdGroup(
-            long[] adGroupTimesUs, long positionUs, long periodDurationUs, int adGroupIndex) {
-        if (positionUs == C.TIME_END_OF_SOURCE) {
-            // The end of the content is at (but not before) any postroll ad, and after any other ads.
-            return false;
-        }
-        long adGroupPositionUs = adGroupTimesUs[adGroupIndex];
-        if (adGroupPositionUs == C.TIME_END_OF_SOURCE) {
-            return periodDurationUs == C.TIME_UNSET || positionUs < periodDurationUs;
-        } else {
-            return positionUs < adGroupPositionUs;
-        }
-    }
+    
+   
 
 }
