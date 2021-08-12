@@ -39,7 +39,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
     private val handler: Handler = Handler(Looper.getMainLooper())
     private val state: MutableMap<Ad?, AdEvent.AdEventType> = HashMap()
     private var lastAdProgress: VideoProgressUpdate = VideoProgressUpdate.VIDEO_TIME_NOT_READY
-    private var lastAdBreakProcessed: Int = C.INDEX_UNSET
+    private var processedAdBreaks: Int = 0
     private var videoAdViewHolder: VideoAdViewHolder? = null
 
     private val adsEventListeners: MutableSet<AdEvent.AdEventListener> = Collections
@@ -121,13 +121,16 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
                 this@AdsManagerImpl.onEvent(adEvent)
                 if (adEvent.type == AdEvent.AdEventType.ALL_ADS_COMPLETED) {
                     AdsManagerImpl@activeAdBreak = null
-                    if (lastAdBreakProcessed == (adBreaks!!.size - 1)) {
+                    if (!hasUnplayedAds()) {
                         handler.removeCallbacks(updateRunnable)
                     }
                 }
             }
         }, object : AdErrorEvent.AdErrorListener{
             override fun onAdError(adErrorEvent: AdErrorEvent) {
+                if (!hasUnplayedAds()) {
+                    handler.removeCallbacks(updateRunnable)
+                }
                 this@AdsManagerImpl.onAdError(adErrorEvent)
             }
         }, adCompanionManager)
@@ -238,8 +241,10 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
 
 
     private fun scheduleUpdate(delayTime: Long) {
-        handler.removeCallbacks(updateRunnable)
-        handler.postDelayed(updateRunnable, delayTime)
+        if (processedAdBreaks < adBreaks!!.size) {
+            handler.removeCallbacks(updateRunnable)
+            handler.postDelayed(updateRunnable, delayTime)
+        }
     }
 
     private fun getNextAdBreak(currentTime: Long): AdBreak? {
@@ -251,10 +256,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
         }
         if (index >= 0) {
             val adGroup = adBreaks[index]
-            if (adGroup.hasUnplayedAds) {
-                lastAdBreakProcessed = index
-                return adGroup
-            }
+            if (adGroup.hasUnplayedAds) return adGroup
         }
         return null
     }
@@ -274,9 +276,6 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
 
 
     private fun onAdError(adErrorEvent: AdErrorEvent) {
-        if (lastAdBreakProcessed == (adBreaks!!.size - 1) && !adBreaks[lastAdBreakProcessed].hasUnplayedAds) {
-            handler.removeCallbacks(updateRunnable)
-        }
         synchronized(adErrorListeners) {
             for (listener in adErrorListeners) {
                 listener.onAdError(adErrorEvent)
@@ -296,6 +295,17 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
                 listener.onAdEvent(adEvent)
             }
         }
+    }
+
+    private fun hasUnplayedAds(): Boolean {
+        var unPlayedAds = 0
+        adBreaks!!.forEach {
+            if (it.hasUnplayedAds) unPlayedAds++
+        }
+        return if (unPlayedAds > 0) {
+            processedAdBreaks = adBreaks.size - unPlayedAds
+            true
+        } else false
     }
 
 
