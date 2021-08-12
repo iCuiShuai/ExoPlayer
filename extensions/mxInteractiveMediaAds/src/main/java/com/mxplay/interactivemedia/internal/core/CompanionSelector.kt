@@ -4,6 +4,7 @@ import com.mxplay.interactivemedia.api.AdDisplayContainer
 import com.mxplay.interactivemedia.api.CompanionAd
 import com.mxplay.interactivemedia.api.CompanionAdSlot
 import com.mxplay.interactivemedia.internal.api.ICompanionSelector
+import com.mxplay.interactivemedia.internal.data.model.CompanionAdData
 
 class CompanionSelector: ICompanionSelector {
 
@@ -19,7 +20,7 @@ class CompanionSelector: ICompanionSelector {
             while (iterator.hasNext()) {
                 val next = iterator.next()
                 if (isCompatible(companionSlot, next)) {
-                    adCompanionInfo.add(AdCompanionInfo(companionSlot, next))
+                    adCompanionInfo.add(AdCompanionInfo(companionSlot, next, (next as? CompanionAdData)?.resourceType ?: CompanionAdData.TAG_NO_RESOURCE))
                     iterator.remove()
                 }
             }

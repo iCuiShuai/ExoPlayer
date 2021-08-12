@@ -39,6 +39,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
     private val handler: Handler = Handler(Looper.getMainLooper())
     private val state: MutableMap<Ad?, AdEvent.AdEventType> = HashMap()
     private var lastAdProgress: VideoProgressUpdate = VideoProgressUpdate.VIDEO_TIME_NOT_READY
+    private var processedAdBreaks: Int = 0
     private var videoAdViewHolder: VideoAdViewHolder? = null
 
     private val adsEventListeners: MutableSet<AdEvent.AdEventListener> = Collections
@@ -120,10 +121,16 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
                 this@AdsManagerImpl.onEvent(adEvent)
                 if (adEvent.type == AdEvent.AdEventType.ALL_ADS_COMPLETED) {
                     AdsManagerImpl@activeAdBreak = null
+                    if (!hasUnplayedAds()) {
+                        handler.removeCallbacks(updateRunnable)
+                    }
                 }
             }
         }, object : AdErrorEvent.AdErrorListener{
             override fun onAdError(adErrorEvent: AdErrorEvent) {
+                if (!hasUnplayedAds()) {
+                    handler.removeCallbacks(updateRunnable)
+                }
                 this@AdsManagerImpl.onAdError(adErrorEvent)
             }
         }, adCompanionManager)
@@ -234,8 +241,10 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
 
 
     private fun scheduleUpdate(delayTime: Long) {
-        handler.removeCallbacks(updateRunnable)
-        handler.postDelayed(updateRunnable, delayTime)
+        if (processedAdBreaks < adBreaks!!.size) {
+            handler.removeCallbacks(updateRunnable)
+            handler.postDelayed(updateRunnable, delayTime)
+        }
     }
 
     private fun getNextAdBreak(currentTime: Long): AdBreak? {
@@ -288,6 +297,14 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
         }
     }
 
+    private fun hasUnplayedAds(): Boolean {
+        var unPlayedAds = 0
+        adBreaks!!.forEach {
+            if (it.hasUnplayedAds) unPlayedAds++
+        }
+        processedAdBreaks = adBreaks.size - unPlayedAds
+        return unPlayedAds > 0
+    }
 
     override val adCuePoints: List<Float?>
         get() = cuePoints

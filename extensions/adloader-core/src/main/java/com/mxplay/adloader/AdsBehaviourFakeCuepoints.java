@@ -93,12 +93,12 @@ public class AdsBehaviourFakeCuepoints extends AdsBehaviourDefault {
     }
 
     @Override
-    public long getContentPositionMs(Player player, Timeline timeline, Timeline.Period period) {
+    public long getContentPositionMs(Player player, Timeline timeline, Timeline.Period period, long contentDurationMs) {
         boolean hasContentDuration = contentDurationMs != C.INDEX_UNSET;
         if (hasContentDuration) {
             cleanUnusedCuePoints(player, timeline, period);
         }
-        return super.getContentPositionMs(player, timeline, period);
+        return super.getContentPositionMs(player, timeline, period, contentDurationMs);
 
     }
 

@@ -58,10 +58,8 @@ public class AdsBehaviourWatchTime extends AdsBehaviourFakeCuepoints{
     }
 
     @Override
-    public long getContentPositionMs(Player player, Timeline timeline, Timeline.Period period) {
-        super.getContentPositionMs(player, timeline, period);
+    public long getContentPositionMs(Player player, Timeline timeline, Timeline.Period period, long contentDurationMs) {
+        super.getContentPositionMs(player, timeline, period, contentDurationMs);
         return Objects.requireNonNull(playbackStatsListener).getContentTotalPlayTimeMs();
     }
-
-
 }

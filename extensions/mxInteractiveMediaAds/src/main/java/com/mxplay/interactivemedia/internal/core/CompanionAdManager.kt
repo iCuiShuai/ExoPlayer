@@ -8,24 +8,36 @@ import com.mxplay.interactivemedia.internal.api.ICompanionSelector
 import com.mxplay.interactivemedia.internal.data.RemoteDataSource
 import com.mxplay.interactivemedia.internal.tracking.ITrackersHandler
 import kotlinx.coroutines.CoroutineScope
+import java.util.*
 
 class CompanionAdManager(ioOpsScope: CoroutineScope, remoteDataSource: RemoteDataSource, trackersHandler: ITrackersHandler?): ICompanionSelector, ICompanionRenderer {
     private val companionSelector = CompanionSelector()
-    private val staticResRenderer = CompanionStaticResourceRenderer(ioOpsScope, remoteDataSource, trackersHandler)
+    private val companionRenderers = LinkedList<ICompanionRenderer>()
+
+    init {
+        companionRenderers.add(CompanionStaticResourceRenderer(ioOpsScope, remoteDataSource, trackersHandler))
+        companionRenderers.add(CompanionHtmlResourceRenderer(ioOpsScope, remoteDataSource, trackersHandler))
+    }
 
     override fun pickBestCompanions(displayContainer: AdDisplayContainer, companionAds: List<CompanionAd>?): List<AdCompanionInfo>? {
         return companionSelector.pickBestCompanions(displayContainer, companionAds)
     }
 
     override fun render(companionAdInfo: List<AdCompanionInfo>?) {
-        staticResRenderer.render(companionAdInfo)
+        companionRenderers.forEach {
+            it.render(companionAdInfo)
+        }
     }
 
     override fun load(companionAdInfo: List<AdCompanionInfo>?) {
-        staticResRenderer.load(companionAdInfo)
+        companionRenderers.forEach {
+            it.load(companionAdInfo)
+        }
     }
 
     override fun release(companionAdSlots: List<CompanionAdSlot>?) {
-        staticResRenderer.release(companionAdSlots)
+        companionRenderers.forEach {
+            it.release(companionAdSlots)
+        }
     }
 }
