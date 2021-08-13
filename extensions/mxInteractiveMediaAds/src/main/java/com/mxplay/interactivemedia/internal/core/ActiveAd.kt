@@ -13,7 +13,11 @@ import com.mxplay.interactivemedia.api.player.VideoProgressUpdate
 import com.mxplay.interactivemedia.internal.data.model.AdInline
 import com.mxplay.interactivemedia.internal.data.model.ICompanionInfoProvider
 
-class ActiveAd(val ad: Ad, private val player: VideoAdPlayer?, @AdState private var state : Int, private val stateChangeListener:(activeAd : ActiveAd, newState : Int) -> Unit, private val adProgressCallback:(activeAd : ActiveAd, progress : VideoProgressUpdate) -> Unit, private val adEventListener: AdEvent.AdEventListener, private val onErrorListener : AdErrorEvent.AdErrorListener) : AdProgressListener, View.OnClickListener, ICompanionInfoProvider, Runnable{
+class ActiveAd(val ad: Ad, private val player: VideoAdPlayer?, @AdState private var state : Int,
+               private val stateChangeListener:(activeAd : ActiveAd, newState : Int) -> Unit,
+               private val adProgressCallback:(activeAd : ActiveAd, progress : VideoProgressUpdate) -> Unit,
+               private val adEventListener: AdEvent.AdEventListener, private val onErrorListener : AdErrorEvent.AdErrorListener,
+               private val DEBUG: Boolean) : AdProgressListener, View.OnClickListener, ICompanionInfoProvider, Runnable{
 
         var waitingMediaTimeout = false
         private var lastAdProgressUpdate : VideoProgressUpdate = VideoProgressUpdate.VIDEO_TIME_NOT_READY
@@ -44,7 +48,9 @@ class ActiveAd(val ad: Ad, private val player: VideoAdPlayer?, @AdState private 
        private fun onAdStateChanged(@AdState newState : Int){
            if(state == newState) return
             stateChangeListener(this, newState)
-            Log.d("ActiveAd", " Ad state changed $state new state $newState")
+           if (DEBUG) {
+               Log.d("ActiveAd", " Ad state changed $state new state $newState")
+           }
             state = newState
             when (newState) {
                 AdState.LOADED -> {

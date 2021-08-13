@@ -22,13 +22,13 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
                      private val adBreaks: MutableList<AdBreak>?, private val contentProgressProvider: ContentProgressProvider, private val userRequestContext: Any?,
                      trackersHandler: ITrackersHandler?,
                      private val adBreakLoader: AdBreakLoader,
-                     private val adCompanionManager: CompanionAdManager)   : AdsManager {
+                     private val adCompanionManager: CompanionAdManager,
+                     private val DEBUG: Boolean)   : AdsManager {
 
     companion object{
         private const val DELAY_MILLIS = 300L
         private const val PROXIMITY_THRESHOLD_MILLIS = DELAY_MILLIS - 200
         private const val PRELOAD_TIME_OFFSET = 8000L
-        private const val DEBUG = true
         private const val TAG = "OmaAdsManager"
     }
 
@@ -133,7 +133,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
                 }
                 this@AdsManagerImpl.onAdError(adErrorEvent)
             }
-        }, adCompanionManager)
+        }, adCompanionManager, DEBUG)
         return true
     }
 
