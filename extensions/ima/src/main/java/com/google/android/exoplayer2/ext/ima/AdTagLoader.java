@@ -811,7 +811,7 @@ import java.util.Map;
       case LOADED:
         if (adEvent.getAd().getVastMediaWidth() <= 1 && adEvent.getAd().getVastMediaHeight() <= 1){
           AdPodInfo adPodInfo = adEvent.getAd().getAdPodInfo();
-          adsBehaviour.handleAudioAdLoaded(adPodInfo.getPodIndex(), adPodInfo.getAdPosition());
+          adsBehaviour.handleAudioAdLoaded(adPodInfo.getPodIndex(), adPodInfo.getAdPosition() - 1);
         }
         break;
       default:

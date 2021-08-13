@@ -1,6 +1,7 @@
 package com.mxplay.adloader;
 
 import android.net.Uri;
+import android.util.Log;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
@@ -13,8 +14,10 @@ import com.google.android.exoplayer2.source.ads.AdPlaybackState;
 
 import java.util.concurrent.TimeUnit;
 
-public abstract class AdsBehaviour {
+import static java.lang.Math.max;
 
+public abstract class AdsBehaviour {
+    private static final String TAG = "AdsBehaviour";
     public static final long THRESHOLD_AD_MATCH_US = 1000;
 
     public abstract String getTrackerName();
@@ -50,14 +53,34 @@ public abstract class AdsBehaviour {
 
     public boolean handleAudioAdLoaded(int podIndex, int adPosition) {
         if (isPipModeActive){
-            AdPlaybackState adPlaybackState = adPlaybackStateHost.getAdPlaybackState();
-            adPlaybackStateHost.updateAdPlaybackState(adPlaybackState.withAdLoadError(podIndex, adPosition - 1));
+            discardAudioAd(podIndex, adPosition);
             return true;
         }else {
             audioAdPodIndex = podIndex;
             audioAdPosition = adPosition;
         }
         return false;
+    }
+
+    private void discardAudioAd(int podIndex, int adPosition) {
+        try {
+            AdPlaybackState adPlaybackState = adPlaybackStateHost.getAdPlaybackState();
+            AdPlaybackState.AdGroup adGroup = adPlaybackState.adGroups[podIndex];
+            if (adGroup.count == C.LENGTH_UNSET) {
+                adPlaybackState = adPlaybackState.withAdCount(podIndex, max(1, adGroup.states.length));
+                adGroup = adPlaybackState.adGroups[podIndex];
+            }
+            for (int i = 0; i < adGroup.count; i++) {
+                if ((adGroup.states[i] == AdPlaybackState.AD_STATE_UNAVAILABLE || adGroup.states[i] == AdPlaybackState.AD_STATE_AVAILABLE)  && i == adPosition) {
+                    if (debug) Log.d(TAG, "Removing audio ad " + i + " in ad group " + podIndex);
+                    adPlaybackState = adPlaybackState.withAdLoadError(podIndex, i);
+                    break;
+                }
+            }
+            adPlaybackStateHost.updateAdPlaybackState(adPlaybackState);
+        } catch (Exception e) {
+            if (debug) e.fillInStackTrace();
+        }
     }
 
     public int getMediaLoadTimeout(int defaultTimout){
@@ -72,12 +95,11 @@ public abstract class AdsBehaviour {
 
     public final void setPipMode(boolean isPip) {
         isPipModeActive = isPip;
-        if (isPipModeActive){
+        if (isPipModeActive && adPlaybackStateHost != null){
             Pair<Integer, Integer> playingAdInfo = adPlaybackStateHost.getPlayingAdInfo();
             if (playingAdInfo == null) return;
             if (playingAdInfo.first == audioAdPodIndex && playingAdInfo.second == audioAdPosition){
-                AdPlaybackState adPlaybackState = adPlaybackStateHost.getAdPlaybackState();
-                adPlaybackStateHost.updateAdPlaybackState(adPlaybackState.withSkippedAd(audioAdPodIndex, audioAdPosition));
+                discardAudioAd(audioAdPodIndex, audioAdPosition);
             }
         }
     }
