@@ -41,7 +41,9 @@ class AdBreakLoader(val ioOpsScope: CoroutineScope, private val remoteDataSource
     fun isUriResolved(adTagUri : AdTagUriHost) = resolvedUris.contains(adTagUri)
 
     fun loadAdBreak(adBreak: AdBreak, timeOutMs : Long, adBreakLoadCallback : AdBreakLoadingCallback){
-        Log.d(TAG, "loadAdBreak  ${adBreak.startTime}  media ads count ${adBreak.adsList.size} :: total ads ${adBreak.totalAdsCount}" )
+        if (sdkSettings.isDebugMode) {
+            Log.d(TAG, "loadAdBreak  ${adBreak.startTime}  media ads count ${adBreak.adsList.size} :: total ads ${adBreak.totalAdsCount}")
+        }
         val pendingAdTagUriHost = adBreak.getPendingAdTagUriHost()
         pendingAdTagUriHost?.let {
             if(!resolvedUris.contains(it)){

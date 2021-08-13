@@ -155,7 +155,11 @@ class AdLoaderImpl(context: Context, private val configuration : Configuration, 
             Log.e(TAG, " error in creating tracker", e)
         }
         trackersHandler = TrackersHandler(mxOmid, remoteDataSource, ioOpsScope, adDisplayContainer.getObstructionList())
-        val adsManager = AdsManagerImpl(ctx, adDisplayContainer, vmapModel!!.adBreaks, adsRequest.contentProgressProvider, adsRequest.userRequestContext, trackersHandler, AdBreakLoader(ioOpsScope, remoteDataSource, sdkSettings), CompanionAdManager(ioOpsScope, remoteDataSource, trackersHandler))
+        val adsManager = AdsManagerImpl(ctx, adDisplayContainer, vmapModel!!.adBreaks,
+                adsRequest.contentProgressProvider, adsRequest.userRequestContext, trackersHandler,
+                AdBreakLoader(ioOpsScope, remoteDataSource, sdkSettings),
+                CompanionAdManager(ioOpsScope, remoteDataSource, trackersHandler),
+                configuration.debugModeEnabled)
 
         return AdLoaderResponse(
                 AdsManagerLoadedEvent(adsManager, adsRequest.userRequestContext))

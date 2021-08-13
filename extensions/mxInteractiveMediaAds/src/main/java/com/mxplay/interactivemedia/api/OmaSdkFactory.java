@@ -6,8 +6,6 @@
 package com.mxplay.interactivemedia.api;
 
 import android.content.Context;
-import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -16,23 +14,10 @@ import androidx.annotation.Nullable;
 import com.mxplay.interactivemedia.internal.core.CompanionAdSlotImpl;
 import com.mxplay.interactivemedia.internal.core.FriendlyObstructionImpl;
 import com.mxplay.interactivemedia.internal.core.OmSdkSettingsImpl;
-import com.mxplay.mediaads.exo.JsonUtil;
 import com.mxplay.mediaads.exo.OmaUtil;
-import com.mxplay.interactivemedia.internal.data.RemoteDataSource;
 import com.mxplay.interactivemedia.internal.core.AdLoaderImpl;
 import com.mxplay.interactivemedia.api.player.VideoAdPlayer;
 import com.mxplay.interactivemedia.internal.data.xml.XmlParserHelper;
-import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-import okhttp3.Cache;
-import okhttp3.CacheControl;
-import okhttp3.Dispatcher;
-import okhttp3.Interceptor;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.logging.HttpLoggingInterceptor;
 
 public class OmaSdkFactory  {
 
