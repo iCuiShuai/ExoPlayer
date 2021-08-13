@@ -23,6 +23,8 @@ import android.content.Context;
 import android.os.Looper;
 import android.view.View;
 import android.view.ViewGroup;
+
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.Player;
@@ -408,11 +410,13 @@ public final class MxMediaAdLoader implements Player.EventListener, AdsLoader {
     }
 
     @Override
+    @NonNull
     public AdDisplayContainer createAdDisplayContainer(ViewGroup container, VideoAdPlayer player) {
       return OmaSdkFactory.createAdDisplayContainer(container, player);
     }
 
     @Override
+    @NonNull
     public AdDisplayContainer createAudioAdDisplayContainer(Context context, VideoAdPlayer player) {
       return OmaSdkFactory.createAudioAdDisplayContainer(context, player);
     }

@@ -12,11 +12,19 @@ import com.mxplay.interactivemedia.internal.data.xml.ProtocolException
 import kotlinx.coroutines.TimeoutCancellationException
 
 
-class ActiveAdBreak(val adBreak: AdBreak, private val loader : AdBreakLoader, private val prelodTimeOffset : Long,
-                    private val proximityThreshold : Long, @AdBreakState private var state : Int, private val displayContainer: AdDisplayContainer,
-                    private val adsRenderingSettings: AdsRenderingSettings, private val handler: Handler,
-                    private val adEventListener: AdEvent.AdEventListener, private val onErrorListener : AdErrorEvent.AdErrorListener,
-                    private val companionAdManager: CompanionAdManager, private val DEBUG: Boolean) : ContentProgressListener, AdBreakLoader.AdBreakLoadingCallback {
+class ActiveAdBreak(
+    val adBreak: AdBreak,
+    private val loader: AdBreakLoader,
+    private val prelodTimeOffset: Long,
+    @AdBreakState private var state: Int,
+    private val displayContainer: AdDisplayContainer,
+    private val adsRenderingSettings: AdsRenderingSettings,
+    private val handler: Handler,
+    private val adEventListener: AdEvent.AdEventListener,
+    private val onErrorListener: AdErrorEvent.AdErrorListener,
+    private val companionAdManager: CompanionAdManager,
+    private val DEBUG: Boolean
+) : ContentProgressListener, AdBreakLoader.AdBreakLoadingCallback {
 
         var viewHolder: VideoAdViewHolder? = null
         private var activeAd: ActiveAd? = null

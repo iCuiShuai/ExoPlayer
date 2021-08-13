@@ -48,7 +48,7 @@ public class OmaSdkFactory  {
     }
 
   
-    public static AdDisplayContainer createAdDisplayContainer(ViewGroup  viewGroup, VideoAdPlayer  videoAdPlayer) {
+    public static @NonNull AdDisplayContainer createAdDisplayContainer(ViewGroup  viewGroup, VideoAdPlayer  videoAdPlayer) {
         AdDisplayContainer adDisplayContainer = new AdDisplayContainer();
         adDisplayContainer.setAdContainer(viewGroup);
         adDisplayContainer.setPlayer(videoAdPlayer);
@@ -56,7 +56,7 @@ public class OmaSdkFactory  {
     }
 
    
-    public static AdDisplayContainer createAudioAdDisplayContainer(Context context, VideoAdPlayer videoAdPlayer) {
+    public static @NonNull AdDisplayContainer createAudioAdDisplayContainer(Context context, VideoAdPlayer videoAdPlayer) {
         AdDisplayContainer adDisplayContainer = new AdDisplayContainer();
         adDisplayContainer.setPlayer(videoAdPlayer);
         return adDisplayContainer;

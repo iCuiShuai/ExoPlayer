@@ -270,6 +270,7 @@ import java.util.Map;
     adsBehaviour = configuration.adsBehaviour;
     adsBehaviour.setAdPlaybackStateHost(adPlaybackStateHost);
     adsBehaviour.setDebug(configuration.debugModeEnabled);
+    adsBehaviour.setHandler(handler);
     adsLoader = requestAds(context, imaSdkSettings, adDisplayContainer);
   }
 
@@ -288,6 +289,16 @@ import java.util.Map;
     @Override
     public @Nullable Pair<Integer, Integer> getPlayingAdInfo() {
       return imaAdState == IMA_AD_STATE_PLAYING && imaAdInfo != null ? new Pair<Integer, Integer>(imaAdInfo.adGroupIndex, imaAdInfo.adIndexInAdGroup) : null;
+    }
+
+    @Override
+    public void onVastCallMaxWaitingTimeOver() {
+        if (pendingAdRequestContext != null){
+            componentListener.onAdError(new AdsLoadRequestTimeoutEvent(pendingAdRequestContext));
+            adsLoader.removeAdsLoadedListener(componentListener);
+            adsLoader.removeAdErrorListener(componentListener);
+            if (configuration.debugModeEnabled) Log.w(TAG, "Vast call forced time out");
+        }
     }
   };
 

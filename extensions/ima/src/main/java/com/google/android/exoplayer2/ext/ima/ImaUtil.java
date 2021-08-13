@@ -133,7 +133,7 @@ import java.util.Set;
       this.applicationAdEventListener = applicationAdEventListener;
       this.applicationVideoAdPlayerCallback = applicationVideoAdPlayerCallback;
       this.imaSdkSettings = imaSdkSettings;
-      this.adsBehaviour = adsBehaviour == null ? new AdsBehaviourDefault() : adsBehaviour;
+      this.adsBehaviour = adsBehaviour == null ? new AdsBehaviourDefault(vastLoadTimeoutMs) : adsBehaviour;
       this.debugModeEnabled = debugModeEnabled;
     }
   }

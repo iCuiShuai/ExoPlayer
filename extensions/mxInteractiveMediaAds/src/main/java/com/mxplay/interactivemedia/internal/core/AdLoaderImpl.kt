@@ -3,6 +3,7 @@ package com.mxplay.interactivemedia.internal.core
 import android.content.Context
 import android.text.TextUtils
 import android.util.Log
+import com.mxplay.adloader.AdsBehaviourOffline
 import com.mxplay.interactivemedia.api.*
 import com.mxplay.interactivemedia.internal.data.RemoteDataSource
 import com.mxplay.interactivemedia.internal.data.model.VMAPModel
@@ -148,13 +149,15 @@ class AdLoaderImpl(context: Context, private val configuration : Configuration, 
 
     private  fun toAdLoaderResponse(adsRequest: AdsRequest): AdLoaderResponse {
         val ctx = context.get() ?: throw IllegalStateException("Context is null")
-        try {
-            mxOmid  = MxOmid(remoteDataSource, configuration)
-            mxOmid!!.prepare()
-        } catch (e: Exception) {
-            Log.e(TAG, " error in creating tracker", e)
+        if (configuration.adsBehaviour !is AdsBehaviourOffline){
+            try {
+                mxOmid  = MxOmid(remoteDataSource, configuration)
+                mxOmid!!.prepare()
+            } catch (e: Exception) {
+                Log.e(TAG, " error in creating tracker", e)
+            }
+            trackersHandler = TrackersHandler(mxOmid, remoteDataSource, ioOpsScope, adDisplayContainer.getObstructionList())
         }
-        trackersHandler = TrackersHandler(mxOmid, remoteDataSource, ioOpsScope, adDisplayContainer.getObstructionList())
         val adsManager = AdsManagerImpl(ctx, adDisplayContainer, vmapModel!!.adBreaks,
                 adsRequest.contentProgressProvider, adsRequest.userRequestContext, trackersHandler,
                 AdBreakLoader(ioOpsScope, remoteDataSource, sdkSettings),

@@ -28,8 +28,8 @@ public class AdsBehaviourWatchTime extends AdsBehaviourDefault{
     private final long contentDurationMs;
     private int totalAdLoads;
 
-    public AdsBehaviourWatchTime(long durationSec) {
-        super();
+    public AdsBehaviourWatchTime(long durationSec, int vastTimeOutInMs) {
+        super(vastTimeOutInMs);
         this.contentDurationMs =  Math.round(C.MICROS_PER_SECOND * durationSec);;
         playbackStatsListener = new PlaybackStatsListener(true, null);
     }

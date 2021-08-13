@@ -27,8 +27,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
 
     companion object{
         private const val DELAY_MILLIS = 300L
-        private const val PROXIMITY_THRESHOLD_MILLIS = DELAY_MILLIS - 200
-        private const val PRELOAD_TIME_OFFSET = 8000L
+        private const val PRELOAD_TIME_OFFSET = 4000L
         private const val TAG = "OmaAdsManager"
     }
 
@@ -116,24 +115,36 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
         }
 
 
-        activeAdBreak = ActiveAdBreak(nextAdBreak, adBreakLoader, PRELOAD_TIME_OFFSET, PROXIMITY_THRESHOLD_MILLIS, AdBreakState.AD_BREAK_INIT, adDisplayContainer, adsRenderingSettings, handler, object : AdEvent.AdEventListener{
-            override fun onAdEvent(adEvent: AdEvent) {
-                this@AdsManagerImpl.onEvent(adEvent)
-                if (adEvent.type == AdEvent.AdEventType.ALL_ADS_COMPLETED) {
-                    AdsManagerImpl@activeAdBreak = null
+        activeAdBreak = ActiveAdBreak(
+            nextAdBreak,
+            adBreakLoader,
+            PRELOAD_TIME_OFFSET,
+            AdBreakState.AD_BREAK_INIT,
+            adDisplayContainer,
+            adsRenderingSettings,
+            handler,
+            object : AdEvent.AdEventListener{
+                override fun onAdEvent(adEvent: AdEvent) {
+                    this@AdsManagerImpl.onEvent(adEvent)
+                    if (adEvent.type == AdEvent.AdEventType.ALL_ADS_COMPLETED) {
+                        AdsManagerImpl@activeAdBreak = null
+                        if (!hasUnplayedAds()) {
+                            handler.removeCallbacks(updateRunnable)
+                        }
+                    }
+                }
+            },
+            object : AdErrorEvent.AdErrorListener{
+                override fun onAdError(adErrorEvent: AdErrorEvent) {
                     if (!hasUnplayedAds()) {
                         handler.removeCallbacks(updateRunnable)
                     }
+                    this@AdsManagerImpl.onAdError(adErrorEvent)
                 }
-            }
-        }, object : AdErrorEvent.AdErrorListener{
-            override fun onAdError(adErrorEvent: AdErrorEvent) {
-                if (!hasUnplayedAds()) {
-                    handler.removeCallbacks(updateRunnable)
-                }
-                this@AdsManagerImpl.onAdError(adErrorEvent)
-            }
-        }, adCompanionManager, DEBUG)
+            },
+            adCompanionManager,
+            DEBUG
+        )
         return true
     }
 

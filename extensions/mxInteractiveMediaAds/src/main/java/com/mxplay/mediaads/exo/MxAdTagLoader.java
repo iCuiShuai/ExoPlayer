@@ -75,6 +75,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /** Handles loading and playback of a single ad tag. */
 /* package */ final class MxAdTagLoader implements Player.EventListener {
@@ -262,6 +263,7 @@ import java.util.Map;
     }
     adsBehaviour = configuration.getAdsBehaviour();
     adsBehaviour.setAdPlaybackStateHost(adPlaybackStateHost);
+    adsBehaviour.setHandler(handler);
     adsLoader = requestAds(context, imaSdkSettings, adDisplayContainer);
   }
 

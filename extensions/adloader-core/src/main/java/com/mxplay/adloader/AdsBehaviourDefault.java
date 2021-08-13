@@ -4,8 +4,8 @@ import com.google.android.exoplayer2.source.ads.AdPlaybackState;
 
 public class AdsBehaviourDefault extends AdsBehaviour{
 
-    public AdsBehaviourDefault() {
-        super();
+    public AdsBehaviourDefault(int vastTimeOutInMs) {
+        super(vastTimeOutInMs);
     }
 
     @Override

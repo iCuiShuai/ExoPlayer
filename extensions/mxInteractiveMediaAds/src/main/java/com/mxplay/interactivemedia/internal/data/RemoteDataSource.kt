@@ -16,8 +16,8 @@ import java.util.concurrent.TimeUnit
 
 class RemoteDataSource(val configuration: Configuration) : IDataSource{
 
-    private val CONN_TIMEOUT = 8000
-    private val READ_TIMEOUT = 10000
+    private val CONN_TIMEOUT = 2000
+    private val READ_TIMEOUT = 3000
 
     private var okHttpClient: OkHttpClient = normalClient(configuration.context, configuration.ioExecutor, configuration.debugModeEnabled)
 

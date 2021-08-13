@@ -18,7 +18,7 @@ class Configuration(builder : Builder) {
 
     companion object{
         const val DEFAULT_AD_PRELOAD_TIMEOUT_MS = 10 * C.MILLIS_PER_SECOND
-        const val VAST_LOAD_TIMEOUT_MS = (8 * C.MILLIS_PER_SECOND).toInt()
+        const val VAST_LOAD_TIMEOUT_MS = (4 * C.MILLIS_PER_SECOND).toInt()
         const val MEDIA_LOAD_TIMEOUT_MS = (8 * C.MILLIS_PER_SECOND).toInt()
 
     }
@@ -68,7 +68,7 @@ class Configuration(builder : Builder) {
          trackersConfig = builder.trackersConfig
          debugModeEnabled = builder.debugModeEnabled
         ioDispatcher = ioExecutor.asCoroutineDispatcher()
-        adsBehaviour = builder.adsBehaviour ?: AdsBehaviourDefault()
+        adsBehaviour = builder.adsBehaviour ?: AdsBehaviourDefault(vastLoadTimeoutMs)
     }
 
     private fun getUserAgentFromProperty(): String? {

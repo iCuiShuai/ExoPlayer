@@ -1,6 +1,7 @@
 package com.mxplay.adloader;
 
 import android.net.Uri;
+import android.os.Handler;
 import android.util.Log;
 import android.util.Pair;
 
@@ -27,12 +28,14 @@ public abstract class AdsBehaviour {
         AdPlaybackState getAdPlaybackState();
         void updateAdPlaybackState(AdPlaybackState adPlaybackState);
         @Nullable Pair<Integer, Integer> getPlayingAdInfo();
+        default void onVastCallMaxWaitingTimeOver(){}
     }
 
     protected boolean debug = false;
     protected @NonNull AdPlaybackStateHost adPlaybackStateHost;
     protected long contentDurationMs = C.TIME_UNSET;
     private VideoAdsTracker videoAdsTracker;
+    private int vastTimeOutInMs;
     private boolean isPipModeActive = false;
     private @Nullable IAdTagProvider adTagProvider;
     protected int audioAdPodIndex = C.INDEX_UNSET;
@@ -43,13 +46,20 @@ public abstract class AdsBehaviour {
     protected int lastRealStartTime = C.INDEX_UNSET;
     protected int lastPlayAdGroupIndex = C.INDEX_UNSET;
     protected int lastStartRequestAdGroupIndex = C.INDEX_UNSET;
+    private Handler handler;
 
-    public AdsBehaviour() {
+    public AdsBehaviour(int vastTimeOutInMs) {
+        this.vastTimeOutInMs = vastTimeOutInMs;
     }
 
     public final void setAdTagProvider(@Nullable IAdTagProvider adTagProvider) {
         this.adTagProvider = adTagProvider;
     }
+
+    public  void setHandler(Handler handler){
+        this.handler = handler;
+    }
+
 
     public boolean handleAudioAdLoaded(int podIndex, int adPosition) {
         if (isPipModeActive){
@@ -120,9 +130,22 @@ public abstract class AdsBehaviour {
         this.videoAdsTracker = videoAdsTracker;
     }
 
+    private final Runnable vastCallWaitingRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (adPlaybackStateHost != null){
+                adPlaybackStateHost.onVastCallMaxWaitingTimeOver();
+            }
+        }
+    };
+
     public final void onAllAdsRequested(){
         videoAdsTracker.onAdManagerRequested();
         startRequestTime = System.currentTimeMillis();
+        long vastCallMaxWaitingTime = vastTimeOutInMs > 0 ? vastTimeOutInMs + 1000 : 6000;
+        if (handler != null){
+            handler.postDelayed(vastCallWaitingRunnable, vastCallMaxWaitingTime);
+        }
     }
 
     public abstract AdPlaybackState createAdPlaybackState(Object objectId, long[] adGroupTimesUs);
