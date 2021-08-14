@@ -25,6 +25,7 @@ import com.google.android.exoplayer2.extractor.flac.FlacExtractor;
 import com.google.android.exoplayer2.extractor.flv.FlvExtractor;
 import com.google.android.exoplayer2.extractor.jpeg.JpegExtractor;
 import com.google.android.exoplayer2.extractor.mkv.MatroskaExtractor;
+import com.google.android.exoplayer2.extractor.mkv.MatroskaExtractorMX;
 import com.google.android.exoplayer2.extractor.mp3.Mp3Extractor;
 import com.google.android.exoplayer2.extractor.mp4.FragmentedMp4Extractor;
 import com.google.android.exoplayer2.extractor.mp4.Mp4Extractor;
@@ -361,6 +362,7 @@ public final class DefaultExtractorsFactory implements ExtractorsFactory {
         extractors.add(new FlvExtractor());
         break;
       case FileTypes.MATROSKA:
+        extractors.add(new MatroskaExtractorMX(matroskaFlags));
         extractors.add(new MatroskaExtractor(matroskaFlags));
         break;
       case FileTypes.MP3:
