@@ -230,7 +230,6 @@ import java.io.IOException;
 
   public static boolean isMXVMP4WithPreVideo(ExtractorInput input)
       throws IOException {
-    /*
     long inputLength = input.getLength();
     int bytesToSearch = (int) (inputLength == C.LENGTH_UNSET || inputLength > SEARCH_LENGTH
         ? SEARCH_LENGTH : inputLength);
@@ -242,14 +241,14 @@ import java.io.IOException;
       // Read an atom header.
       int headerSize = Atom.HEADER_SIZE;
       buffer.reset(headerSize);
-      input.peekFully(buffer.data, 0, headerSize);
+      input.peekFully(buffer.getData(), 0, headerSize);
       long atomSize = buffer.readUnsignedInt();
       int atomType = buffer.readInt();
 
       if (atomSize == Atom.DEFINES_LARGE_SIZE) {
         // Read the large atom size.
         headerSize = Atom.LONG_HEADER_SIZE;
-        input.peekFully(buffer.data, Atom.HEADER_SIZE, Atom.LONG_HEADER_SIZE - Atom.HEADER_SIZE);
+        input.peekFully(buffer.getData(), Atom.HEADER_SIZE, Atom.LONG_HEADER_SIZE - Atom.HEADER_SIZE);
         buffer.setLimit(Atom.LONG_HEADER_SIZE);
         atomSize = buffer.readLong();
       } else if (atomSize == Atom.EXTENDS_TO_END_SIZE) {
@@ -274,14 +273,11 @@ import java.io.IOException;
       }
     }
 
-     */
-
     return false;
   }
 
   public static int getMXVMainContentOffset(ExtractorInput input)
       throws IOException {
-    /*
     int preVideoSize = 0;
     long inputLength = input.getLength();
 
@@ -292,14 +288,14 @@ import java.io.IOException;
       // Read an atom header.
       int headerSize = Atom.HEADER_SIZE;
       buffer.reset(headerSize);
-      input.peekFully(buffer.data, 0, headerSize);
+      input.peekFully(buffer.getData(), 0, headerSize);
       long atomSize = buffer.readUnsignedInt();
       int atomType = buffer.readInt();
 
       if (atomSize == Atom.DEFINES_LARGE_SIZE) {
         // Read the large atom size.
         headerSize = Atom.LONG_HEADER_SIZE;
-        input.peekFully(buffer.data, Atom.HEADER_SIZE, Atom.LONG_HEADER_SIZE - Atom.HEADER_SIZE);
+        input.peekFully(buffer.getData(), Atom.HEADER_SIZE, Atom.LONG_HEADER_SIZE - Atom.HEADER_SIZE);
         buffer.setLimit(Atom.LONG_HEADER_SIZE);
         atomSize = buffer.readLong();
       } else if (atomSize == Atom.EXTENDS_TO_END_SIZE) {
@@ -347,8 +343,5 @@ import java.io.IOException;
       }
     }
     return preVideoSize;
-
-     */
-    return -1;
   }
 }
