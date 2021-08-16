@@ -306,7 +306,7 @@ public class AdPlaybackState {
         /* contentDurationUs= */ C.TIME_UNSET);
   }
 
-  private AdPlaybackState(
+  protected AdPlaybackState(
       @Nullable Object adsId,
       long[] adGroupTimesUs,
       @Nullable AdGroup[] adGroups,

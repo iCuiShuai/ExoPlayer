@@ -27,6 +27,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.util.Pair;
 import android.view.ViewGroup;
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
@@ -65,6 +66,10 @@ import com.google.android.exoplayer2.util.Log;
 import com.google.android.exoplayer2.util.Util;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.mxplay.adloader.AdsBehaviour;
+import com.mxplay.adloader.AdsBehaviourWatchTime;
+import com.mxplay.adloader.VideoAdsTracker;
+
 import java.io.IOException;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -138,6 +143,7 @@ import java.util.Map;
   private final BiMap<AdMediaInfo, AdInfo> adInfoByAdMediaInfo;
   private final AdDisplayContainer adDisplayContainer;
   private final AdsLoader adsLoader;
+  private final AdsBehaviour adsBehaviour;
 
   @Nullable private Object pendingAdRequestContext;
   @Nullable private Player player;
@@ -261,8 +267,40 @@ import java.util.Map;
     if (configuration.companionAdSlots != null) {
       adDisplayContainer.setCompanionSlots(configuration.companionAdSlots);
     }
+    adsBehaviour = configuration.adsBehaviour;
+    adsBehaviour.setAdPlaybackStateHost(adPlaybackStateHost);
+    adsBehaviour.setDebug(configuration.debugModeEnabled);
+    adsBehaviour.setHandler(handler);
     adsLoader = requestAds(context, imaSdkSettings, adDisplayContainer);
   }
+
+  private final AdsBehaviour.AdPlaybackStateHost adPlaybackStateHost = new AdsBehaviour.AdPlaybackStateHost() {
+    @Override
+    public AdPlaybackState getAdPlaybackState() {
+      return AdTagLoader.this.adPlaybackState;
+    }
+
+    @Override
+    public void updateAdPlaybackState(AdPlaybackState adPlaybackState) {
+      AdTagLoader.this.adPlaybackState = adPlaybackState;
+      AdTagLoader.this.updateAdPlaybackState();
+    }
+
+    @Override
+    public @Nullable Pair<Integer, Integer> getPlayingAdInfo() {
+      return imaAdState == IMA_AD_STATE_PLAYING && imaAdInfo != null ? new Pair<Integer, Integer>(imaAdInfo.adGroupIndex, imaAdInfo.adIndexInAdGroup) : null;
+    }
+
+    @Override
+    public void onVastCallMaxWaitingTimeOver() {
+        if (pendingAdRequestContext != null){
+            componentListener.onAdError(new AdsLoadRequestTimeoutEvent(pendingAdRequestContext));
+            adsLoader.removeAdsLoadedListener(componentListener);
+            adsLoader.removeAdErrorListener(componentListener);
+            if (configuration.debugModeEnabled) Log.w(TAG, "Vast call forced time out");
+        }
+    }
+  };
 
   /** Returns the underlying IMA SDK ads loader. */
   public AdsLoader getAdsLoader() {
@@ -338,7 +376,7 @@ import java.util.Map;
   public void activate(Player player) {
     this.player = player;
     player.addListener(this);
-
+    adsBehaviour.setPlayer(player);
     boolean playWhenReady = player.getPlayWhenReady();
     onTimelineChanged(player.getCurrentTimeline(), Player.TIMELINE_CHANGE_REASON_SOURCE_UPDATE);
     @Nullable AdsManager adsManager = this.adsManager;
@@ -428,6 +466,10 @@ import java.util.Map;
       for (int i = 0; i < adCallbacks.size(); i++) {
         adCallbacks.get(i).onLoaded(adMediaInfo);
       }
+      @Nullable AdInfo activeAdInfo = adInfoByAdMediaInfo.get(adMediaInfo);
+      if (activeAdInfo != null){
+        activeAdInfo.isPrepareComplete = true;
+      }
     } else {
       Log.w(TAG, "Unexpected prepared ad " + adInfo);
     }
@@ -457,6 +499,7 @@ import java.util.Map;
     Player player = checkNotNull(this.player);
     long contentDurationUs = timeline.getPeriod(player.getCurrentPeriodIndex(), period).durationUs;
     contentDurationMs = C.usToMs(contentDurationUs);
+    adsBehaviour.setContentDurationMs(contentDurationMs);
     if (contentDurationUs != adPlaybackState.contentDurationUs) {
       adPlaybackState = adPlaybackState.withContentDurationUs(contentDurationUs);
       updateAdPlaybackState();
@@ -469,6 +512,9 @@ import java.util.Map;
   @Override
   public void onPositionDiscontinuity(@Player.DiscontinuityReason int reason) {
     handleTimelineOrPositionChanged();
+    if (reason == Player.DISCONTINUITY_REASON_SEEK || reason == Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT){
+      adsBehaviour.handleTimelineOrPositionChanged(player, timeline, period);
+    }
   }
 
   @Override
@@ -547,7 +593,15 @@ import java.util.Map;
       request.setVastLoadTimeout(configuration.vastLoadTimeoutMs);
     }
     request.setContentProgressProvider(componentListener);
-    adsLoader.requestAds(request);
+    adsBehaviour.onAllAdsRequested();
+    if (request.getAdTagUrl() != null) {
+      adsBehaviour.provideAdTagUri(Uri.parse(request.getAdTagUrl()), adTag -> {
+        request.setAdTagUrl(adTag.toString());
+        adsLoader.requestAds(request);
+      });
+    }else
+      adsLoader.requestAds(request);
+
     return adsLoader;
   }
 
@@ -584,8 +638,9 @@ import java.util.Map;
         configuration.adMediaMimeTypes != null
             ? configuration.adMediaMimeTypes
             : supportedMimeTypes);
-    if (configuration.mediaLoadTimeoutMs != TIMEOUT_UNSET) {
-      adsRenderingSettings.setLoadVideoTimeout(configuration.mediaLoadTimeoutMs);
+    int mediaLoadTimeout = adsBehaviour.getMediaLoadTimeout(configuration.mediaLoadTimeoutMs);
+    if (mediaLoadTimeout != TIMEOUT_UNSET) {
+      adsRenderingSettings.setLoadVideoTimeout(mediaLoadTimeout);
     }
     if (configuration.mediaBitrate != BITRATE_UNSET) {
       adsRenderingSettings.setBitrateKbps(configuration.mediaBitrate / 1000);
@@ -595,7 +650,8 @@ import java.util.Map;
     if (configuration.adUiElements != null) {
       adsRenderingSettings.setUiElements(configuration.adUiElements);
     }
-
+    boolean isSetupDone = adsBehaviour.doSetupAdsRendering(contentPositionMs, contentDurationMs);
+    if (isSetupDone) return adsRenderingSettings;
     // Skip ads based on the start position as required.
     long[] adGroupTimesUs = adPlaybackState.adGroupTimesUs;
     int adGroupForPositionIndex =
@@ -641,7 +697,9 @@ import java.util.Map;
 
   private VideoProgressUpdate getContentVideoProgressUpdate() {
     boolean hasContentDuration = contentDurationMs != C.TIME_UNSET;
+    long contentDurationMs = hasContentDuration ? this.contentDurationMs : IMA_DURATION_UNSET;
     long contentPositionMs;
+    resetFlagsIfRequired();
     if (pendingContentPositionMs != C.TIME_UNSET) {
       sentPendingContentPositionMs = true;
       contentPositionMs = pendingContentPositionMs;
@@ -651,20 +709,26 @@ import java.util.Map;
       long elapsedSinceEndMs = SystemClock.elapsedRealtime() - fakeContentProgressElapsedRealtimeMs;
       contentPositionMs = fakeContentProgressOffsetMs + elapsedSinceEndMs;
     } else if (imaAdState == IMA_AD_STATE_NONE && !playingAd && hasContentDuration) {
-      contentPositionMs = getContentPeriodPositionMs(player, timeline, period);
+      contentPositionMs = adsBehaviour.getContentPositionMs(player, timeline, period, contentDurationMs);
     } else {
       return VideoProgressUpdate.VIDEO_TIME_NOT_READY;
     }
-    long contentDurationMs = hasContentDuration ? this.contentDurationMs : IMA_DURATION_UNSET;
     return new VideoProgressUpdate(contentPositionMs, contentDurationMs);
+  }
+
+  private void resetFlagsIfRequired() {
+    if (adsBehaviour instanceof AdsBehaviourWatchTime  && contentDurationMs != C.TIME_UNSET){
+      pendingContentPositionMs = C.TIME_UNSET;
+      fakeContentProgressElapsedRealtimeMs = C.TIME_UNSET;
+    }
   }
 
   private VideoProgressUpdate getAdVideoProgressUpdate() {
     if (player == null) {
       return lastAdProgress;
-    } else if (imaAdState != IMA_AD_STATE_NONE && playingAd) {
+    } else if (imaAdState != IMA_AD_STATE_NONE && playingAd && imaAdInfo != null && imaAdInfo.isPrepareComplete) {
       long adDuration = player.getDuration();
-      return adDuration == C.TIME_UNSET
+      return adDuration == C.TIME_UNSET || player.getCurrentPosition() > adDuration + 500
           ? VideoProgressUpdate.VIDEO_TIME_NOT_READY
           : new VideoProgressUpdate(player.getCurrentPosition(), adDuration);
     } else {
@@ -727,6 +791,7 @@ import java.util.Map;
             adGroupTimeSeconds == -1.0
                 ? adPlaybackState.adGroupCount - 1
                 : getAdGroupIndexForCuePointTimeSeconds(adGroupTimeSeconds);
+        adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adGroupIndex, new Exception("Fetch error for ad "));
         markAdGroupInErrorStateAndClearPendingContentPosition(adGroupIndex);
         break;
       case CONTENT_PAUSE_REQUESTED:
@@ -753,6 +818,12 @@ import java.util.Map;
         Map<String, String> adData = adEvent.getAdData();
         String message = "AdEvent: " + adData;
         Log.i(TAG, message);
+        break;
+      case LOADED:
+        if (adEvent.getAd().getVastMediaWidth() <= 1 && adEvent.getAd().getVastMediaHeight() <= 1){
+          AdPodInfo adPodInfo = adEvent.getAd().getAdPodInfo();
+          adsBehaviour.handleAudioAdLoaded(adPodInfo.getPodIndex(), adPodInfo.getAdPosition() - 1);
+        }
         break;
       default:
         break;
@@ -903,7 +974,7 @@ import java.util.Map;
       return;
     }
 
-    int adGroupIndex = getAdGroupIndexForAdPod(adPodInfo);
+    int adGroupIndex = adsBehaviour.getAdGroupIndexForAdPod(adPodInfo.getPodIndex(), adPodInfo.getTimeOffset(), player, timeline, period);
     int adIndexInAdGroup = adPodInfo.getAdPosition() - 1;
     AdInfo adInfo = new AdInfo(adGroupIndex, adIndexInAdGroup);
     // The ad URI may already be known, so force put to update it if needed.
@@ -935,6 +1006,7 @@ import java.util.Map;
     Uri adUri = Uri.parse(adMediaInfo.getUrl());
     adPlaybackState =
         adPlaybackState.withAdUri(adInfo.adGroupIndex, adInfo.adIndexInAdGroup, adUri);
+    adsBehaviour.onAdLoad(adGroupIndex, adIndexInAdGroup, adUri);
     updateAdPlaybackState();
   }
 
@@ -968,6 +1040,8 @@ import java.util.Map;
         for (int i = 0; i < adCallbacks.size(); i++) {
           adCallbacks.get(i).onError(adMediaInfo);
         }
+      } else {
+        adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_SUCCESS, imaAdInfo.adGroupIndex, null);
       }
       updateAdProgress();
     } else {
@@ -1055,6 +1129,7 @@ import java.util.Map;
       Log.w(TAG, "Unable to determine ad group index for ad group load error", error);
       return;
     }
+    adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adGroupIndex, error);
     markAdGroupInErrorStateAndClearPendingContentPosition(adGroupIndex);
     if (pendingAdLoadError == null) {
       pendingAdLoadError = AdLoadException.createForAdGroup(error, adGroupIndex);
@@ -1117,6 +1192,7 @@ import java.util.Map;
     }
     adPlaybackState = adPlaybackState.withAdLoadError(adGroupIndex, adIndexInAdGroup);
     updateAdPlaybackState();
+    adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adGroupIndex, adIndexInAdGroup, exception);
   }
 
   private void ensureSentContentCompleteIfAtEndOfStream() {
@@ -1286,6 +1362,7 @@ import java.util.Map;
         adsManager.destroy();
         return;
       }
+      adsBehaviour.onAdsManagerLoaded(adsManager.getAdCuePoints().size());
       pendingAdRequestContext = null;
       AdTagLoader.this.adsManager = adsManager;
       adsManager.addAdErrorListener(this);
@@ -1298,7 +1375,7 @@ import java.util.Map;
       }
       try {
         adPlaybackState =
-            new AdPlaybackState(adsId, getAdGroupTimesUsForCuePoints(adsManager.getAdCuePoints()));
+                adsBehaviour.createAdPlaybackState(adsId, getAdGroupTimesUsForCuePoints(adsManager.getAdCuePoints()));
         updateAdPlaybackState();
       } catch (RuntimeException e) {
         maybeNotifyInternalError("onAdsManagerLoaded", e);
@@ -1347,6 +1424,11 @@ import java.util.Map;
       }
       try {
         handleAdEvent(adEvent);
+        if (adEventType == AdEventType.STARTED || adEventType == AdEventType.COMPLETED){
+          @Nullable String creativeId = adEvent.getAd() != null ? adEvent.getAd().getCreativeId() : null;
+          @Nullable String advertiser = adEvent.getAd() != null ? adEvent.getAd().getAdvertiserName() : null;
+          adsBehaviour.onAdEvent(adEventType.name(), creativeId, advertiser);
+        }
       } catch (RuntimeException e) {
         maybeNotifyInternalError("onAdEvent", e);
       }
@@ -1365,6 +1447,7 @@ import java.util.Map;
         pendingAdRequestContext = null;
         adPlaybackState = new AdPlaybackState(adsId);
         updateAdPlaybackState();
+        adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, -1, error);
       } else if (ImaUtil.isAdGroupLoadError(error)) {
         try {
           handleAdGroupLoadError(error);
@@ -1442,11 +1525,14 @@ import java.util.Map;
     }
   }
 
+
+
   // TODO: Consider moving this into AdPlaybackState.
   private static final class AdInfo {
 
     public final int adGroupIndex;
     public final int adIndexInAdGroup;
+    public boolean isPrepareComplete;
 
     public AdInfo(int adGroupIndex, int adIndexInAdGroup) {
       this.adGroupIndex = adGroupIndex;
