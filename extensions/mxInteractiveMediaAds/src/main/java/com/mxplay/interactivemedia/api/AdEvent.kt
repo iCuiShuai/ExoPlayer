@@ -13,4 +13,8 @@ interface AdEvent {
     interface AdEventListener {
         fun onAdEvent(adEvent: AdEvent)
     }
+
+    interface AdEventVerificationListener {
+        fun onAdEventVerification(adEvent: AdEvent)
+    }
 }

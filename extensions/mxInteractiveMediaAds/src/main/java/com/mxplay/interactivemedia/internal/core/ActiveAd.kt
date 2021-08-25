@@ -41,6 +41,8 @@ class ActiveAd(val ad: Ad, private val player: VideoAdPlayer?, @AdState private 
                 onAdStateChanged(AdState.MIDPOINT)
             }else if (this.state == AdState.MIDPOINT && progress.isThirdQuartileReached){
                 onAdStateChanged(AdState.THIRD_QUARTILE)
+            } else {
+                adEventListener.onAdEvent(AdEventImpl(AdEvent.AdEventType.AD_PROGRESS, ad, null))
             }
         }
 
