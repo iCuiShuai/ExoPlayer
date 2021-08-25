@@ -212,6 +212,9 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
                                     ?: ""))
                         }
                     }
+                    AdData.ADVERIFICATIONS ->{
+                        inLine.adverifications = readAdVerifications(pullParser)
+                    }
                     AdData.CREATIVES_XML_TAG -> inLine.creatives = readCreatives(pullParser)
                     else -> skip(pullParser)
                 }
@@ -471,10 +474,10 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
     @Throws(IOException::class, XmlPullParserException::class)
     private fun readVerification(parser: XmlPullParser) : AdVerification {
         assertStartTag(parser, AdVerification.TAG_VERIFICATION)
-        parser.nextTag()
-        var event = parser.eventType
         val verification = AdVerification()
         verification.vendorKey = readAttr(parser, AdVerification.ATTR_VENDOR)!!
+        parser.nextTag()
+        var event = parser.eventType
 
         while (parser.name !=  AdVerification.TAG_VERIFICATION){
             if (event == XmlPullParser.START_TAG){
