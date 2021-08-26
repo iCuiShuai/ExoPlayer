@@ -13,6 +13,7 @@ import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.source.ads.AdPlaybackState;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.Math.max;
@@ -56,6 +57,16 @@ public abstract class AdsBehaviour {
         this.adTagProvider = adTagProvider;
     }
 
+    private @Nullable Map<String, String> getAdTagProviderExtraParams() {
+        if(adTagProvider != null){
+            @Nullable AdTagData adTagData = adTagProvider.getAdTagData();
+            if(adTagData != null){
+                return adTagData.toParams();
+            }
+        }
+        return null;
+    }
+
     public  void setHandler(Handler handler){
         this.handler = handler;
     }
@@ -97,10 +108,12 @@ public abstract class AdsBehaviour {
         return defaultTimout;
     }
     public final void provideAdTagUri(Uri actualUri, @NonNull IAdTagProvider.Listener listener) {
+        AdTagData adTagData = new AdTagData(actualUri,false, -1);
         if (adTagProvider != null){
             adTagProvider.registerTagListener(listener);
+            if (adTagProvider.getAdTagData() != null) adTagData = adTagProvider.getAdTagData();
         }
-        listener.onTagReceived(actualUri);
+        listener.onTagReceived(adTagData);
     }
 
     public final void setPipMode(boolean isPip) {
@@ -140,7 +153,7 @@ public abstract class AdsBehaviour {
     };
 
     public final void onAllAdsRequested(){
-        videoAdsTracker.onAdManagerRequested();
+        videoAdsTracker.onAdManagerRequested(getAdTagProviderExtraParams());
         startRequestTime = System.currentTimeMillis();
         long vastCallMaxWaitingTime = vastTimeOutInMs > 0 ? vastTimeOutInMs + 1000 : 6000;
         if (handler != null){

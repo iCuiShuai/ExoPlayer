@@ -14,7 +14,7 @@ class FriendlyObstructionImpl(val _view : View, val _purpose : FriendlyObstructi
         return _purpose
     }
 
-    override fun getDetailedReason(): String {
-        return _detailReason ?: ""
+    override fun getDetailedReason(): String? {
+        return _detailReason
     }
 }

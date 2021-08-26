@@ -462,7 +462,7 @@ public class MatroskaExtractorMX implements Extractor {
 
   @Override
   public final boolean sniff(ExtractorInput input) throws IOException {
-    return new Sniffer().sniff(input);
+    return new SnifferMX().sniff(input);
   }
 
   @Override
