@@ -15,12 +15,18 @@ import com.mxplay.interactivemedia.internal.data.model.TrackingEvent
 import com.mxplay.mediaads.exo.OmaUtil
 import java.util.*
 
-class AdEventTracker(private val ad: Ad, mxOmid: MxOmid?, private val remoteDataSource: RemoteDataSource, private val obstructionList: List<FriendlyObstruction>) : EventTracker(), FriendlyObstructionProvider, AdErrorEvent.AdErrorListener, AdEvent.AdEventListener {
+class AdEventTracker(private val ad: Ad, mxOmid: MxOmid?, private val remoteDataSource: RemoteDataSource,
+                     private val obstructionList: List<FriendlyObstruction>, adContainer: View?) :
+        EventTracker(), FriendlyObstructionProvider, AdErrorEvent.AdErrorListener, AdEvent.AdEventListener,
+        AdEvent.AdEventVerificationListener, AdErrorEvent.AdErrorVerificationListener{
 
-    private var adView : View ? = null
+    private var adView : View? = adContainer
     private val trackingEvents : Map<EventName, MutableList<TrackingEvent>>? = ad.provideTrackingEvent()
-    private val pixelTrackers : List<IAdPixelTracker> = createPixelTrackers(mxOmid, adView)
     private val urlStitchingService = remoteDataSource.configuration.urlStitchingService
+    private val pixelTrackers : List<IAdPixelTracker> = createPixelTrackers(mxOmid, adView)
+
+    private var isBuffering = false
+
     companion object{
         const val TAG = "AdEventTracker"
     }
@@ -46,27 +52,6 @@ class AdEventTracker(private val ad: Ad, mxOmid: MxOmid?, private val remoteData
                     }
                 }
             }
-
-            pixelTrackers.forEach{
-                when(adEvent.type){
-                    AdEvent.AdEventType.STARTED -> {
-                        val props = adEvent.adData!!
-                        it.startSession(this);
-                        it.start(props["duration"]!!.toFloat(), props["volume"]!!.toFloat(), ad.getSkipTimeOffset().toFloat())
-                    }
-                    AdEvent.AdEventType.FIRST_QUARTILE -> it.firstQuartile()
-                    AdEvent.AdEventType.MIDPOINT -> it.midpoint()
-                    AdEvent.AdEventType.THIRD_QUARTILE -> it.thirdQuartile()
-                    AdEvent.AdEventType.COMPLETED -> {it.completed(); it.finishSession()}
-                    AdEvent.AdEventType.CLICKED -> it.clickAd()
-                    AdEvent.AdEventType.AD_BUFFERING -> it.videoBuffering(true)
-                    AdEvent.AdEventType.PAUSED -> it.paused()
-                    AdEvent.AdEventType.RESUMED -> it.resumed()
-                    AdEvent.AdEventType.LOADED -> it.loaded()
-                    AdEvent.AdEventType.AD_PROGRESS -> { }
-                    else -> {}
-                }
-            }
         }
     }
 
@@ -83,24 +68,6 @@ class AdEventTracker(private val ad: Ad, mxOmid: MxOmid?, private val remoteData
                 }
             }
         }
-        pixelTrackers.forEach { pxTracker ->
-            if (pxTracker.hasSession()) {
-                pxTracker.onError(adErrorEvent.error.errorCodeNumber, adErrorEvent.error.errorType)
-                pxTracker.finishSession()
-            } else {
-                pxTracker.adVerification.trackingEvents?.get(EventName.VERIFICATION_NOT_EXECUTED)?.let { e ->
-                    if (e.isTrackingAllowed()) {
-                        e.onEventTracked()
-                        try {
-                            remoteDataSource.trackEvent(e.trackingUrl, { url -> urlStitchingService.errorMacro(doUrlStitching(url), adErrorEvent.error.errorCode.errorNumber)}, { mutableMapOf()})
-                        } catch (ex: Exception) {
-                            Log.e(TAG, "Error tracking ${e.name} ", ex)
-                        }
-                    }
-                }
-            }
-        }
-
     }
 
 
@@ -137,6 +104,58 @@ class AdEventTracker(private val ad: Ad, mxOmid: MxOmid?, private val remoteData
 
     override fun getFriendlyObstructions(): List<FriendlyObstruction> {
         return obstructionList
+    }
+
+    override fun onAdEventVerification(adEvent: AdEvent) {
+        pixelTrackers.forEach{
+            when(adEvent.type){
+                AdEvent.AdEventType.STARTED -> {
+                    val props = adEvent.adData!!
+                    it.startSession(this);
+                    it.start(props["duration"]!!.toFloat(), props["volume"]!!.toFloat(), ad.getSkipTimeOffset().toFloat())
+                }
+                AdEvent.AdEventType.FIRST_QUARTILE -> it.firstQuartile()
+                AdEvent.AdEventType.MIDPOINT -> it.midpoint()
+                AdEvent.AdEventType.THIRD_QUARTILE -> it.thirdQuartile()
+                AdEvent.AdEventType.COMPLETED -> {it.completed(); it.finishSession()}
+                AdEvent.AdEventType.CLICKED -> it.clickAd()
+                AdEvent.AdEventType.AD_BUFFERING -> {
+                    isBuffering = true
+                    it.videoBuffering(true)
+                }
+                AdEvent.AdEventType.PAUSED -> it.paused()
+                AdEvent.AdEventType.RESUMED -> it.resumed()
+                AdEvent.AdEventType.LOADED -> it.loaded()
+                AdEvent.AdEventType.AD_PROGRESS -> {
+                    if (isBuffering) {
+                        isBuffering = false
+                        it.videoBuffering(false)
+                    }
+                }
+                AdEvent.AdEventType.SKIPPED -> it.skippedAd()
+                else -> {}
+            }
+        }
+    }
+
+    override fun onAdErrorVerification(adErrorEvent: AdErrorEvent) {
+        pixelTrackers.forEach { pxTracker ->
+            if (pxTracker.hasSession()) {
+                pxTracker.onError(adErrorEvent.error.errorCodeNumber, adErrorEvent.error.errorType)
+                pxTracker.finishSession()
+            } else {
+                pxTracker.adVerification.trackingEvents?.get(EventName.VERIFICATION_NOT_EXECUTED)?.let { e ->
+                    if (e.isTrackingAllowed()) {
+                        e.onEventTracked()
+                        try {
+                            remoteDataSource.trackEvent(e.trackingUrl, { url -> urlStitchingService.errorMacro(doUrlStitching(url), adErrorEvent.error.errorCode.errorNumber)}, { mutableMapOf()})
+                        } catch (ex: Exception) {
+                            Log.e(TAG, "Error tracking ${e.name} ", ex)
+                        }
+                    }
+                }
+            }
+        }
     }
 
 }

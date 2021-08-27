@@ -1,12 +1,12 @@
 package com.mxplay.adloader;
 
-import android.net.Uri;
-
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 public interface IAdTagProvider {
     void registerTagListener(@NonNull Listener listener);
+    @Nullable AdTagData getAdTagData();
      interface Listener{
-        void onTagReceived(Uri adTag);
+        void onTagReceived(@NonNull AdTagData adTagData);
     }
 }

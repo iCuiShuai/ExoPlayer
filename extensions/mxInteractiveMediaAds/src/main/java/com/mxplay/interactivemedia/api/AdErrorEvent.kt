@@ -19,4 +19,8 @@ class AdErrorEvent {
     interface AdErrorListener {
         fun onAdError(adErrorEvent: AdErrorEvent)
     }
+
+    interface AdErrorVerificationListener {
+        fun onAdErrorVerification(adErrorEvent: AdErrorEvent)
+    }
 }
