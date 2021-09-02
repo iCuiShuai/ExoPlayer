@@ -20,17 +20,30 @@ class AdSource(val id : String, val allowMultiple : Boolean = true, val followRe
 
     override fun getPendingAdTagUriHost(): AdTagUriHost? {
         if (!followRedirect) return null
-        return if (vastData == null) this else vastData!!.getPendingAdTagUriHost()
+        return if (adTagUri != null && vastData == null) this
+        else if (vastData != null) vastData!!.getPendingAdTagUriHost()
+        else null
     }
     override fun getPendingAdTagUri(): String?{
         return adTagUri
     }
 
-    override fun handleAdTagUriResult(vastModel: VASTModel) {
-        this.vastData = vastModel
-        if (!allowMultiple){
-            this.vastData!!.disallowMultiple()
+    override fun handleAdTagUriResult(vastModel: VASTModel?) {
+        if (vastModel != null) {
+            this.vastData = vastModel
+            if (!allowMultiple) {
+                this.vastData!!.disallowMultiple()
+            }
+            if (!isFallBackOnNoAd()) {
+                this.vastData!!.disallowFallBack()
+            }
+        } else {
+            adTagUri = null
         }
+    }
+
+    override fun isFallBackOnNoAd(): Boolean {
+        return true
     }
 
     fun getAds(): List<Ad> {

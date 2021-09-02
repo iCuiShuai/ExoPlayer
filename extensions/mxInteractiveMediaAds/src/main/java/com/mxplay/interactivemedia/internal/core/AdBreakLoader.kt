@@ -14,7 +14,6 @@ import com.mxplay.interactivemedia.internal.data.xml.VastXmlParser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.yield
 import okhttp3.ResponseBody
 import org.xmlpull.v1.XmlPullParser
 import java.io.IOException
@@ -70,9 +69,20 @@ class AdBreakLoader(val ioOpsScope: CoroutineScope, private val remoteDataSource
     private suspend fun handleRedirection(adBreak: AdBreak) {
         var uriHost: AdTagUriHost? = adBreak.getPendingAdTagUriHost()
         var maxRedirect = sdkSettings.maxRedirects
+        val hostStack = Stack<AdTagUriHost>()
+        val depthStack = Stack<Int>()
+        var isHostResolved = false
 
-        while (uriHost != null) {
-            val response = remoteDataSource.fetchDataFromUri(uriHost.getPendingAdTagUri()!!)
+        hostStack.push(uriHost)
+        depthStack.push(1)
+
+        while (!hostStack.empty() && !isHostResolved) {
+            var currentUriHost = hostStack.peek()
+            val currentDepth = depthStack.peek()
+
+            if (sdkSettings.isDebugMode) Log.d(TAG, "handleRedirection: ${currentUriHost} at depth ${currentDepth}")
+
+            val response = remoteDataSource.fetchDataFromUri(currentUriHost.getPendingAdTagUri()!!)
             if (response.isSuccessful) {
                 val responseBody: ResponseBody = response.body()!!
                 val content = responseBody.string()
@@ -85,7 +95,7 @@ class AdBreakLoader(val ioOpsScope: CoroutineScope, private val remoteDataSource
                             XmlPullParser.START_TAG -> {
                                 if (pullParser.name == VASTModel.VAST) {
                                     val vastModel = vastProcessor.parse()
-                                    uriHost.handleAdTagUriResult(vastModel)
+                                    currentUriHost.handleAdTagUriResult(vastModel)
                                     adBreak.refreshAds()
                                 }
                             }
@@ -94,16 +104,38 @@ class AdBreakLoader(val ioOpsScope: CoroutineScope, private val remoteDataSource
                         event = pullParser.next()
                     }
 
-                    uriHost = uriHost.getPendingAdTagUriHost()
+                    if(currentUriHost.getPendingAdTagUriHost() == null) {
+                        isHostResolved = true
+                    } else {
+                        if (currentDepth < maxRedirect) {
+                            hostStack.push(currentUriHost.getPendingAdTagUriHost())
+                            depthStack.push(currentDepth + 1)
+                        } else {
+                            onError(adBreak, currentUriHost, hostStack, depthStack, MaxRedirectLimitReachException("MAX redirect limit reached ${sdkSettings.maxRedirects}"))
+                        }
+                    }
                 }
             } else {
-                throw IOException("invalid response from server")
+                onError(adBreak, currentUriHost, hostStack, depthStack, IOException("invalid response from server"))
             }
-            maxRedirect--
-            if (maxRedirect == 0) throw MaxRedirectLimitReachException("MAX redirect limit reached ${sdkSettings.maxRedirects}")
-            yield()
         }
+        if (!isHostResolved) throw IOException("invalid response from server")
+    }
 
+    @Throws(Exception::class)
+    fun onError(adBreak: AdBreak, currentUriHost: AdTagUriHost, hostStack: Stack<AdTagUriHost>, depthStack: Stack<Int>, e: Exception) {
+        if (!currentUriHost.isFallBackOnNoAd()) {
+            currentUriHost.handleAdTagUriResult(null)
+            if (sdkSettings.isDebugMode) Log.d(TAG, "onError removing: ${hostStack.peek()} at depth ${depthStack.peek()} with error:${e.message}")
+            hostStack.pop()
+            depthStack.pop()
+            if (hostStack.isEmpty() && adBreak.getPendingAdTagUriHost() != null) {
+                hostStack.push(adBreak.getPendingAdTagUriHost())
+                depthStack.push(1)
+            }
+        } else {
+            throw e
+        }
     }
 
 
