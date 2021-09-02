@@ -167,6 +167,9 @@ class ActiveAd(val ad: Ad, private val player: VideoAdPlayer?, @AdState private 
         this.adCompanionsInfo = adCompanionInfo
     }
 
-
+    fun getCurrentAdDuration(): Long {
+        return lastAdProgressUpdate.durationMs
     }
+
+}
 

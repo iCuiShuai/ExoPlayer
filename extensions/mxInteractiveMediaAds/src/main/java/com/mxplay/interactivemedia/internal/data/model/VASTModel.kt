@@ -66,6 +66,14 @@ class VASTModel() {
         }
     }
 
+    fun disallowFallBack() {
+        if (ads != null && ads!!.isNotEmpty()){
+            ads!!.forEach {
+                if (it is AdWrapper) it.fallBackOnNoAd = false
+            }
+        }
+    }
+
     fun updatePodInfo(podIndex: Int, startTimeSec: Long, adPosition: Int): Int {
         var count = 0
         ads?.forEach { it ->

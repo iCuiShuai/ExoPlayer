@@ -3,7 +3,7 @@ package com.mxplay.interactivemedia.internal.data.model
 import com.mxplay.interactivemedia.api.Ad
 import com.mxplay.interactivemedia.internal.tracking.ITrackersProvider
 
-open class AdWrapper(id : String, var allowMultiple : Boolean  = true) : AdData(id) , AdTagUriHost, ITrackersProvider{
+open class AdWrapper(id : String, var allowMultiple : Boolean  = false, var fallBackOnNoAd: Boolean = true) : AdData(id) , AdTagUriHost, ITrackersProvider{
 
     var adTagUri: String? = null
     var vastData : VASTModel? = null
@@ -11,7 +11,7 @@ open class AdWrapper(id : String, var allowMultiple : Boolean  = true) : AdData(
 
     companion object{
         const val AD_TAG_URI = "VASTAdTagURI"
-
+        const val FAlLBACK_ON_NO_AD = "fallbackOnNoAd"
     }
 
 
@@ -21,21 +21,34 @@ open class AdWrapper(id : String, var allowMultiple : Boolean  = true) : AdData(
 
 
     override fun getPendingAdTagUriHost(): AdTagUriHost? {
-        return if (adTagUri != null && vastData == null) this else vastData!!.getPendingAdTagUriHost()
+        return if (adTagUri != null && vastData == null) this
+        else if (vastData != null) vastData!!.getPendingAdTagUriHost()
+        else null
     }
 
     override fun getPendingAdTagUri(): String? {
         return adTagUri
     }
 
-    override fun handleAdTagUriResult(vastModel: VASTModel) {
-        this.vastData = vastModel
-        this.vastData!!.ads?.forEach{ ad ->
-            ad.parent = this
+    override fun handleAdTagUriResult(vastModel: VASTModel?) {
+        if (vastModel != null) {
+            this.vastData = vastModel
+            this.vastData!!.ads?.forEach { ad ->
+                ad.parent = this
+            }
+            if (!allowMultiple) {
+                this.vastData!!.disallowMultiple();
+            }
+            if (!isFallBackOnNoAd()) {
+                this.vastData!!.disallowFallBack()
+            }
+        } else {
+            adTagUri = null
         }
-        if (!allowMultiple){
-            this.vastData!!.disallowMultiple();
-        }
+    }
+
+    override fun isFallBackOnNoAd(): Boolean {
+        return fallBackOnNoAd
     }
 
     fun getAdsCount() : Int{
