@@ -14,6 +14,7 @@ import com.mxplay.interactivemedia.internal.data.xml.VastXmlParser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
 import okhttp3.ResponseBody
 import org.xmlpull.v1.XmlPullParser
 import java.io.IOException
@@ -118,6 +119,7 @@ class AdBreakLoader(val ioOpsScope: CoroutineScope, private val remoteDataSource
             } else {
                 onError(adBreak, currentUriHost, hostStack, depthStack, IOException("invalid response from server"))
             }
+            yield()
         }
         if (!isHostResolved) throw IOException("invalid response from server")
     }
@@ -127,11 +129,18 @@ class AdBreakLoader(val ioOpsScope: CoroutineScope, private val remoteDataSource
         if (!currentUriHost.isFallBackOnNoAd()) {
             currentUriHost.handleAdTagUriResult(null)
             if (sdkSettings.isDebugMode) Log.d(TAG, "onError removing: ${hostStack.peek()} at depth ${depthStack.peek()} with error:${e.message}")
-            hostStack.pop()
-            depthStack.pop()
-            if (hostStack.isEmpty() && adBreak.getPendingAdTagUriHost() != null) {
+
+            while (!hostStack.empty() && hostStack.peek().getPendingAdTagUriHost() == null) {
+                hostStack.pop()
+                depthStack.pop()
+            }
+
+            if (hostStack.empty() && adBreak.getPendingAdTagUriHost() != null) {
                 hostStack.push(adBreak.getPendingAdTagUriHost())
                 depthStack.push(1)
+            } else if (!hostStack.empty() && hostStack.peek().getPendingAdTagUriHost() != null) {
+                hostStack.push(hostStack.peek().getPendingAdTagUriHost())
+                depthStack.push(depthStack.peek() + 1)
             }
         } else {
             throw e
