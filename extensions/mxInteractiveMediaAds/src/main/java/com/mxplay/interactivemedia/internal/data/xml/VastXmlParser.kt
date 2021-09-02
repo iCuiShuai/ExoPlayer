@@ -153,15 +153,6 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
 
             /** make sure the vast response ends with the correct tag **/
             assertEndTag(pullParser, VASTModel.VAST)
-            var wrappersCount = 0;
-            ads.forEach{
-                if(it is AdWrapper) wrappersCount++
-            }
-            if (wrappersCount > 1){
-                ads.forEach{
-                    if(it is AdWrapper) it.allowMultiple = false
-                }
-            }
 
             vastData.ads = ads
             return vastData

@@ -2,7 +2,7 @@ package com.mxplay.interactivemedia.internal.data.model
 
 import com.mxplay.interactivemedia.api.Ad
 
-class AdSource(val id : String, val allowMultiple : Boolean = true, val followRedirect : Boolean = true) : AdTagUriHost {
+class AdSource(val id : String, var allowMultiple : Boolean = true, val followRedirect : Boolean = true) : AdTagUriHost {
 
 
     var adTagUri: String? = null
