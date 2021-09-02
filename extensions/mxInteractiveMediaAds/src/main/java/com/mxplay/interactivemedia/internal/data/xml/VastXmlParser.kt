@@ -153,15 +153,6 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
 
             /** make sure the vast response ends with the correct tag **/
             assertEndTag(pullParser, VASTModel.VAST)
-            var wrappersCount = 0;
-            ads.forEach{
-                if(it is AdWrapper) wrappersCount++
-            }
-            if (wrappersCount > 1){
-                ads.forEach{
-                    if(it is AdWrapper) it.allowMultiple = false
-                }
-            }
 
             vastData.ads = ads
             return vastData
@@ -234,7 +225,7 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
         assertStartTag(pullParser, AdData.WRAPPER_XML_TAG)
         pullParser.nextTag()
 
-        val adWrapper = AdWrapper(parent.id, readAttrAsBool(pullParser, Creative.ID_XML_ATTR) ?: true)
+        val adWrapper = AdWrapper(parent.id, readAttrAsBool(pullParser, AdSource.MULTIPLE_ADS_ATTR) ?: false, readAttrAsBool(pullParser, AdWrapper.FAlLBACK_ON_NO_AD) ?: true)
         var event = pullParser.eventType
 
         /** loop until close tag for inline is found **/

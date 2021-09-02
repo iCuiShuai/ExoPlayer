@@ -42,7 +42,7 @@ class AdBreakLoader(val ioOpsScope: CoroutineScope, private val remoteDataSource
 
     fun loadAdBreak(adBreak: AdBreak, timeOutMs : Long, adBreakLoadCallback : AdBreakLoadingCallback){
         if (sdkSettings.isDebugMode) {
-            Log.d(TAG, "loadAdBreak  ${adBreak.startTime}  media ads count ${adBreak.adsList.size} :: total ads ${adBreak.totalAdsCount}")
+            Log.d(TAG, "loadAdBreak  ${adBreak.startTime}  media ads count ${adBreak.adsList.size} :: total ads ${adBreak.totalAdsCount} with timeOut ${timeOutMs}ms")
         }
         val pendingAdTagUriHost = adBreak.getPendingAdTagUriHost()
         pendingAdTagUriHost?.let {
@@ -70,9 +70,20 @@ class AdBreakLoader(val ioOpsScope: CoroutineScope, private val remoteDataSource
     private suspend fun handleRedirection(adBreak: AdBreak) {
         var uriHost: AdTagUriHost? = adBreak.getPendingAdTagUriHost()
         var maxRedirect = sdkSettings.maxRedirects
+        val hostStack = Stack<AdTagUriHost>()
+        val depthStack = Stack<Int>()
+        var isHostResolved = false
 
-        while (uriHost != null) {
-            val response = remoteDataSource.fetchDataFromUri(uriHost.getPendingAdTagUri()!!)
+        hostStack.push(uriHost)
+        depthStack.push(1)
+
+        while (!hostStack.empty() && !isHostResolved) {
+            var currentUriHost = hostStack.peek()
+            val currentDepth = depthStack.peek()
+
+            if (sdkSettings.isDebugMode) Log.d(TAG, "handleRedirection: ${currentUriHost} at depth ${currentDepth}")
+
+            val response = remoteDataSource.fetchDataFromUri(currentUriHost.getPendingAdTagUri()!!)
             if (response.isSuccessful) {
                 val responseBody: ResponseBody = response.body()!!
                 val content = responseBody.string()
@@ -85,7 +96,7 @@ class AdBreakLoader(val ioOpsScope: CoroutineScope, private val remoteDataSource
                             XmlPullParser.START_TAG -> {
                                 if (pullParser.name == VASTModel.VAST) {
                                     val vastModel = vastProcessor.parse()
-                                    uriHost.handleAdTagUriResult(vastModel)
+                                    currentUriHost.handleAdTagUriResult(vastModel)
                                     adBreak.refreshAds()
                                 }
                             }
@@ -94,16 +105,46 @@ class AdBreakLoader(val ioOpsScope: CoroutineScope, private val remoteDataSource
                         event = pullParser.next()
                     }
 
-                    uriHost = uriHost.getPendingAdTagUriHost()
+                    if(currentUriHost.getPendingAdTagUriHost() == null) {
+                        isHostResolved = true
+                    } else {
+                        if (currentDepth < maxRedirect) {
+                            hostStack.push(currentUriHost.getPendingAdTagUriHost())
+                            depthStack.push(currentDepth + 1)
+                        } else {
+                            onError(adBreak, currentUriHost, hostStack, depthStack, MaxRedirectLimitReachException("MAX redirect limit reached ${sdkSettings.maxRedirects}"))
+                        }
+                    }
                 }
             } else {
-                throw IOException("invalid response from server")
+                onError(adBreak, currentUriHost, hostStack, depthStack, IOException("invalid response from server"))
             }
-            maxRedirect--
-            if (maxRedirect == 0) throw MaxRedirectLimitReachException("MAX redirect limit reached ${sdkSettings.maxRedirects}")
             yield()
         }
+        if (!isHostResolved) throw IOException("invalid response from server")
+    }
 
+    @Throws(Exception::class)
+    fun onError(adBreak: AdBreak, currentUriHost: AdTagUriHost, hostStack: Stack<AdTagUriHost>, depthStack: Stack<Int>, e: Exception) {
+        if (!currentUriHost.isFallBackOnNoAd()) {
+            currentUriHost.handleAdTagUriResult(null)
+            if (sdkSettings.isDebugMode) Log.d(TAG, "onError removing: ${hostStack.peek()} at depth ${depthStack.peek()} with error:${e.message}")
+
+            while (!hostStack.empty() && hostStack.peek().getPendingAdTagUriHost() == null) {
+                hostStack.pop()
+                depthStack.pop()
+            }
+
+            if (hostStack.empty() && adBreak.getPendingAdTagUriHost() != null) {
+                hostStack.push(adBreak.getPendingAdTagUriHost())
+                depthStack.push(1)
+            } else if (!hostStack.empty() && hostStack.peek().getPendingAdTagUriHost() != null) {
+                hostStack.push(hostStack.peek().getPendingAdTagUriHost())
+                depthStack.push(depthStack.peek() + 1)
+            }
+        } else {
+            throw e
+        }
     }
 
 

@@ -93,6 +93,9 @@ class VMAPParser(private var pullParser: XmlPullParser, private var vastParser: 
                     adBreak.trackingEvents?.let {existingAdBreak.trackingEvents!!.putAll(it)}
 
                     existingAdBreak.adSource.addAll(adBreak.adSource)
+                    existingAdBreak.adSource.forEach {
+                        it.allowMultiple = false
+                    }
                     existingAdBreak.refreshAds()
                     continue
                 }
