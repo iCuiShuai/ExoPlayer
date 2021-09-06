@@ -12,8 +12,8 @@ class CompanionSelector: ICompanionSelector {
         if (companionAds.isNullOrEmpty() || displayContainer.getCompanionAdSlots().isNullOrEmpty()) {
             return null
         }
-        var adCompanionInfo = mutableListOf<AdCompanionInfo>()
-        var companionAdList = companionAds.toMutableList()
+        val adCompanionInfo = mutableListOf<AdCompanionInfo>()
+        val companionAdList = companionAds.toMutableList()
         val companionAdSlots = displayContainer.getCompanionAdSlots()
         for (companionSlot in companionAdSlots!!) {
             val iterator = companionAdList.iterator()

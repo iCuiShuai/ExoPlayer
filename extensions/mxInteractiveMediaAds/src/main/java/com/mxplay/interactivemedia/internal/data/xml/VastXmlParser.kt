@@ -544,7 +544,7 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
                     MediaFile.MEDIA_FILE_XML_TAG -> {
                         val mediaFile = MediaFile()
                         mediaFile.id = readAttr(pullParser, MediaFile.ID_XML_ATTR)
-                        mediaFile.delivery = readAttr(pullParser, MediaFile.DELIVERY_XML_ATTR)
+                        mediaFile.delivery = readAttr(pullParser, MediaFile.DELIVERY_XML_ATTR)!!
                         mediaFile.width = readAttrAsInt(pullParser, MediaFile.WIDTH_XML_ATTR)
                         mediaFile.height = readAttrAsInt(pullParser, MediaFile.HEIGHT_XML_ATTR)
                         mediaFile.type = readAttr(pullParser, MediaFile.TYPE_XML_ATTR)

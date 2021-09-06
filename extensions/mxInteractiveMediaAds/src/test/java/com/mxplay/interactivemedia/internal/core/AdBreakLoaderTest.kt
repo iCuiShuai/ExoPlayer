@@ -1,6 +1,5 @@
 package com.mxplay.interactivemedia.internal.core
 
-import android.net.Uri
 import com.mxplay.interactivemedia.MainCoroutineRule
 import com.mxplay.interactivemedia.api.OmSdkSettings
 import com.mxplay.interactivemedia.internal.data.RemoteDataSource
@@ -13,8 +12,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.test.TestCoroutineDispatcher
-import okhttp3.Response
-import okhttp3.ResponseBody
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,7 +32,7 @@ class AdBreakLoaderTest : TestCase() {
     @Test
     fun testLoadAdBreak() {
         val mockDataSource = mock<RemoteDataSource>()
-        val response = TestConfigData().getOkHttpResponse("vast.xml")
+        val response = TestConfigData().getOkHttpSuccessResponse("vast.xml")
         whenever(mockDataSource.fetchDataFromUri(any(), any(), any())).thenReturn(response)
         val mockOmSdkSettings = mock<OmSdkSettings>()
         val mockCallback = mock<AdBreakLoader.AdBreakLoadingCallback>()
@@ -52,5 +49,22 @@ class AdBreakLoaderTest : TestCase() {
         adBreakLoader.loadAdBreak(adBreak, 2000L, mockCallback)
         assertEquals(adBreak, argumentCaptor.lastValue)
         assertEquals(1, vastArgumentCaptor.lastValue.ads!!.size)
+    }
+
+
+    @Test
+    fun testLoadAdBreakEmptyVastError() {
+        val mockDataSource = mock<RemoteDataSource>()
+        val response = TestConfigData().getOkHttpEmptyVastResponse("vast.xml")
+        whenever(mockDataSource.fetchDataFromUri(any(), any(), any())).thenReturn(response)
+        val mockOmSdkSettings = mock<OmSdkSettings>()
+        val mockCallback = mock<AdBreakLoader.AdBreakLoadingCallback>()
+        val adBreakLoader = AdBreakLoader(ioOpsScope, mockDataSource, mockOmSdkSettings)
+        val adBreak = mock<AdBreak>()
+        val uriHost = mock<AdTagUriHost>()
+        whenever(uriHost.getPendingAdTagUri()).thenReturn("http://mxp-server.in")
+        whenever(adBreak.getPendingAdTagUriHost()).thenReturn(uriHost)
+        adBreakLoader.loadAdBreak(adBreak, 2000L, mockCallback)
+        verify(mockCallback).onAdBreakFetchError(any(), any())
     }
 }
