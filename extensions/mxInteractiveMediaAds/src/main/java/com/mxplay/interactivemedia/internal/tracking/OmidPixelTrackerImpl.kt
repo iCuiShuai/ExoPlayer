@@ -25,10 +25,10 @@ class OmidPixelTrackerImpl(private val mxOmid: MxOmid, private var adView: View?
         adSession = mxOmid.createSession(adView!!.context, adVerification, true)
         try {
             if (adSession != null) {
-                adEvents = AdEvents.createAdEvents(adSession)
-                mediaEvents = MediaEvents.createMediaEvents(adSession)
                 adSession!!.registerAdView(adView)
                 addFriendlyObstruction(friendlyObstructionProvider, adSession)
+                adEvents = AdEvents.createAdEvents(adSession)
+                mediaEvents = MediaEvents.createMediaEvents(adSession)
                 adSession!!.start()
             }
         } catch (e: Exception) {

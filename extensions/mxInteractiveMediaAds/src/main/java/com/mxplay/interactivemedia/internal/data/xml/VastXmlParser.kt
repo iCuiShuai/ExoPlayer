@@ -153,15 +153,6 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
 
             /** make sure the vast response ends with the correct tag **/
             assertEndTag(pullParser, VASTModel.VAST)
-            var wrappersCount = 0;
-            ads.forEach{
-                if(it is AdWrapper) wrappersCount++
-            }
-            if (wrappersCount > 1){
-                ads.forEach{
-                    if(it is AdWrapper) it.allowMultiple = false
-                }
-            }
 
             vastData.ads = ads
             return vastData
@@ -212,6 +203,9 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
                                     ?: ""))
                         }
                     }
+                    AdData.ADVERIFICATIONS ->{
+                        inLine.adverifications = readAdVerifications(pullParser)
+                    }
                     AdData.CREATIVES_XML_TAG -> inLine.creatives = readCreatives(pullParser)
                     else -> skip(pullParser)
                 }
@@ -231,7 +225,7 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
         assertStartTag(pullParser, AdData.WRAPPER_XML_TAG)
         pullParser.nextTag()
 
-        val adWrapper = AdWrapper(parent.id, readAttrAsBool(pullParser, Creative.ID_XML_ATTR) ?: true)
+        val adWrapper = AdWrapper(parent.id, readAttrAsBool(pullParser, AdSource.MULTIPLE_ADS_ATTR) ?: false, readAttrAsBool(pullParser, AdWrapper.FAlLBACK_ON_NO_AD) ?: true)
         var event = pullParser.eventType
 
         /** loop until close tag for inline is found **/
@@ -471,10 +465,10 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
     @Throws(IOException::class, XmlPullParserException::class)
     private fun readVerification(parser: XmlPullParser) : AdVerification {
         assertStartTag(parser, AdVerification.TAG_VERIFICATION)
-        parser.nextTag()
-        var event = parser.eventType
         val verification = AdVerification()
         verification.vendorKey = readAttr(parser, AdVerification.ATTR_VENDOR)!!
+        parser.nextTag()
+        var event = parser.eventType
 
         while (parser.name !=  AdVerification.TAG_VERIFICATION){
             if (event == XmlPullParser.START_TAG){
@@ -550,7 +544,7 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
                     MediaFile.MEDIA_FILE_XML_TAG -> {
                         val mediaFile = MediaFile()
                         mediaFile.id = readAttr(pullParser, MediaFile.ID_XML_ATTR)
-                        mediaFile.delivery = readAttr(pullParser, MediaFile.DELIVERY_XML_ATTR)
+                        mediaFile.delivery = readAttr(pullParser, MediaFile.DELIVERY_XML_ATTR)!!
                         mediaFile.width = readAttrAsInt(pullParser, MediaFile.WIDTH_XML_ATTR)
                         mediaFile.height = readAttrAsInt(pullParser, MediaFile.HEIGHT_XML_ATTR)
                         mediaFile.type = readAttr(pullParser, MediaFile.TYPE_XML_ATTR)

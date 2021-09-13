@@ -38,6 +38,7 @@ dependencies {
     testImplementation "org.robolectric:robolectric:${robolectricVersion}"
     testImplementation "org.mockito:mockito-android:${mockitoVersion}"
     testImplementation "org.mockito.kotlin:mockito-kotlin:${mockito_kotlin}"
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:${coroutineVersion}"
 
 
 }

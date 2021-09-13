@@ -2,7 +2,10 @@ package com.mxplay.interactivemedia.internal.util
 
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.upstream.DataSource
+import java.io.BufferedReader
 import java.io.IOException
+import java.io.InputStream
+import java.io.InputStreamReader
 import java.nio.charset.Charset
 import java.util.*
 
@@ -65,5 +68,17 @@ object Util {
         return String.format(Locale.US, format!!, *args)
     }
 
+
+    @Throws(Exception::class)
+    fun convertStreamToString(`is`: InputStream?): String {
+        val reader = BufferedReader(InputStreamReader(`is`, Charset.defaultCharset()))
+        val sb = StringBuilder()
+        var line: String? = null
+        while (reader.readLine().also { line = it } != null) {
+            sb.append(line).append("\n")
+        }
+        reader.close()
+        return sb.toString()
+    }
 
 }

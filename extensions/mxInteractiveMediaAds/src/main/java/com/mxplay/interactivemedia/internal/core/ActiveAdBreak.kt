@@ -51,7 +51,8 @@ class ActiveAdBreak(
                     companionAdManager.release(displayContainer.getCompanionAdSlots()?.toList())
                     companionAdManager.render(acAd.getCompanionsInfo())
                     viewHolder!!.bind(acAd)
-                    nextAd = loadNextAd(activeAd)
+                    val timeLimit = if (acAd.getCurrentAdDuration() > 0) acAd.getCurrentAdDuration() else prelodTimeOffset
+                    nextAd = loadNextAd(activeAd, timeLimit)
                 }
                 AdState.LOADED -> {
                     (acAd as ICompanionInfoProvider).run {

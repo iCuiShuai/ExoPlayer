@@ -1,5 +1,6 @@
 package com.mxplay.interactivemedia.internal.tracking
 
+import android.view.View
 import com.mxplay.interactivemedia.api.Ad
 import com.mxplay.interactivemedia.api.AdErrorEvent
 import com.mxplay.interactivemedia.api.AdEvent
@@ -12,9 +13,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
-class TrackersHandler(val mxOmid: MxOmid?, private val remoteDataSource: RemoteDataSource, private val coroutineScope: CoroutineScope, private val obstructionList: List<FriendlyObstruction>) : ITrackersHandler{
+class TrackersHandler(val mxOmid: MxOmid?, private val remoteDataSource: RemoteDataSource, private val coroutineScope: CoroutineScope, private val obstructionList: List<FriendlyObstruction>, private val adView: View?) : ITrackersHandler{
 
     private val eventPostFlow = MutableStateFlow<Any>(Any())
     private val trackers  = mutableMapOf<Any, EventTracker>()
@@ -30,15 +32,21 @@ class TrackersHandler(val mxOmid: MxOmid?, private val remoteDataSource: RemoteD
                 when(task){
                     is AdEvent -> {
                         task.ad?.let {
-                            val eventTracker = (trackers.getOrPut(it) { AdEventTracker(it, mxOmid, remoteDataSource, obstructionList) }) as AdEventTracker
+                            val eventTracker = (trackers.getOrPut(it) { AdEventTracker(it, mxOmid, remoteDataSource, obstructionList, adView) }) as AdEventTracker
                             eventTracker.onAdEvent(task)
+                            withContext(remoteDataSource.configuration.mainDispatcher) {
+                                eventTracker.onAdEventVerification(task)
+                            }
                         }
                         onEvent()
                     }
                     is AdErrorEvent -> {
                         task.ad?.let {
-                            val eventTracker = (trackers.getOrPut(it) { AdEventTracker(it, mxOmid, remoteDataSource, obstructionList) }) as AdEventTracker
+                            val eventTracker = (trackers.getOrPut(it) { AdEventTracker(it, mxOmid, remoteDataSource, obstructionList, adView) }) as AdEventTracker
                             eventTracker.onAdError(task)
+                            withContext(remoteDataSource.configuration.mainDispatcher) {
+                                eventTracker.onAdErrorVerification(task)
+                            }
                         }
                         onError()
                     }

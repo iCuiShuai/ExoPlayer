@@ -20,7 +20,7 @@ class MediaFile {
     var id: String? = null
 
     /** delivery protocol **/
-    var delivery: String? = null
+    var delivery: String = "progressive"
 
     /** url of the media **/
     var url: String? = null

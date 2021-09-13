@@ -28,13 +28,23 @@ enum class EventName(val value : String){
     CREATIVEVIEW("creativeView"),
     FULLSCREEN("fullscreen"),
     ACCEPT_INVITATION_LINEAR("acceptInvitationLinear"),
+    ACCEPT_INVITATION("acceptInvitation"),
     CLOSE_LINEAR("closeLinear"),
+    CLOSE("close"),
     REWIND("rewind"),
     EXIT_FULLSCREEN("exitFullscreen"),
     ERROR("Error"),
     BREAK_START("breakStart"),
     BREAK_END("breakEnd"),
-    VERIFICATION_NOT_EXECUTED("verificationNotExecuted");
+    VERIFICATION_NOT_EXECUTED("verificationNotExecuted"),
+    PLAYER_EXPAND("playerExpand"),
+    PLAYER_COLLAPSE("playerCollapse"),
+    NOT_USED("notUsed"),
+    OTHER_AD_INTERACTION("otherAdInteraction"),
+    AD_EXPAND("adExpand"),
+    AD_COLLAPSE("adCollapse"),
+    MINIMIZE("minimize"),
+    OVERLAY_VIEW_DURATION("overlayViewDuration");
 
     companion object{
         fun getType(value: String): EventName? {
@@ -52,7 +62,9 @@ enum class EventName(val value : String){
                 CREATIVEVIEW.value -> return CREATIVEVIEW
                 FULLSCREEN.value -> return FULLSCREEN
                 ACCEPT_INVITATION_LINEAR.value -> return ACCEPT_INVITATION_LINEAR
+                ACCEPT_INVITATION.value -> return ACCEPT_INVITATION
                 CLOSE_LINEAR.value  -> return CLOSE_LINEAR
+                CLOSE.value  -> return CLOSE
                 REWIND.value -> return REWIND
                 EXIT_FULLSCREEN.value -> return EXIT_FULLSCREEN
                 SKIP.value -> return SKIP
@@ -62,6 +74,14 @@ enum class EventName(val value : String){
                 ERROR.value -> return ERROR
                 BREAK_START.value -> return BREAK_START
                 BREAK_END.value -> return BREAK_END
+                PLAYER_EXPAND.value -> return PLAYER_EXPAND
+                PLAYER_COLLAPSE.value -> return PLAYER_COLLAPSE
+                NOT_USED.value -> return NOT_USED
+                OTHER_AD_INTERACTION.value -> return OTHER_AD_INTERACTION
+                AD_EXPAND.value -> return AD_EXPAND
+                AD_COLLAPSE.value -> return AD_COLLAPSE
+                MINIMIZE.value -> return MINIMIZE
+                OVERLAY_VIEW_DURATION.value -> OVERLAY_VIEW_DURATION
             }
             Log.e("EventNameMapper", "Unidentified event name $value")
             return null

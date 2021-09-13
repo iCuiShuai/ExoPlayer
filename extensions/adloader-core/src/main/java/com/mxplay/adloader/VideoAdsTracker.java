@@ -111,6 +111,10 @@ public abstract class VideoAdsTracker {
     }
 
     public void onAdManagerRequested(){
+        onAdManagerRequested(null);
+    }
+
+    public void onAdManagerRequested(Map<String,String> extraParams){
         sessionId = UUID.randomUUID().toString();
         Map<String, String> result = new HashMap<>();
         result.put(AD_LOADER_NAME, adLoaderName);
@@ -118,6 +122,9 @@ public abstract class VideoAdsTracker {
         result.put(SESSION_ID, sessionId);
         result.put(START_TIME,String.valueOf(startTime));
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
+        if(extraParams != null && !extraParams.isEmpty()){
+            result.putAll(extraParams);
+        }
         trackEvent(EVENT_ALL_ADS_REQUESTED, result);
     }
 

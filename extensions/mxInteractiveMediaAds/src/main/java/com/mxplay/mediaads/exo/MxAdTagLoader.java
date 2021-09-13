@@ -576,8 +576,8 @@ import java.util.Objects;
     request.setContentProgressProvider(componentListener);
     adsBehaviour.onAllAdsRequested();
     if (request.getAdTagUrl() != null) {
-      adsBehaviour.provideAdTagUri(Uri.parse(request.getAdTagUrl()), adTag -> {
-        request.setAdTagUrl(adTag.toString());
+      adsBehaviour.provideAdTagUri(Uri.parse(request.getAdTagUrl()), adTagData -> {
+        request.setAdTagUrl(adTagData.getAdTag().toString());
         adsLoader.requestAds(request);
       });
     }else
