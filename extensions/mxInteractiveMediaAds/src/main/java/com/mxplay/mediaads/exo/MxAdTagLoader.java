@@ -970,7 +970,7 @@ import java.util.Objects;
     Uri adUri = Uri.parse(adMediaInfo.getUrl());
     adPlaybackState =
         adPlaybackState.withAdUri(adInfo.adGroupIndex, adInfo.adIndexInAdGroup, adUri);
-    adsBehaviour.onAdLoad(adGroupIndex, adIndexInAdGroup, adUri);
+    adsBehaviour.onAdLoad(adGroupIndex, adIndexInAdGroup, adUri, adPodInfo.getPodIndex());
     updateAdPlaybackState();
   }
 
@@ -1005,7 +1005,7 @@ import java.util.Objects;
           adCallbacks.get(i).onError(adMediaInfo);
         }
       } else {
-        adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_SUCCESS, imaAdInfo.adGroupIndex, null);
+        adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_SUCCESS, imaAdInfo.adGroupIndex, imaAdInfo.adIndexInAdGroup, null);
       }
       updateAdProgress();
     } else {
@@ -1391,7 +1391,10 @@ import java.util.Objects;
         if (adEventType == AdEvent.AdEventType.STARTED || adEventType == AdEvent.AdEventType.COMPLETED) {
           @Nullable String creativeId = adEvent.getAd() != null ? adEvent.getAd().getCreativeId() : null;
           @Nullable String advertiser = adEvent.getAd() != null ? adEvent.getAd().getAdvertiserName() : null;
-          adsBehaviour.onAdEvent(adEventType.name(), creativeId, advertiser);
+          AdPodInfo adPodInfo = adEvent.getAd() != null ? adEvent.getAd().getAdPodInfo() : null;
+          int adPodIndex = adPodInfo != null ? adPodInfo.getPodIndex() : -1;
+          int adIndexInAdGroup = adPodInfo != null ? adPodInfo.getAdPosition() - 1 : -1;
+          adsBehaviour.onAdEvent(adEventType.name(), creativeId, advertiser, adPodIndex, adIndexInAdGroup);
         }
       } catch (RuntimeException e) {
         maybeNotifyInternalError("onAdEvent", e);

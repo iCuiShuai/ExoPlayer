@@ -12,7 +12,10 @@ import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.source.ads.AdPlaybackState;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -48,6 +51,9 @@ public abstract class AdsBehaviour {
     protected int lastPlayAdGroupIndex = C.INDEX_UNSET;
     protected int lastStartRequestAdGroupIndex = C.INDEX_UNSET;
     private Handler handler;
+
+    private final BiMap<Integer, Integer> adGroupIndexOpportunitySet = HashBiMap.create();
+    private final Map<String, Uri> adMediaUriByAdInfo = new HashMap<>();
 
     public AdsBehaviour(int vastTimeOutInMs) {
         this.vastTimeOutInMs = vastTimeOutInMs;
@@ -229,13 +235,20 @@ public abstract class AdsBehaviour {
         videoAdsTracker.onAdsManagerLoaded(groupCount);
     }
 
-    public final void onAdLoad(int adGroupIndex, int adIndexInGroup, Uri adUri) {
+    public final void onAdLoad(int adGroupIndex, int adIndexInGroup, Uri adUri, int adPodIndex) {
         videoAdsTracker.onAdLoad(adGroupIndex, adIndexInGroup, adUri);
+        adMediaUriByAdInfo.put(getKeyForAdInfo(adGroupIndex, adIndexInGroup), adUri);
+        if (!adGroupIndexOpportunitySet.containsKey(adGroupIndex)) {
+            trySendOpportunity(adGroupIndex);
+        }
+        adGroupIndexOpportunitySet.put(adGroupIndex, adPodIndex);
         updateStartLoadMediaTime();
     }
 
-    public final void onAdEvent(String name, @Nullable String creativeId, @Nullable String advertiser) {
-        videoAdsTracker.onAdEvent(name, creativeId, advertiser);
+    public final void onAdEvent(String name, @Nullable String creativeId, @Nullable String advertiser, int adPodIndex, int adIndexInAdGroup) {
+        Integer adGroupIndex = adGroupIndexOpportunitySet.inverse().get(adPodIndex);
+        Uri adUri = adMediaUriByAdInfo.get(getKeyForAdInfo(adGroupIndex, adIndexInAdGroup));
+        videoAdsTracker.trackEvent(name, videoAdsTracker.buildEventParams(creativeId, advertiser, adGroupIndex, adIndexInAdGroup, adUri));
     }
 
     public final void trackEvent(@NonNull String eventName, int adGroupIndex, Exception exception) {
@@ -243,18 +256,20 @@ public abstract class AdsBehaviour {
     }
 
     public final void trackEvent(@NonNull String eventName, int adGroupIndex, int adIndexInAdGroup, Exception exception) {
+        trySendOpportunity(adGroupIndex);
         AdPlaybackState adPlaybackState = adPlaybackStateHost.getAdPlaybackState();
         int adGroupCount = adPlaybackState.adGroupCount;
+        Uri mediaUri = adMediaUriByAdInfo.get(getKeyForAdInfo(adGroupIndex, adIndexInAdGroup));
         switch (eventName) {
             case VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED:
                 videoAdsTracker.trackEvent(eventName, videoAdsTracker.buildFailedParams(adGroupIndex, adIndexInAdGroup,
-                        startRequestTime, exception, adGroupCount));
+                        startRequestTime, exception, adGroupCount, mediaUri));
                 break;
             case VideoAdsTracker.EVENT_VIDEO_AD_PLAY_SUCCESS:
                 if (lastPlayAdGroupIndex != adGroupIndex) {
                     lastPlayAdGroupIndex = adGroupIndex;
                     videoAdsTracker.trackEvent(eventName, videoAdsTracker.buildSuccessParams(startLoadMediaTime, startRequestTime,
-                            startLoadMediaTime, lastPlayAdGroupIndex, adGroupCount));
+                            startLoadMediaTime, lastPlayAdGroupIndex, adIndexInAdGroup, adGroupCount, mediaUri));
                 }
                 break;
         }
@@ -269,7 +284,7 @@ public abstract class AdsBehaviour {
             return;
         }
         AdPlaybackState adPlaybackState = adPlaybackStateHost.getAdPlaybackState();
-        int adGroupIndex = getLoadingAdGroupIndexForReporting(adPlaybackState, C.msToUs(contentDurationMs));
+        int adGroupIndex = getLoadingAdGroupIndexForReporting(adPlaybackState, C.msToUs(contentPositionMs));
         if (adGroupIndex == C.INDEX_UNSET) return;
         long contentPosition = TimeUnit.MILLISECONDS.toSeconds(contentPositionMs);
         int realStartTime;
@@ -289,6 +304,7 @@ public abstract class AdsBehaviour {
         if (lastStartRequestAdGroupIndex != adGroupIndex && (adGroupIndex != C.INDEX_UNSET)) {
             lastStartRequestAdGroupIndex = adGroupIndex;
             startRequestTime = System.currentTimeMillis();
+            trySendOpportunity(adGroupIndex);
         }
     }
 
@@ -311,7 +327,16 @@ public abstract class AdsBehaviour {
         return adGroupIndex;
     }
 
-    
+    private void trySendOpportunity(int adGroupIndex) {
+        if (!adGroupIndexOpportunitySet.containsKey(adGroupIndex)) {
+            adGroupIndexOpportunitySet.put(adGroupIndex, -adGroupIndex - 1);
+            videoAdsTracker.onAdOpportunity(adGroupIndex);
+        }
+    }
+
+    private String getKeyForAdInfo(int adGroupIndex, int adIndexInAdGroup) {
+        return adGroupIndex + "_" + adIndexInAdGroup;
+    }
    
 
 }

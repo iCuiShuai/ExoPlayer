@@ -23,6 +23,7 @@ public abstract class VideoAdsTracker {
 
     public static final String EVENT_AD_REQUESTED = "adRequested";
     public static final String EVENT_AD_LOAD = "onAdLoad";
+    public static final String EVENT_AD_OPPORTUNITY = "adOpportunity";
 
 
     public static final String EVENT_VIDEO_AD_PLAY_SUCCESS = "VideoAdPlaySuccess";
@@ -58,16 +59,24 @@ public abstract class VideoAdsTracker {
     
 
     public  Map<String, String> buildSuccessParams(long adLoadedTime, long startRequestTime, long startLoadMediaTime, int adGroupIndex, int adGroupCount) {
+        return buildSuccessParams(adLoadedTime, startRequestTime, startLoadMediaTime, adGroupIndex, -1, adGroupCount, null);
+    }
+
+    public  Map<String, String> buildSuccessParams(long adLoadedTime, long startRequestTime, long startLoadMediaTime, int adGroupIndex, int adIndexInAdGroup, int adGroupCount, Uri adUri) {
         Map<String, String> result = new HashMap<>();
         result.put(AD_LOADER_NAME, adLoaderName);
         result.put(REQUEST_TIME, String.valueOf(adLoadedTime - startRequestTime));
         result.put(LOAD_MEDIA_TIME, String.valueOf(System.currentTimeMillis() - startLoadMediaTime));
         result.put(TOTAL_COST_TIME, String.valueOf(System.currentTimeMillis() - startRequestTime));
         result.put(AD_GROUP_INDEX, String.valueOf(adGroupIndex));
+        result.put(AD_INDEX_IN_GROUP, String.valueOf(adIndexInAdGroup));
         result.put(AD_GROUP_COUNT, String.valueOf(adGroupCount));
         result.put(START_TIME,String.valueOf(startTime));
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
         result.put(SESSION_ID, sessionId);
+        if (adUri != null) {
+            result.put(AD_URI, adUri.toString());
+        }
         return result;
     }
 
@@ -75,9 +84,11 @@ public abstract class VideoAdsTracker {
         return buildFailedParams(adGroupIndex, -1, startRequestTime, exception, adGroupCount);
     }
 
-    
-
     public  Map<String, String> buildFailedParams(int adGroupIndex, int adIndexInAdGroup, long startRequestTime, Exception exception, int adGroupCount) {
+        return buildFailedParams(adGroupIndex, adIndexInAdGroup, startRequestTime, exception, adGroupCount, null);
+    }
+
+    public  Map<String, String> buildFailedParams(int adGroupIndex, int adIndexInAdGroup, long startRequestTime, Exception exception, int adGroupCount,  Uri adUri) {
         Map<String, String> result = new HashMap<>();
         result.put(AD_LOADER_NAME, adLoaderName);
         if (adGroupIndex >= 0) {
@@ -89,11 +100,33 @@ public abstract class VideoAdsTracker {
         if (adGroupCount > 0) {
             result.put(AD_GROUP_COUNT, String.valueOf(adGroupCount));
         }
+        if (adUri != null) {
+            result.put(AD_URI, adUri.toString());
+        }
         result.put(REASON, exception == null ? UNKNOWN : exception.getMessage());
         result.put(TOTAL_COST_TIME, String.valueOf(System.currentTimeMillis() - startRequestTime));
         result.put(SESSION_ID, sessionId);
         result.put(START_TIME,String.valueOf(startTime));
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
+        return result;
+    }
+
+    public Map<String, String> buildEventParams(@Nullable String creativeId, @Nullable String advertiser, int adGroupIndex, int adIndexInAdGroup, Uri adUri) {
+        Map<String, String> result = new HashMap<>();
+        result.put(AD_LOADER_NAME, adLoaderName);
+        if (creativeId != null)
+            result.put(CREATIVE_ID, creativeId);
+        if (advertiser != null)
+            result.put(ADVERTISER, advertiser);
+        result.put(REQUEST_TIME, String.valueOf(System.currentTimeMillis()));
+        result.put(SESSION_ID, sessionId);
+        result.put(START_TIME,String.valueOf(startTime));
+        result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
+        result.put(AD_GROUP_INDEX, String.valueOf(adGroupIndex));
+        result.put(AD_INDEX_IN_GROUP, String.valueOf(adIndexInAdGroup));
+        if (adUri != null) {
+            result.put(AD_URI, adUri.toString());
+        }
         return result;
     }
 
@@ -162,6 +195,15 @@ public abstract class VideoAdsTracker {
         result.put(START_TIME,String.valueOf(startTime));
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
         trackEvent(name, result);
+    }
+
+    public void onAdOpportunity(int adGroupIndex) {
+        Map<String, String> result = new HashMap<>();
+        result.put(AD_LOADER_NAME, adLoaderName);
+        result.put(SESSION_ID, sessionId);
+        result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
+        result.put(AD_GROUP_INDEX, String.valueOf(adGroupIndex));
+        trackEvent(EVENT_AD_OPPORTUNITY, result);
     }
 
     
