@@ -135,8 +135,10 @@ class ActiveAdBreak(
             if (nextAd != null && nextAd.currentState() == AdState.NONE){
                 val player = displayContainer.getPlayer()
                 (nextAd.ad as IMediaFilesProvider).run {
-                    if (getAdMediaInfo() == null)
-                        setAdMediaInfo(AdMediaInfo(mediaFileSelector.selectMediaFile(this).url!!))
+                    if (getAdMediaInfo() == null) {
+                        val selectedMediaFile = mediaFileSelector.selectMediaFile(this)
+                        setAdMediaInfo(AdMediaInfo(selectedMediaFile.url!!), selectedMediaFile.width, selectedMediaFile.height)
+                    }
                 }
                 nextAd.onLoaded(nextAd.ad.getMediaInfo())
                 player?.loadAd(nextAd.ad.getMediaInfo(), nextAd.ad.getAdPodInfo())

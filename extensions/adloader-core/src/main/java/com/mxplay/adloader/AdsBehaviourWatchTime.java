@@ -130,9 +130,10 @@ public class AdsBehaviourWatchTime extends AdsBehaviourDefault{
 
 
     @Override
-    public void handleTimelineOrPositionChanged(Player player, Timeline timeline, Timeline.Period period) {
+    public boolean handleTimelineOrPositionChanged(Player player, Timeline timeline, Timeline.Period period) {
         super.handleTimelineOrPositionChanged(player, timeline, period);
         skipAdOnUserSeek(player, timeline, period);
+        return true;
     }
 
     private void skipAdOnUserSeek(Player player, Timeline timeline, Timeline.Period period) {

@@ -23,7 +23,8 @@ class AdInline(id: String) : AdData(id), Ad, IMediaFilesProvider {
     var podInfo : AdPodInfo? = null
 
     var _adMediaInfo : AdMediaInfo?= null
-
+    var _vastMediaHeight : Int? = null
+    var _vastMediaWidth : Int? = null;
 
     override fun getDescription(): String {
         return adDescription ?: ""
@@ -92,8 +93,10 @@ class AdInline(id: String) : AdData(id), Ad, IMediaFilesProvider {
         return mediaCount != null && mediaCount > 0
     }
 
-    override fun setAdMediaInfo(adMediaInfo: AdMediaInfo) {
+    override fun setAdMediaInfo(adMediaInfo: AdMediaInfo, width: Int?, height: Int?) {
         this._adMediaInfo = adMediaInfo
+        this._vastMediaWidth = width
+        this._vastMediaHeight = height
     }
 
     override fun getAdMediaInfo(): AdMediaInfo? {
@@ -106,6 +109,14 @@ class AdInline(id: String) : AdData(id), Ad, IMediaFilesProvider {
 
     override fun getCompanionAds(): List<CompanionAd>? {
         return _companionAds
+    }
+
+    override fun getVastMediaWidth(): Int {
+        return _vastMediaWidth ?: 0
+    }
+
+    override fun getVastMediaHeight(): Int {
+        return _vastMediaHeight ?: 0
     }
 
 

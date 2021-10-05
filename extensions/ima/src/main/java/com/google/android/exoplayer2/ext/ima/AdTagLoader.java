@@ -269,7 +269,6 @@ import java.util.Map;
     }
     adsBehaviour = configuration.adsBehaviour;
     adsBehaviour.setAdPlaybackStateHost(adPlaybackStateHost);
-    adsBehaviour.setDebug(configuration.debugModeEnabled);
     adsBehaviour.setHandler(handler);
     adsLoader = requestAds(context, imaSdkSettings, adDisplayContainer);
   }
@@ -513,7 +512,9 @@ import java.util.Map;
   public void onPositionDiscontinuity(@Player.DiscontinuityReason int reason) {
     handleTimelineOrPositionChanged();
     if (reason == Player.DISCONTINUITY_REASON_SEEK || reason == Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT){
-      adsBehaviour.handleTimelineOrPositionChanged(player, timeline, period);
+      if(adsBehaviour.handleTimelineOrPositionChanged(player, timeline, period){
+        resetFlagsIfRequired();
+      }
     }
   }
 
@@ -699,7 +700,6 @@ import java.util.Map;
     boolean hasContentDuration = contentDurationMs != C.TIME_UNSET;
     long contentDurationMs = hasContentDuration ? this.contentDurationMs : IMA_DURATION_UNSET;
     long contentPositionMs;
-    resetFlagsIfRequired();
     if (pendingContentPositionMs != C.TIME_UNSET) {
       sentPendingContentPositionMs = true;
       contentPositionMs = pendingContentPositionMs;
@@ -728,7 +728,7 @@ import java.util.Map;
       return lastAdProgress;
     } else if (imaAdState != IMA_AD_STATE_NONE && playingAd && imaAdInfo != null && imaAdInfo.isPrepareComplete) {
       long adDuration = player.getDuration();
-      return adDuration == C.TIME_UNSET || player.getCurrentPosition() > adDuration + 500
+      return adDuration == C.TIME_UNSET || player.getCurrentPosition() > adDuration
           ? VideoProgressUpdate.VIDEO_TIME_NOT_READY
           : new VideoProgressUpdate(player.getCurrentPosition(), adDuration);
     } else {

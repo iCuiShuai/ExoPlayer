@@ -48,7 +48,7 @@ class MediaFileSelectorTest : TestCase(){
 
     class MediaFilesProvider(val mediaFiles : List<MediaFile>) : IMediaFilesProvider{
         var file:AdMediaInfo? = null
-        override fun setAdMediaInfo(adMediaInfo: AdMediaInfo) {
+        override fun setAdMediaInfo(adMediaInfo: AdMediaInfo, width: Int?, height: Int?) {
             file = adMediaInfo
         }
 
