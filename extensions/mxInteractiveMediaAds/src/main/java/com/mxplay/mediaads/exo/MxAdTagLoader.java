@@ -37,6 +37,7 @@ import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.Timeline;
+import com.google.android.exoplayer2.audio.AudioListener;
 import com.google.android.exoplayer2.source.ads.AdPlaybackState;
 import com.google.android.exoplayer2.source.ads.AdsLoader.EventListener;
 import com.google.android.exoplayer2.source.ads.AdsLoader.AdViewProvider;
@@ -78,7 +79,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /** Handles loading and playback of a single ad tag. */
-/* package */ final class MxAdTagLoader implements Player.EventListener {
+/* package */ final class MxAdTagLoader implements Player.EventListener, AudioListener {
 
   private static final String TAG = "AdTagLoader";
 
@@ -360,6 +361,8 @@ import java.util.Objects;
     this.player = player;
     player.addListener(this);
 
+    Objects.requireNonNull(player.getAudioComponent()).addAudioListener(this);
+
     boolean playWhenReady = player.getPlayWhenReady();
     onTimelineChanged(player.getCurrentTimeline(), Player.TIMELINE_CHANGE_REASON_SOURCE_UPDATE);
     @Nullable AdsManager adsManager = this.adsManager;
@@ -544,6 +547,13 @@ import java.util.Objects;
       for (int i = 0; i < adCallbacks.size(); i++) {
         adCallbacks.get(i).onError(adMediaInfo);
       }
+    }
+  }
+
+  @Override
+  public void onVolumeChanged(float volume) {
+    for (int i = 0; i < adCallbacks.size(); i++) {
+      adCallbacks.get(i).onVolumeChanged(volume);
     }
   }
 

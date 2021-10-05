@@ -36,5 +36,7 @@ public interface VideoAdPlayer extends AdProgressProvider, VolumeProvider {
         void onContentComplete();
 
         void onAdProgress(AdMediaInfo adMediaInfo, VideoProgressUpdate videoProgressUpdate);
+
+        void onVolumeChanged(float volume);
     }
 }

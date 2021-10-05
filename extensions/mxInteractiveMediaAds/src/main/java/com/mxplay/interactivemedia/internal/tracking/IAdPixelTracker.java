@@ -28,4 +28,6 @@ public interface IAdPixelTracker {
     void resumed();
 
     void loaded();
+
+    void volumeChanged(float volume);
 }

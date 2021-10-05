@@ -91,6 +91,10 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
             lastAdProgress = videoProgressUpdate ?: lastAdProgress
             activeAdBreak?.getCurrentActiveAd()?.onAdProgressUpdate(adMediaInfo, videoProgressUpdate!!)
         }
+
+        override fun onVolumeChanged(volume: Float) {
+            onEvent(AdEventImpl(AdEvent.AdEventType.VOLUME_CHANGE, null, mutableMapOf(Pair("volume", volume.toString()))))
+        }
     }
 
 

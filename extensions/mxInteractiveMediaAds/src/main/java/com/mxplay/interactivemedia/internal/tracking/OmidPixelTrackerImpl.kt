@@ -126,6 +126,10 @@ class OmidPixelTrackerImpl(private val mxOmid: MxOmid, private var adView: View?
     override fun loaded() {
     }
 
+    override fun volumeChanged(volume: Float) {
+        mediaEvents?.volumeChange(volume)
+    }
+
     override fun hasSession(): Boolean {
         return adSession != null
     }

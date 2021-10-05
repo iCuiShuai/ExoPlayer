@@ -44,7 +44,8 @@ enum class EventName(val value : String){
     AD_EXPAND("adExpand"),
     AD_COLLAPSE("adCollapse"),
     MINIMIZE("minimize"),
-    OVERLAY_VIEW_DURATION("overlayViewDuration");
+    OVERLAY_VIEW_DURATION("overlayViewDuration"),
+    VOLUME_CHANGE("volumeChange");
 
     companion object{
         fun getType(value: String): EventName? {
@@ -81,6 +82,7 @@ enum class EventName(val value : String){
                 AD_EXPAND.value -> return AD_EXPAND
                 AD_COLLAPSE.value -> return AD_COLLAPSE
                 MINIMIZE.value -> return MINIMIZE
+                VOLUME_CHANGE.value -> return VOLUME_CHANGE
                 OVERLAY_VIEW_DURATION.value -> OVERLAY_VIEW_DURATION
             }
             Log.e("EventNameMapper", "Unidentified event name $value")
@@ -99,6 +101,7 @@ enum class EventName(val value : String){
                 AdEvent.AdEventType.SKIPPED -> SKIP
                 AdEvent.AdEventType.LOADED -> LOADED
                 AdEvent.AdEventType.CREATIVE_VIEW -> CREATIVEVIEW
+                AdEvent.AdEventType.VOLUME_CHANGE -> VOLUME_CHANGE
                 else -> null
             }
         }
