@@ -4,6 +4,6 @@ import com.mxplay.interactivemedia.api.player.AdMediaInfo
 
 interface IMediaFilesProvider {
     fun getAllMedia() : List<MediaFile>
-    fun setAdMediaInfo(adMediaInfo: AdMediaInfo)
+    fun setAdMediaInfo(adMediaInfo: AdMediaInfo, width: Int?, height: Int?)
     fun getAdMediaInfo() : AdMediaInfo?
 }

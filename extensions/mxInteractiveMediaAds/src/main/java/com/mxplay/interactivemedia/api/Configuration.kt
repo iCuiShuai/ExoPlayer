@@ -69,6 +69,7 @@ class Configuration(builder : Builder) {
          debugModeEnabled = builder.debugModeEnabled
         ioDispatcher = ioExecutor.asCoroutineDispatcher()
         adsBehaviour = builder.adsBehaviour ?: AdsBehaviourDefault(vastLoadTimeoutMs)
+        adsBehaviour.setDebug(debugModeEnabled)
     }
 
     private fun getUserAgentFromProperty(): String? {

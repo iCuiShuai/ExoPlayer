@@ -160,7 +160,7 @@ class AdLoaderImpl(context: Context, private val configuration : Configuration, 
         }
         val adsManager = AdsManagerImpl(ctx, adDisplayContainer, vmapModel!!.adBreaks,
                 adsRequest.contentProgressProvider, adsRequest.userRequestContext, trackersHandler,
-                AdBreakLoader(ioOpsScope, remoteDataSource, sdkSettings),
+                AdBreakLoader(ioOpsScope, configuration, remoteDataSource, sdkSettings),
                 CompanionAdManager(ioOpsScope, remoteDataSource, trackersHandler),
                 configuration.debugModeEnabled)
 

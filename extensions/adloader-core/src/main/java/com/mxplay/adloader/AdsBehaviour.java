@@ -174,8 +174,8 @@ public abstract class AdsBehaviour {
         return false;
     }
 
-    public void handleTimelineOrPositionChanged(Player player, Timeline timeline, Timeline.Period period){
-
+    public boolean handleTimelineOrPositionChanged(Player player, Timeline timeline, Timeline.Period period){
+        return false;
     }
 
     public final void setDebug(boolean debug) {
