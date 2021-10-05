@@ -512,7 +512,7 @@ import java.util.Map;
   public void onPositionDiscontinuity(@Player.DiscontinuityReason int reason) {
     handleTimelineOrPositionChanged();
     if (reason == Player.DISCONTINUITY_REASON_SEEK || reason == Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT){
-      if(adsBehaviour.handleTimelineOrPositionChanged(player, timeline, period){
+      if(adsBehaviour.handleTimelineOrPositionChanged(player, timeline, period)){
         resetFlagsIfRequired();
       }
     }
