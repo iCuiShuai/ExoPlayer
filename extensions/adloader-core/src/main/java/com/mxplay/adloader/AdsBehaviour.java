@@ -14,6 +14,7 @@ import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.source.ads.AdPlaybackState;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.mxplay.adloader.exo.MxAdPlaybackState;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -236,13 +237,22 @@ public abstract class AdsBehaviour {
     }
 
     public final void onAdLoad(int adGroupIndex, int adIndexInGroup, Uri adUri, int adPodIndex) {
-        videoAdsTracker.onAdLoad(adGroupIndex, adIndexInGroup, adUri);
-        adMediaUriByAdInfo.put(getKeyForAdInfo(adGroupIndex, adIndexInGroup), adUri);
-        if (!adGroupIndexOpportunitySet.containsKey(adGroupIndex)) {
-            trySendOpportunity(adGroupIndex);
+        handleAdLoad(adGroupIndex, adIndexInGroup);
+        int actualAdGroupIndex = getActualAdGroupIndex(adGroupIndex) != C.INDEX_UNSET ? getActualAdGroupIndex(adGroupIndex) : adGroupIndex;
+        videoAdsTracker.onAdLoad(actualAdGroupIndex, adIndexInGroup, adUri);
+        adMediaUriByAdInfo.put(getKeyForAdInfo(actualAdGroupIndex, adIndexInGroup), adUri);
+        if (!adGroupIndexOpportunitySet.containsKey(actualAdGroupIndex)) {
+            trySendOpportunity(actualAdGroupIndex);
         }
-        adGroupIndexOpportunitySet.put(adGroupIndex, adPodIndex);
+        adGroupIndexOpportunitySet.put(actualAdGroupIndex, adPodIndex);
         updateStartLoadMediaTime();
+    }
+
+    protected void handleAdLoad(int adGroupIndex, int adIndexInAdGroup) {
+    }
+
+    protected int getActualAdGroupIndex(int fakeAdGroupIndex) {
+        return fakeAdGroupIndex;
     }
 
     public final void onAdEvent(String name, @Nullable String creativeId, @Nullable String advertiser, int adPodIndex, int adIndexInAdGroup) {
@@ -256,18 +266,22 @@ public abstract class AdsBehaviour {
     }
 
     public final void trackEvent(@NonNull String eventName, int adGroupIndex, int adIndexInAdGroup, Exception exception) {
-        trySendOpportunity(adGroupIndex);
+        int actualAdGroupIndex = getActualAdGroupIndex(adGroupIndex) != C.INDEX_UNSET ? getActualAdGroupIndex(adGroupIndex) : adGroupIndex;
+        trySendOpportunity(actualAdGroupIndex);
         AdPlaybackState adPlaybackState = adPlaybackStateHost.getAdPlaybackState();
         int adGroupCount = adPlaybackState.adGroupCount;
-        Uri mediaUri = adMediaUriByAdInfo.get(getKeyForAdInfo(adGroupIndex, adIndexInAdGroup));
+        if (adPlaybackState instanceof MxAdPlaybackState) {
+            adGroupCount = ((MxAdPlaybackState) adPlaybackState).actualAdGroupCount;
+        }
+        Uri mediaUri = adMediaUriByAdInfo.get(getKeyForAdInfo(actualAdGroupIndex, adIndexInAdGroup));
         switch (eventName) {
             case VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED:
-                videoAdsTracker.trackEvent(eventName, videoAdsTracker.buildFailedParams(adGroupIndex, adIndexInAdGroup,
+                videoAdsTracker.trackEvent(eventName, videoAdsTracker.buildFailedParams(actualAdGroupIndex, adIndexInAdGroup,
                         startRequestTime, exception, adGroupCount, mediaUri));
                 break;
             case VideoAdsTracker.EVENT_VIDEO_AD_PLAY_SUCCESS:
-                if (lastPlayAdGroupIndex != adGroupIndex) {
-                    lastPlayAdGroupIndex = adGroupIndex;
+                if (lastPlayAdGroupIndex != actualAdGroupIndex) {
+                    lastPlayAdGroupIndex = actualAdGroupIndex;
                     videoAdsTracker.trackEvent(eventName, videoAdsTracker.buildSuccessParams(startLoadMediaTime, startRequestTime,
                             startLoadMediaTime, lastPlayAdGroupIndex, adIndexInAdGroup, adGroupCount, mediaUri));
                 }
@@ -279,7 +293,7 @@ public abstract class AdsBehaviour {
         startLoadMediaTime = System.currentTimeMillis();
     }
 
-    private void tryUpdateStartRequestTime(long contentPositionMs, long contentDurationMs) {
+    protected void tryUpdateStartRequestTime(long contentPositionMs, long contentDurationMs) {
         if (contentPositionMs < 0 || contentDurationMs < 0) {
             return;
         }
@@ -289,10 +303,13 @@ public abstract class AdsBehaviour {
         long contentPosition = TimeUnit.MILLISECONDS.toSeconds(contentPositionMs);
         int realStartTime;
         long startTime = TimeUnit.MICROSECONDS.toSeconds(adPlaybackState.adGroupTimesUs[adGroupIndex]);
+        if (adPlaybackState instanceof MxAdPlaybackState) {
+            startTime = TimeUnit.MICROSECONDS.toSeconds(((MxAdPlaybackState) adPlaybackState).actualAdGroupTimeUs[adGroupIndex]);
+        }
         if (startTime == -1.0) {
-            realStartTime = (int) (contentPosition - 4);
+            realStartTime = (int) (contentPosition - 8);
         } else {
-            realStartTime = (int) (startTime == 0 ? startTime : startTime - 4);
+            realStartTime = (int) (startTime == 0 ? startTime : startTime - 8);
         }
         if (realStartTime == contentPosition && lastRealStartTime != realStartTime) {
             lastRealStartTime = realStartTime;
