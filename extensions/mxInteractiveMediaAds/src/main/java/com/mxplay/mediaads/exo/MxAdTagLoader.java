@@ -406,6 +406,7 @@ import java.util.Objects;
     lastAdProgress = getAdVideoProgressUpdate();
     lastContentProgress = getContentVideoProgressUpdate();
 
+    Objects.requireNonNull(player.getAudioComponent()).removeAudioListener(this);
     player.removeListener(this);
     this.player = null;
   }
