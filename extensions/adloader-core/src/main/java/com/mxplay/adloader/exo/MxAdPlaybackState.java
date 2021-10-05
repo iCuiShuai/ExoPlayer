@@ -145,6 +145,11 @@ public class MxAdPlaybackState extends AdPlaybackState {
         }
     }
 
+    public void withActualAdGroupProcessed(int actualAdGroupIndex, int adIndexInAdGroup) {
+        if (actualAdGroupIndex < actualAdGroups.length) {
+            actualAdGroups[actualAdGroupIndex] = actualAdGroups[actualAdGroupIndex].withAdCount(adIndexInAdGroup).withAdState(AD_STATE_PLAYED, adIndexInAdGroup);
+        }
+    }
     /**
      * Returns the index of the ad group at or before {@code positionUs}, if that ad group is
      * unplayed. Returns {@link C#INDEX_UNSET} if the ad group at or before {@code positionUs} has no

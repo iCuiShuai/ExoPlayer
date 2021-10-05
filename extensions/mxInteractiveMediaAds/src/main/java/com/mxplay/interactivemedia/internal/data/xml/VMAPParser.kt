@@ -100,18 +100,6 @@ class VMAPParser(private var pullParser: XmlPullParser, private var vastParser: 
                     continue
                 }
                 breakIdMap.put(adBreak.breakId!!, adBreak)
-                when (adBreak.startTime) {
-                    AdBreak.TimeOffsetTypes.START -> {
-                        adBreak.podIndex = AdsManager.PRE_ROLL_POD_INDEX
-                    }
-                    AdBreak.TimeOffsetTypes.END -> {
-                        adBreak.podIndex = AdsManager.POST_ROLL_POD_INDEX
-                    }
-                    else -> {
-                        adBreak.podIndex = podIndex
-                        podIndex++
-                    }
-                }
 
                 adBreak.refreshAds()
             }

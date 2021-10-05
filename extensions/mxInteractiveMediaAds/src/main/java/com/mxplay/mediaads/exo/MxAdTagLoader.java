@@ -37,6 +37,7 @@ import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.Timeline;
+import com.google.android.exoplayer2.audio.AudioListener;
 import com.google.android.exoplayer2.source.ads.AdPlaybackState;
 import com.google.android.exoplayer2.source.ads.AdsLoader.EventListener;
 import com.google.android.exoplayer2.source.ads.AdsLoader.AdViewProvider;
@@ -79,7 +80,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /** Handles loading and playback of a single ad tag. */
-/* package */ final class MxAdTagLoader implements Player.EventListener {
+/* package */ final class MxAdTagLoader implements Player.EventListener, AudioListener {
 
   private static final String TAG = "AdTagLoader";
 
@@ -360,6 +361,8 @@ import java.util.Objects;
   public void activate(Player player) {
     this.player = player;
     player.addListener(this);
+    Objects.requireNonNull(player.getAudioComponent()).addAudioListener(this);
+
     adsBehaviour.setPlayer(player);
     boolean playWhenReady = player.getPlayWhenReady();
     onTimelineChanged(player.getCurrentTimeline(), Player.TIMELINE_CHANGE_REASON_SOURCE_UPDATE);
@@ -403,6 +406,7 @@ import java.util.Objects;
     lastAdProgress = getAdVideoProgressUpdate();
     lastContentProgress = getContentVideoProgressUpdate();
 
+    Objects.requireNonNull(player.getAudioComponent()).removeAudioListener(this);
     player.removeListener(this);
     this.player = null;
   }
@@ -547,6 +551,13 @@ import java.util.Objects;
       for (int i = 0; i < adCallbacks.size(); i++) {
         adCallbacks.get(i).onError(adMediaInfo);
       }
+    }
+  }
+
+  @Override
+  public void onVolumeChanged(float volume) {
+    for (int i = 0; i < adCallbacks.size(); i++) {
+      adCallbacks.get(i).onVolumeChanged(volume);
     }
   }
 
@@ -989,7 +1000,7 @@ import java.util.Objects;
     Uri adUri = Uri.parse(adMediaInfo.getUrl());
     adPlaybackState =
         adPlaybackState.withAdUri(adInfo.adGroupIndex, adInfo.adIndexInAdGroup, adUri);
-    adsBehaviour.onAdLoad(adGroupIndex, adIndexInAdGroup, adUri);
+    adsBehaviour.onAdLoad(adGroupIndex, adIndexInAdGroup, adUri, adPodInfo.getPodIndex());
     updateAdPlaybackState();
   }
 
@@ -1024,7 +1035,7 @@ import java.util.Objects;
           adCallbacks.get(i).onError(adMediaInfo);
         }
       } else {
-        adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_SUCCESS, imaAdInfo.adGroupIndex, null);
+        adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_SUCCESS, imaAdInfo.adGroupIndex, imaAdInfo.adIndexInAdGroup, null);
       }
       updateAdProgress();
     } else {
@@ -1410,7 +1421,10 @@ import java.util.Objects;
         if (adEventType == AdEvent.AdEventType.STARTED || adEventType == AdEvent.AdEventType.COMPLETED) {
           @Nullable String creativeId = adEvent.getAd() != null ? adEvent.getAd().getCreativeId() : null;
           @Nullable String advertiser = adEvent.getAd() != null ? adEvent.getAd().getAdvertiserName() : null;
-          adsBehaviour.onAdEvent(adEventType.name(), creativeId, advertiser);
+          AdPodInfo adPodInfo = adEvent.getAd() != null ? adEvent.getAd().getAdPodInfo() : null;
+          int adPodIndex = adPodInfo != null ? adPodInfo.getPodIndex() : -1;
+          int adIndexInAdGroup = adPodInfo != null ? adPodInfo.getAdPosition() - 1 : -1;
+          adsBehaviour.onAdEvent(adEventType.name(), creativeId, advertiser, adPodIndex, adIndexInAdGroup);
         }
       } catch (RuntimeException e) {
         maybeNotifyInternalError("onAdEvent", e);

@@ -11,6 +11,7 @@ import com.mxplay.interactivemedia.api.player.ContentProgressProvider
 import com.mxplay.interactivemedia.api.player.VideoAdPlayer
 import com.mxplay.interactivemedia.api.player.VideoProgressUpdate
 import com.mxplay.interactivemedia.internal.data.model.AdBreak
+import com.mxplay.interactivemedia.internal.data.model.EventName
 import com.mxplay.interactivemedia.internal.tracking.ITrackersHandler
 import java.util.*
 import kotlin.collections.ArrayList
@@ -89,6 +90,10 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
         override  fun onAdProgress(adMediaInfo: AdMediaInfo?, videoProgressUpdate: VideoProgressUpdate?) {
             lastAdProgress = videoProgressUpdate ?: lastAdProgress
             activeAdBreak?.getCurrentActiveAd()?.onAdProgressUpdate(adMediaInfo, videoProgressUpdate!!)
+        }
+
+        override fun onVolumeChanged(volume: Float) {
+            onEvent(AdEventImpl(AdEvent.AdEventType.VOLUME_CHANGE, null, mutableMapOf(Pair("volume", volume.toString()))))
         }
     }
 
@@ -187,6 +192,10 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
             Log.d(TAG, " Got  AdsRenderingSettings " + adsRenderingSettings.getPlayAdsAfterTime())
         }
         val playAdsAfterTime: Double = adsRenderingSettings.getPlayAdsAfterTime()
+        refreshAdBreaks(playAdsAfterTime)
+    }
+
+    private fun refreshAdBreaks(playAdsAfterTime: Double) {
         val iterator = adBreaks!!.iterator()
         while (iterator.hasNext()) {
             val next = iterator.next()
@@ -195,6 +204,23 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
             }
         }
 
+        var podIndex = 1
+        for (adBreak in adBreaks!!) {
+            when (adBreak.startTime) {
+                AdBreak.TimeOffsetTypes.START -> {
+                    adBreak.podIndex = AdsManager.PRE_ROLL_POD_INDEX
+                }
+                AdBreak.TimeOffsetTypes.END -> {
+                    adBreak.podIndex = AdsManager.POST_ROLL_POD_INDEX
+                }
+                else -> {
+                    adBreak.podIndex = podIndex
+                    podIndex++
+                }
+            }
+
+            adBreak.refreshAds()
+        }
     }
 
     override fun destroy() {

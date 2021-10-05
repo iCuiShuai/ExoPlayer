@@ -512,7 +512,7 @@ import java.util.Map;
   public void onPositionDiscontinuity(@Player.DiscontinuityReason int reason) {
     handleTimelineOrPositionChanged();
     if (reason == Player.DISCONTINUITY_REASON_SEEK || reason == Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT){
-      if(adsBehaviour.handleTimelineOrPositionChanged(player, timeline, period){
+      if(adsBehaviour.handleTimelineOrPositionChanged(player, timeline, period)){
         resetFlagsIfRequired();
       }
     }
@@ -1006,7 +1006,7 @@ import java.util.Map;
     Uri adUri = Uri.parse(adMediaInfo.getUrl());
     adPlaybackState =
         adPlaybackState.withAdUri(adInfo.adGroupIndex, adInfo.adIndexInAdGroup, adUri);
-    adsBehaviour.onAdLoad(adGroupIndex, adIndexInAdGroup, adUri);
+    adsBehaviour.onAdLoad(adGroupIndex, adIndexInAdGroup, adUri, adPodInfo.getPodIndex());
     updateAdPlaybackState();
   }
 
@@ -1041,7 +1041,7 @@ import java.util.Map;
           adCallbacks.get(i).onError(adMediaInfo);
         }
       } else {
-        adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_SUCCESS, imaAdInfo.adGroupIndex, null);
+        adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_SUCCESS, imaAdInfo.adGroupIndex, imaAdInfo.adIndexInAdGroup, null);
       }
       updateAdProgress();
     } else {
@@ -1427,7 +1427,10 @@ import java.util.Map;
         if (adEventType == AdEventType.STARTED || adEventType == AdEventType.COMPLETED){
           @Nullable String creativeId = adEvent.getAd() != null ? adEvent.getAd().getCreativeId() : null;
           @Nullable String advertiser = adEvent.getAd() != null ? adEvent.getAd().getAdvertiserName() : null;
-          adsBehaviour.onAdEvent(adEventType.name(), creativeId, advertiser);
+          AdPodInfo adPodInfo = adEvent.getAd() != null ? adEvent.getAd().getAdPodInfo() : null;
+          int adPodIndex = adPodInfo != null ? adPodInfo.getPodIndex() : -1;
+          int adIndexInAdGroup = adPodInfo != null ? adPodInfo.getAdPosition() - 1 : -1;
+          adsBehaviour.onAdEvent(adEventType.name(), creativeId, advertiser, adPodIndex, adIndexInAdGroup);
         }
       } catch (RuntimeException e) {
         maybeNotifyInternalError("onAdEvent", e);

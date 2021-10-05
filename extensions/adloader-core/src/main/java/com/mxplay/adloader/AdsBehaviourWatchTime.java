@@ -14,7 +14,9 @@ import com.google.android.exoplayer2.util.Log;
 import com.mxplay.adloader.exo.MxAdPlaybackState;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class AdsBehaviourWatchTime extends AdsBehaviourDefault{
@@ -27,6 +29,7 @@ public class AdsBehaviourWatchTime extends AdsBehaviourDefault{
     public static final int NEXT_FAKE_CUEPOINTS_DISTANCE_THRESHOLD = 8000; // 8 sec
     private final long contentDurationMs;
     private int totalAdLoads;
+    private final Map<Integer, Integer> actualAdGroupIndexByFake = new HashMap<>();
 
     public AdsBehaviourWatchTime(long durationSec, int vastTimeOutInMs) {
         super(vastTimeOutInMs);
@@ -66,6 +69,19 @@ public class AdsBehaviourWatchTime extends AdsBehaviourDefault{
     }
 
     @Override
+    protected void handleAdLoad(int adGroupIndex, int adIndexInAdGroup) {
+        long contentPositionMs = Objects.requireNonNull(playbackStatsListener).getContentTotalPlayTimeMs();
+        AdPlaybackState adPlaybackState = adPlaybackStateHost.getAdPlaybackState();
+        int actualAdGroupIndex = getLoadingAdGroupIndexForReporting(adPlaybackState, C.msToUs(contentPositionMs));
+        if (!actualAdGroupIndexByFake.containsValue(actualAdGroupIndex)) {
+            actualAdGroupIndexByFake.put(adGroupIndex, actualAdGroupIndex);
+        }
+        if (adPlaybackState instanceof MxAdPlaybackState) {
+            ((MxAdPlaybackState) adPlaybackState).withActualAdGroupProcessed(actualAdGroupIndex, adIndexInAdGroup);
+        }
+    }
+
+    @Override
     public boolean handleAudioAdLoaded(int podIndex, int adPosition) {
         audioAdPodIndex = podIndex;
         audioAdPosition = adPosition;
@@ -79,17 +95,20 @@ public class AdsBehaviourWatchTime extends AdsBehaviourDefault{
 
     @Override
     public long getContentPositionMs(Player player, Timeline timeline, Timeline.Period period, long contentDurationMs) {
-        super.getContentPositionMs(player, timeline, period, contentDurationMs);
         boolean hasContentDuration = contentDurationMs != C.INDEX_UNSET;
         if (hasContentDuration) {
             cleanUnusedCuePoints(player, timeline, period);
         }
-        return Objects.requireNonNull(playbackStatsListener).getContentTotalPlayTimeMs();
+        long contentPositionMs = Objects.requireNonNull(playbackStatsListener).getContentTotalPlayTimeMs();
+        tryUpdateStartRequestTime(contentPositionMs, contentDurationMs);
+        return contentPositionMs;
     }
 
-
-
-
+    @Override
+    protected int getActualAdGroupIndex(int fakeAdGroupIndex) {
+        Integer actualAdGroupIndex = actualAdGroupIndexByFake.get(fakeAdGroupIndex);
+        return actualAdGroupIndex != null ? actualAdGroupIndex : C.INDEX_UNSET;
+    }
 
     @Override
     public int getMediaLoadTimeout(int defaultTimout) {

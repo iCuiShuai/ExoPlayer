@@ -133,6 +133,10 @@ class AdEventTracker(private val ad: Ad, mxOmid: MxOmid?, private val remoteData
                     }
                 }
                 AdEvent.AdEventType.SKIPPED -> it.skippedAd()
+                AdEvent.AdEventType.VOLUME_CHANGE -> {
+                    val props = adEvent.adData!!
+                    it.volumeChanged(props["volume"]!!.toFloat())
+                }
                 else -> {}
             }
         }
