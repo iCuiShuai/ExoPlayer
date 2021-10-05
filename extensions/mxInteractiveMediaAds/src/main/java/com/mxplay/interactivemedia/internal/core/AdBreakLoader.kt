@@ -4,6 +4,7 @@ import android.text.TextUtils
 import android.util.Log
 import com.mxplay.interactivemedia.internal.data.RemoteDataSource
 import com.mxplay.interactivemedia.api.AdError
+import com.mxplay.interactivemedia.api.Configuration
 import com.mxplay.interactivemedia.api.OmSdkSettings
 import com.mxplay.interactivemedia.internal.data.xml.XmlParserHelper
 import com.mxplay.interactivemedia.internal.data.model.AdBreak
@@ -18,12 +19,15 @@ import java.io.IOException
 import java.io.StringReader
 import java.util.*
 import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlin.jvm.Throws
 
 
-class AdBreakLoader(val ioOpsScope: CoroutineScope, private val remoteDataSource: RemoteDataSource, private val sdkSettings: OmSdkSettings) {
+class AdBreakLoader(
+    val ioOpsScope: CoroutineScope,
+    val configuration: Configuration,
+    private val remoteDataSource: RemoteDataSource,
+    private val sdkSettings: OmSdkSettings
+) {
 
     class MaxRedirectLimitReachException(message : String) : Exception(message)
 
@@ -53,11 +57,14 @@ class AdBreakLoader(val ioOpsScope: CoroutineScope, private val remoteDataSource
                         withTimeout(timeOutMs){
                             handleRedirection(adBreak)
                             if (adBreak.totalAdsCount == 0) throw ProtocolException(AdError(AdError.AdErrorType.LOAD, AdError.AdErrorCode.VAST_EMPTY_RESPONSE, "Empty VAST response"))
-                            adBreakLoadCallback.onAdBreakLoaded(adBreak)
+                            withContext(configuration.mainDispatcher){
+                                adBreakLoadCallback.onAdBreakLoaded(adBreak)
+                            }
                         }
 
-                    } catch (e: Exception) {
-                        adBreakLoadCallback.onAdBreakFetchError(adBreak, e)
+                    }catch (ignore : CancellationException){ }
+                    catch (e: Exception) {
+                        withContext(configuration.mainDispatcher){ adBreakLoadCallback.onAdBreakFetchError(adBreak, e)}
                     } finally {
 
                     }

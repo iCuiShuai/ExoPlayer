@@ -50,6 +50,7 @@ import com.google.android.exoplayer2.util.Util;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.mxplay.adloader.AdsBehaviour;
+import com.mxplay.adloader.AdsBehaviourWatchTime;
 import com.mxplay.adloader.VideoAdsTracker;
 import com.mxplay.interactivemedia.api.AdDisplayContainer;
 import com.mxplay.interactivemedia.api.AdError;
@@ -359,7 +360,7 @@ import java.util.Objects;
   public void activate(Player player) {
     this.player = player;
     player.addListener(this);
-
+    adsBehaviour.setPlayer(player);
     boolean playWhenReady = player.getPlayWhenReady();
     onTimelineChanged(player.getCurrentTimeline(), Player.TIMELINE_CHANGE_REASON_SOURCE_UPDATE);
     @Nullable AdsManager adsManager = this.adsManager;
@@ -496,7 +497,9 @@ import java.util.Objects;
     if (configuration.getDebugModeEnabled()) Log.d(TAG, " onPositionDiscontinuity "+ playingAd + "  reason "+ reason);
     handleTimelineOrPositionChanged();
     if (reason == Player.DISCONTINUITY_REASON_SEEK || reason == Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT){
-      adsBehaviour.handleTimelineOrPositionChanged(player, timeline, period);
+      if (adsBehaviour.handleTimelineOrPositionChanged(player, timeline, period)){
+        resetFlagsIfRequired();
+      }
     }
   }
 
@@ -626,7 +629,10 @@ import java.util.Objects;
         configuration.getFocusSkipButtonWhenAvailable());
 
     boolean isSetupDone = adsBehaviour.doSetupAdsRendering(contentPositionMs, contentDurationMs);
-    if (isSetupDone) return adsRenderingSettings;
+    if (isSetupDone) {
+      pendingContentPositionMs = 0;
+      return adsRenderingSettings;
+    }
     // Skip ads based on the start position as required.
     long[] adGroupTimesUs = adPlaybackState.adGroupTimesUs;
     int adGroupForPositionIndex =
@@ -674,6 +680,7 @@ import java.util.Objects;
     boolean hasContentDuration = contentDurationMs != C.TIME_UNSET;
     long contentDurationMs = hasContentDuration ? this.contentDurationMs : IMA_DURATION_UNSET;
     long contentPositionMs;
+//    resetFlagsIfRequired();
     if (pendingContentPositionMs != C.TIME_UNSET) {
       sentPendingContentPositionMs = true;
       contentPositionMs = pendingContentPositionMs;
@@ -688,6 +695,13 @@ import java.util.Objects;
       return VideoProgressUpdate.VIDEO_TIME_NOT_READY;
     }
     return new VideoProgressUpdate(contentPositionMs, contentDurationMs);
+  }
+
+  private void resetFlagsIfRequired() {
+    if (adsBehaviour instanceof AdsBehaviourWatchTime && contentDurationMs != C.TIME_UNSET){
+      pendingContentPositionMs = C.TIME_UNSET;
+      fakeContentProgressElapsedRealtimeMs = C.TIME_UNSET;
+    }
   }
 
   private VideoProgressUpdate getAdVideoProgressUpdate() {
@@ -786,6 +800,11 @@ import java.util.Objects;
         String message = "AdEvent: " + adData;
         Log.i(TAG, message);
         break;
+      case LOADED:
+        if (Objects.requireNonNull(adEvent.getAd()).getVastMediaWidth() <= 1 && adEvent.getAd().getVastMediaHeight() <= 1){
+          AdPodInfo adPodInfo = adEvent.getAd().getAdPodInfo();
+          adsBehaviour.handleAudioAdLoaded(adPodInfo.getPodIndex(), adPodInfo.getAdPosition() - 1);
+        }
       default:
         break;
     }
