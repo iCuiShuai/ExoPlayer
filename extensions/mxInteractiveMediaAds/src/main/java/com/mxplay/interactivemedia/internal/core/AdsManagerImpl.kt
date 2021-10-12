@@ -321,6 +321,10 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
     }
 
     private fun onEvent(adEvent: AdEvent) {
+        when (adEvent.type) {
+            AdEvent.AdEventType.CONTENT_PAUSE_REQUESTED, AdEvent.AdEventType.AD_BREAK_STARTED-> handler.removeCallbacks(updateRunnable)
+            AdEvent.AdEventType.CONTENT_RESUME_REQUESTED, AdEvent.AdEventType.AD_BREAK_ENDED-> scheduleUpdate(DELAY_MILLIS)
+        }
         synchronized(adsEventListeners) {
             for (listener in adsEventListeners) {
                 if ((adEvent.type == AdEvent.AdEventType.AD_BREAK_STARTED
