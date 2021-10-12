@@ -73,8 +73,8 @@ class VideoAdViewHolder(private val context : Context ,private val displayContai
         if (activeAd == null || activeAd!!.ad.getMediaInfo() != adMediaInfo) return
         adProgressText!!.visibility = View.VISIBLE
         adProgressText!!.text = formatAdProgress(activeAd!!.ad.getAdPodInfo(), progress)
-        if (activeAd!!.ad.isSkippable() && progress.getDurationMs() > activeAd!!.ad.getSkipTimeOffset()) {
-            if (progress.getCurrentTimeMs() >= activeAd!!.ad.getSkipTimeOffset()) {
+        if (activeAd!!.ad.isSkippable() && (progress.durationMs / 1000) > activeAd!!.ad.getSkipTimeOffset()) {
+            if ((progress.currentTimeMs / 1000) >= activeAd!!.ad.getSkipTimeOffset()) {
                 // Allow skipping.
                 skipButton!!.text = context.getString(R.string.skip_ad)
                 skipButton!!.isEnabled = true
@@ -83,7 +83,7 @@ class VideoAdViewHolder(private val context : Context ,private val displayContai
                 val skipString = String.format(
                         Locale.US, "You can skip this ad in %d",
                         (activeAd!!.ad.getSkipTimeOffset() -
-                                progress.currentTimeMs).toInt())
+                                (progress.currentTimeMs / 1000)).toInt())
                 skipButton!!.text = skipString
                 skipButton!!.isEnabled = false
                 skipButton!!.textSize = 12f
