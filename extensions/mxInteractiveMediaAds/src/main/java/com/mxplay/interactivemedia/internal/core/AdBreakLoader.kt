@@ -74,9 +74,7 @@ class AdBreakLoader(
     }
 
     @Throws(Exception::class)
-    private suspend fun handleRedirection(adBreak: AdBreak) {
-        return suspendCoroutineUninterceptedOrReturn { continuation ->
-
+    private suspend fun handleRedirection(adBreak: AdBreak) = coroutineScope{
             val uriHost: AdTagUriHost? = adBreak.getPendingAdTagUriHost()
             val maxRedirect = sdkSettings.maxRedirects
             val hostStack = Stack<AdTagUriHost>()
@@ -128,13 +126,10 @@ class AdBreakLoader(
                 } else {
                     onError(adBreak, currentUriHost, hostStack, depthStack, IOException("invalid response from server"))
                 }
-                val context = continuation.context
-                val job = context[Job]
-                if (job != null && !job.isActive) break
+                if (!isActive) break
             }
             if (!isHostResolved) throw IOException("invalid response from server")
 
-        }
 
     }
 
