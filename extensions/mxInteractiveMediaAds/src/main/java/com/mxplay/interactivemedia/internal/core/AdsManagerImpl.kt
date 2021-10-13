@@ -11,7 +11,6 @@ import com.mxplay.interactivemedia.api.player.ContentProgressProvider
 import com.mxplay.interactivemedia.api.player.VideoAdPlayer
 import com.mxplay.interactivemedia.api.player.VideoProgressUpdate
 import com.mxplay.interactivemedia.internal.data.model.AdBreak
-import com.mxplay.interactivemedia.internal.data.model.EventName
 import com.mxplay.interactivemedia.internal.tracking.ITrackersHandler
 import java.util.*
 import kotlin.collections.ArrayList
@@ -93,7 +92,11 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
         }
 
         override fun onVolumeChanged(volume: Float) {
-            onEvent(AdEventImpl(AdEvent.AdEventType.VOLUME_CHANGE, null, mutableMapOf(Pair("volume", volume.toString()))))
+            activeAdBreak?.getCurrentActiveAd()?.currentState()?.let { state ->
+                if (state >= AdState.STARTED)
+                    onEvent(AdEventImpl(AdEvent.AdEventType.VOLUME_CHANGE, null, mutableMapOf(Pair("volume", volume.toString()))))
+
+            }
         }
     }
 
@@ -134,7 +137,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
                     if (adEvent.type == AdEvent.AdEventType.ALL_ADS_COMPLETED) {
                         AdsManagerImpl@activeAdBreak = null
                         if (!hasUnplayedAds()) {
-                            handler.removeCallbacks(updateRunnable)
+                            stopPullingContentProgress()
                         }
                     }
                 }
@@ -142,7 +145,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
             object : AdErrorEvent.AdErrorListener{
                 override fun onAdError(adErrorEvent: AdErrorEvent) {
                     if (!hasUnplayedAds()) {
-                        handler.removeCallbacks(updateRunnable)
+                        stopPullingContentProgress()
                     }
                     this@AdsManagerImpl.onAdError(adErrorEvent)
                 }
@@ -156,18 +159,18 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
 
 
     override fun start() {
-        handler.post(updateRunnable);
+        startPullingContentProgress(0)
     }
 
 
     override fun pause() {
-        handler.removeCallbacks(updateRunnable)
+        stopPullingContentProgress()
         activeAdBreak?.pause()
     }
 
 
     override fun resume() {
-        scheduleUpdate(DELAY_MILLIS)
+        startPullingContentProgress(DELAY_MILLIS)
         activeAdBreak?.resume()
     }
 
@@ -205,7 +208,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
         }
 
         var podIndex = 1
-        for (adBreak in adBreaks!!) {
+        for (adBreak in adBreaks) {
             when (adBreak.startTime) {
                 AdBreak.TimeOffsetTypes.START -> {
                     adBreak.podIndex = AdsManager.PRE_ROLL_POD_INDEX
@@ -272,16 +275,20 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
             processNextAd(playerPosition)
             activeAdBreak?.onProgressUpdate(contentProgress)
         }
-        scheduleUpdate(DELAY_MILLIS)
+        startPullingContentProgress(DELAY_MILLIS)
     }
 
 
 
-    private fun scheduleUpdate(delayTime: Long) {
+    private fun startPullingContentProgress(delayTime: Long) {
         if (processedAdBreaks < adBreaks!!.size) {
             handler.removeCallbacks(updateRunnable)
             handler.postDelayed(updateRunnable, delayTime)
         }
+    }
+
+    private fun stopPullingContentProgress() {
+        handler.removeCallbacks(updateRunnable)
     }
 
     private fun getNextAdBreak(currentTime: Long): AdBreak? {
@@ -322,8 +329,9 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
 
     private fun onEvent(adEvent: AdEvent) {
         when (adEvent.type) {
-            AdEvent.AdEventType.CONTENT_PAUSE_REQUESTED, AdEvent.AdEventType.AD_BREAK_STARTED, AdEvent.AdEventType.RESUMED -> handler.removeCallbacks(updateRunnable)
-            AdEvent.AdEventType.CONTENT_RESUME_REQUESTED, AdEvent.AdEventType.AD_BREAK_ENDED -> scheduleUpdate(DELAY_MILLIS)
+            AdEvent.AdEventType.CONTENT_PAUSE_REQUESTED, AdEvent.AdEventType.AD_BREAK_STARTED, AdEvent.AdEventType.RESUMED -> handler.post { stopPullingContentProgress() }
+            AdEvent.AdEventType.CONTENT_RESUME_REQUESTED, AdEvent.AdEventType.AD_BREAK_ENDED -> handler.post { startPullingContentProgress(DELAY_MILLIS) }
+            else -> {}
         }
         synchronized(adsEventListeners) {
             for (listener in adsEventListeners) {
