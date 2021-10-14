@@ -818,6 +818,10 @@ import java.util.Map;
         Map<String, String> adData = adEvent.getAdData();
         String message = "AdEvent: " + adData;
         Log.i(TAG, message);
+        if ("adLoadError".equals(adData.get("type")) || ("adPlayError".equals(adData.get("type")) && "403".equals(adData.get("errorCode")))) {
+          Exception e = new IOException(message);
+          handleAdGroupLoadError(e);
+        }
         break;
       case LOADED:
         if (adEvent.getAd().getVastMediaWidth() <= 1 && adEvent.getAd().getVastMediaHeight() <= 1){
