@@ -268,8 +268,7 @@ import java.util.Map;
       adDisplayContainer.setCompanionSlots(configuration.companionAdSlots);
     }
     adsBehaviour = configuration.adsBehaviour;
-    adsBehaviour.setAdPlaybackStateHost(adPlaybackStateHost);
-    adsBehaviour.setHandler(handler);
+    adsBehaviour.bind(adPlaybackStateHost, handler);
     adsLoader = requestAds(context, imaSdkSettings, adDisplayContainer);
   }
 
@@ -498,7 +497,7 @@ import java.util.Map;
     Player player = checkNotNull(this.player);
     long contentDurationUs = timeline.getPeriod(player.getCurrentPeriodIndex(), period).durationUs;
     contentDurationMs = C.usToMs(contentDurationUs);
-    adsBehaviour.setContentDurationMs(contentDurationMs);
+    adsBehaviour.setContentDuration(contentDurationMs);
     if (contentDurationUs != adPlaybackState.contentDurationUs) {
       adPlaybackState = adPlaybackState.withContentDurationUs(contentDurationUs);
       updateAdPlaybackState();

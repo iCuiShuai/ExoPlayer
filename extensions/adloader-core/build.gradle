@@ -1,5 +1,7 @@
 apply from: '../../constants.gradle'
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
 
 android {
     compileSdkVersion project.ext.compileSdkVersion
@@ -21,6 +23,7 @@ android {
 dependencies {
     implementation 'androidx.annotation:annotation:' + androidxAnnotationVersion
     implementation project(modulePrefix + 'library-core')
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
 
 ext {
@@ -33,6 +36,9 @@ ext {
     releaseDescription = 'Ad loader core lib for ExoPlayer ads'
 }
 apply from: '../../publish.gradle'
+repositories {
+    mavenCentral()
+}
 
 
 
