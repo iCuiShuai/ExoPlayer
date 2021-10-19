@@ -1,0 +1,211 @@
+package com.mxplay.adloader
+
+import android.net.Uri
+import android.os.Handler
+import android.util.Log
+import android.util.Pair
+import androidx.annotation.CallSuper
+import com.google.android.exoplayer2.C
+import com.google.android.exoplayer2.Player
+import com.google.android.exoplayer2.Timeline
+import com.google.android.exoplayer2.source.ads.AdPlaybackState
+
+abstract class AdsBehaviour(private val vastTimeOutInMs: Int, protected open val debug : Boolean = false) : IAdsBehaviour {
+    interface AdPlaybackStateHost {
+        val adPlaybackState: AdPlaybackState
+        fun updateAdPlaybackState(adPlaybackState: AdPlaybackState?)
+        val playingAdInfo: Pair<Int, Int>?
+        fun onVastCallMaxWaitingTimeOver() {}
+    }
+
+
+    protected lateinit var adPlaybackStateHost: AdPlaybackStateHost
+    protected var contentDurationMs = C.TIME_UNSET
+    var isPipModeActive = false
+        private set
+    @JvmField
+    protected var audioAdPodIndex = C.INDEX_UNSET
+    @JvmField
+    protected var audioAdPosition = C.INDEX_UNSET
+
+    private lateinit var handler: Handler
+
+
+
+    override fun handleAudioAdLoaded(podIndex: Int, adPosition: Int): Boolean {
+        if (isPipModeActive) {
+            discardAudioAd(podIndex, adPosition)
+            return true
+        } else {
+            audioAdPodIndex = podIndex
+            audioAdPosition = adPosition
+        }
+        return false
+    }
+
+    private fun discardAudioAd(podIndex: Int, adPosition: Int) {
+        try {
+            var adPlaybackState = adPlaybackStateHost.adPlaybackState
+            var adGroup = adPlaybackState.adGroups[podIndex]
+            if (adGroup.count == C.LENGTH_UNSET) {
+                adPlaybackState = adPlaybackState.withAdCount(podIndex, Math.max(1, adGroup.states.size))
+                adGroup = adPlaybackState.adGroups[podIndex]
+            }
+            for (i in 0 until adGroup.count) {
+                if ((adGroup.states[i] == AdPlaybackState.AD_STATE_UNAVAILABLE || adGroup.states[i] == AdPlaybackState.AD_STATE_AVAILABLE) && i == adPosition) {
+                    if (debug) Log.d(TAG, "Removing audio ad $i in ad group $podIndex")
+                    adPlaybackState = adPlaybackState.withAdLoadError(podIndex, i)
+                    break
+                }
+            }
+            adPlaybackStateHost.updateAdPlaybackState(adPlaybackState)
+        } catch (e: Exception) {
+            if (debug) e.printStackTrace()
+        }
+    }
+
+    override fun getMediaLoadTimeout(defaultTimout: Int): Int {
+        return defaultTimout
+    }
+
+    override fun provideAdTagUri(actualUri: Uri?, listener: IAdTagProvider.Listener) {
+        val adTagData = AdTagData(actualUri, false, -1)
+        listener.onTagReceived(adTagData)
+    }
+
+    override fun setPipMode(isPip: Boolean) {
+        isPipModeActive = isPip
+        if (isPipModeActive && ::adPlaybackStateHost.isInitialized) {
+            val playingAdInfo = adPlaybackStateHost.playingAdInfo ?: return
+            if (playingAdInfo.first == audioAdPodIndex && playingAdInfo.second == audioAdPosition) {
+                discardAudioAd(audioAdPodIndex, audioAdPosition)
+            }
+        }
+    }
+
+    override fun setContentDuration(contentDurationMs: Long) {
+        this.contentDurationMs = contentDurationMs
+    }
+
+    override fun bind(adPlaybackStateHost: AdPlaybackStateHost, handler: Handler) {
+        this.adPlaybackStateHost = adPlaybackStateHost
+        this.handler = handler
+    }
+
+
+
+    private val vastCallWaitingRunnable = Runnable {
+        if (::adPlaybackStateHost.isInitialized) {
+            adPlaybackStateHost.onVastCallMaxWaitingTimeOver()
+        }
+    }
+
+    @CallSuper
+    override fun onAllAdsRequested() {
+        val vastCallMaxWaitingTime = if (vastTimeOutInMs > 0) (vastTimeOutInMs + 1000).toLong() else 6000.toLong()
+        handler.postDelayed(vastCallWaitingRunnable, vastCallMaxWaitingTime)
+    }
+
+    override fun doSetupAdsRendering(contentPositionMs: Long, contentDurationMs: Long): Boolean {
+        return false
+    }
+
+    override fun handleTimelineOrPositionChanged(player: Player?, timeline: Timeline?, period: Timeline.Period?): Boolean {
+        return false
+    }
+
+
+
+    override fun setPlayer(player: Player?) {}
+    override fun getContentPositionMs(player: Player, timeline: Timeline, period: Timeline.Period?, contentDurationMs: Long): Long {
+        return getContentPeriodPositionMs(player, timeline, period)
+    }
+
+    open fun getAdGroupIndexForAdPod(podIndex: Int, podTimeOffset: Double, player: Player?, timeline: Timeline?, period: Timeline.Period?): Int {
+        val adPlaybackState = adPlaybackStateHost.adPlaybackState
+        return if (podIndex == -1) {
+            // This is a postroll ad.
+            adPlaybackState.adGroupCount - 1
+        } else getAdGroupIndexForCuePointTimeSeconds(podTimeOffset)
+
+        // adPodInfo.podIndex may be 0-based or 1-based, so for now look up the cue point instead.
+    }
+
+    private fun getAdGroupIndexForCuePointTimeSeconds(cuePointTimeSeconds: Double): Int {
+        val adPlaybackState = adPlaybackStateHost.adPlaybackState
+        // We receive initial cue points from IMA SDK as floats. This code replicates the same
+        // calculation used to populate adGroupTimesUs (having truncated input back to float, to avoid
+        // failures if the behavior of the IMA SDK changes to provide greater precision).
+        val cuePointTimeSecondsFloat = cuePointTimeSeconds.toFloat()
+        val adPodTimeUs = Math.round(cuePointTimeSecondsFloat.toDouble() * C.MICROS_PER_SECOND)
+        for (adGroupIndex in 0 until adPlaybackState.adGroupCount) {
+            val adGroupTimeUs = adPlaybackState.adGroupTimesUs[adGroupIndex]
+            if (adGroupTimeUs != C.TIME_END_OF_SOURCE
+                    && Math.abs(adGroupTimeUs - adPodTimeUs) < THRESHOLD_AD_MATCH_US) {
+                return adGroupIndex
+            }
+        }
+        throw IllegalStateException("Failed to find cue point")
+    }
+
+    override fun onAdsManagerLoaded(groupCount: Int) {
+    }
+
+    override fun onAdLoad(adGroupIndex: Int, adIndexInGroup: Int, adUri: Uri, adPodIndex: Int) {
+
+    }
+
+
+    override fun onAdEvent(name: String?, creativeId: String?, advertiser: String?, adPodIndex: Int, adIndexInAdGroup: Int) {
+
+    }
+
+    override fun trackEvent(eventName: String, adGroupIndex: Int, exception: Exception?) {
+        trackEvent(eventName, adGroupIndex, -1, exception)
+    }
+
+    open fun trackEvent(eventName: String, adGroupIndex: Int, adIndexInAdGroup: Int, exception: Exception?) {
+
+    }
+
+
+
+    /**
+     * Returns the index of the ad group that will preload next, or [C.INDEX_UNSET] if there is
+     * no such ad group.
+     */
+    protected fun getLoadingAdGroupIndex(adPlaybackState: AdPlaybackState, playerPositionUs: Long): Int {
+        var adGroupIndex = adPlaybackState.getAdGroupIndexForPositionUs(playerPositionUs, C.msToUs(contentDurationMs))
+        if (adGroupIndex == C.INDEX_UNSET) {
+            adGroupIndex = adPlaybackState.getAdGroupIndexAfterPositionUs(
+                    playerPositionUs, C.msToUs(contentDurationMs))
+        }
+        return adGroupIndex
+    }
+
+
+    override fun createAdPlaybackState(adId: Any?, adGroupTimesUs: LongArray): AdPlaybackState {
+        return AdPlaybackState(adId!!, *adGroupTimesUs)
+    }
+
+    override val trackerName: String?
+        get() = VideoAdsTracker.IMA_DEFAULT_AD_LOADER
+
+
+
+    companion object {
+        private const val TAG = "AdsBehaviour"
+        const val THRESHOLD_AD_MATCH_US: Long = 1000
+        @JvmStatic
+        protected fun getContentPeriodPositionMs(
+                player: Player, timeline: Timeline, period: Timeline.Period?): Long {
+            val contentWindowPositionMs = player.contentPosition
+            return if (timeline.isEmpty) {
+                contentWindowPositionMs
+            } else {
+                (contentWindowPositionMs
+                        - timeline.getPeriod(player.currentPeriodIndex, period!!).positionInWindowMs)
+            }
+        }
+    }
+}

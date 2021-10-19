@@ -31,20 +31,19 @@ import android.os.SystemClock;
 import android.util.Pair;
 import android.view.ViewGroup;
 import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.audio.AudioListener;
 import com.google.android.exoplayer2.source.ads.AdPlaybackState;
-import com.google.android.exoplayer2.source.ads.AdsLoader.EventListener;
 import com.google.android.exoplayer2.source.ads.AdsLoader.AdViewProvider;
+import com.google.android.exoplayer2.source.ads.AdsLoader.EventListener;
 import com.google.android.exoplayer2.source.ads.AdsLoader.OverlayInfo;
 import com.google.android.exoplayer2.source.ads.AdsMediaSource.AdLoadException;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
-import com.google.android.exoplayer2.trackselection.TrackSelectionUtil;
 import com.google.android.exoplayer2.upstream.DataSpec;
 import com.google.android.exoplayer2.util.Log;
 import com.google.android.exoplayer2.util.Util;
@@ -62,14 +61,13 @@ import com.mxplay.interactivemedia.api.AdsLoader;
 import com.mxplay.interactivemedia.api.AdsManager;
 import com.mxplay.interactivemedia.api.AdsManagerLoadedEvent;
 import com.mxplay.interactivemedia.api.AdsRenderingSettings;
+import com.mxplay.interactivemedia.api.AdsRequest;
 import com.mxplay.interactivemedia.api.Configuration;
 import com.mxplay.interactivemedia.api.OmSdkSettings;
 import com.mxplay.interactivemedia.api.player.AdMediaInfo;
 import com.mxplay.interactivemedia.api.player.ContentProgressProvider;
 import com.mxplay.interactivemedia.api.player.VideoAdPlayer;
 import com.mxplay.interactivemedia.api.player.VideoProgressUpdate;
-import com.mxplay.interactivemedia.api.AdsRequest;
-
 import java.io.IOException;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -264,28 +262,37 @@ import java.util.Objects;
       adDisplayContainer.setCompanionSlots(configuration.getCompanionAdSlots());
     }
     adsBehaviour = configuration.getAdsBehaviour();
-    adsBehaviour.setAdPlaybackStateHost(adPlaybackStateHost);
-    adsBehaviour.setHandler(handler);
+    adsBehaviour.bind(createAdPlaybackStateHost(), handler);
     adsLoader = requestAds(context, imaSdkSettings, adDisplayContainer);
   }
 
-  private final AdsBehaviour.AdPlaybackStateHost adPlaybackStateHost = new AdsBehaviour.AdPlaybackStateHost() {
-    @Override
-    public AdPlaybackState getAdPlaybackState() {
-      return MxAdTagLoader.this.adPlaybackState;
-    }
+  private  AdsBehaviour.AdPlaybackStateHost createAdPlaybackStateHost() {
+    return new AdsBehaviour.AdPlaybackStateHost() {
+      @Override
+      public void onVastCallMaxWaitingTimeOver() {
 
-    @Override
-    public void updateAdPlaybackState(AdPlaybackState adPlaybackState) {
-      MxAdTagLoader.this.adPlaybackState = adPlaybackState;
-      MxAdTagLoader.this.updateAdPlaybackState();
-    }
+      }
 
-    @Override
-    public @Nullable Pair<Integer, Integer> getPlayingAdInfo() {
-      return imaAdState == IMA_AD_STATE_PLAYING && imaAdInfo != null ? new Pair<Integer, Integer>(imaAdInfo.adGroupIndex, imaAdInfo.adIndexInAdGroup) : null;
-    }
-  };
+      @Override
+      @NonNull
+      public AdPlaybackState getAdPlaybackState() {
+        return MxAdTagLoader.this.adPlaybackState;
+      }
+
+      @Override
+      public void updateAdPlaybackState(AdPlaybackState adPlaybackState) {
+        MxAdTagLoader.this.adPlaybackState = adPlaybackState;
+        MxAdTagLoader.this.updateAdPlaybackState();
+      }
+
+      @Override
+      public @Nullable
+      Pair<Integer, Integer> getPlayingAdInfo() {
+        return imaAdState == IMA_AD_STATE_PLAYING && imaAdInfo != null ? new Pair<Integer, Integer>(
+            imaAdInfo.adGroupIndex, imaAdInfo.adIndexInAdGroup) : null;
+      }
+    };
+  }
 
   /** Returns the underlying IMA SDK ads loader. */
   public AdsLoader getAdsLoader() {
@@ -486,7 +493,7 @@ import java.util.Objects;
     Player player = checkNotNull(this.player);
     long contentDurationUs = timeline.getPeriod(player.getCurrentPeriodIndex(), period).durationUs;
     contentDurationMs = C.usToMs(contentDurationUs);
-    adsBehaviour.setContentDurationMs(contentDurationMs);
+    adsBehaviour.setContentDuration(contentDurationMs);
     if (contentDurationUs != adPlaybackState.contentDurationUs) {
       adPlaybackState = adPlaybackState.withContentDurationUs(contentDurationUs);
       updateAdPlaybackState();

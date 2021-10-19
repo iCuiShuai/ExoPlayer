@@ -268,8 +268,7 @@ import java.util.Map;
       adDisplayContainer.setCompanionSlots(configuration.companionAdSlots);
     }
     adsBehaviour = configuration.adsBehaviour;
-    adsBehaviour.setAdPlaybackStateHost(adPlaybackStateHost);
-    adsBehaviour.setHandler(handler);
+    adsBehaviour.bind(adPlaybackStateHost, handler);
     adsLoader = requestAds(context, imaSdkSettings, adDisplayContainer);
   }
 
@@ -498,7 +497,7 @@ import java.util.Map;
     Player player = checkNotNull(this.player);
     long contentDurationUs = timeline.getPeriod(player.getCurrentPeriodIndex(), period).durationUs;
     contentDurationMs = C.usToMs(contentDurationUs);
-    adsBehaviour.setContentDurationMs(contentDurationMs);
+    adsBehaviour.setContentDuration(contentDurationMs);
     if (contentDurationUs != adPlaybackState.contentDurationUs) {
       adPlaybackState = adPlaybackState.withContentDurationUs(contentDurationUs);
       updateAdPlaybackState();
@@ -818,6 +817,10 @@ import java.util.Map;
         Map<String, String> adData = adEvent.getAdData();
         String message = "AdEvent: " + adData;
         Log.i(TAG, message);
+        if ("adLoadError".equals(adData.get("type")) || ("adPlayError".equals(adData.get("type")) && "403".equals(adData.get("errorCode")))) {
+          Exception e = new IOException(message);
+          handleAdGroupLoadError(e);
+        }
         break;
       case LOADED:
         if (adEvent.getAd().getVastMediaWidth() <= 1 && adEvent.getAd().getVastMediaHeight() <= 1){
