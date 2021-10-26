@@ -54,6 +54,7 @@ import com.google.android.exoplayer2.util.Util;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mxplay.adloader.AdsBehaviour;
+import com.mxplay.adloader.IAdsBehaviour;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -124,7 +125,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     private boolean playAdBeforeStartPosition;
     private boolean debugModeEnabled;
     private ImaUtil.ImaFactory imaFactory;
-    private AdsBehaviour adsBehaviour;
+    private IAdsBehaviour adsBehaviour;
 
     /**
      * Creates a new builder for {@link ImaAdsLoader}.
@@ -156,7 +157,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
       return this;
     }
 
-    public void setAdsBehaviour(AdsBehaviour adsBehaviour) {
+    public void setAdsBehaviour(IAdsBehaviour adsBehaviour) {
       this.adsBehaviour = adsBehaviour;
     }
 

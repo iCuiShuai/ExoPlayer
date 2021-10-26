@@ -10,19 +10,21 @@ import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.Timeline
 import com.google.android.exoplayer2.source.ads.AdPlaybackState
 
-abstract class AdsBehaviour(private val vastTimeOutInMs: Int, protected open val debug : Boolean = false) : IAdsBehaviour {
+open class AdsBehaviour(private val vastTimeOutInMs: Int, protected open val debug : Boolean = false) : IAdsBehaviour {
     interface AdPlaybackStateHost {
         val adPlaybackState: AdPlaybackState
-        fun updateAdPlaybackState(adPlaybackState: AdPlaybackState?)
+        fun updateAdPlaybackState(adPlaybackState: AdPlaybackState, notifyExo: Boolean)
         val playingAdInfo: Pair<Int, Int>?
         fun onVastCallMaxWaitingTimeOver() {}
     }
 
 
-    protected lateinit var adPlaybackStateHost: AdPlaybackStateHost
-    protected var contentDurationMs = C.TIME_UNSET
-    var isPipModeActive = false
-        private set
+    private lateinit var adPlaybackStateHost: AdPlaybackStateHost
+    private var contentDurationMs = C.TIME_UNSET
+    private var isPipModeActive = false
+
+    override fun isPipModeActive() = isPipModeActive
+
     @JvmField
     protected var audioAdPodIndex = C.INDEX_UNSET
     @JvmField
@@ -31,6 +33,7 @@ abstract class AdsBehaviour(private val vastTimeOutInMs: Int, protected open val
     private lateinit var handler: Handler
 
 
+    fun getContentDurationMs() = contentDurationMs
 
     override fun handleAudioAdLoaded(podIndex: Int, adPosition: Int): Boolean {
         if (isPipModeActive) {
@@ -58,7 +61,7 @@ abstract class AdsBehaviour(private val vastTimeOutInMs: Int, protected open val
                     break
                 }
             }
-            adPlaybackStateHost.updateAdPlaybackState(adPlaybackState)
+            adPlaybackStateHost.updateAdPlaybackState(adPlaybackState, true)
         } catch (e: Exception) {
             if (debug) e.printStackTrace()
         }
@@ -121,7 +124,7 @@ abstract class AdsBehaviour(private val vastTimeOutInMs: Int, protected open val
         return getContentPeriodPositionMs(player, timeline, period)
     }
 
-    open fun getAdGroupIndexForAdPod(podIndex: Int, podTimeOffset: Double, player: Player?, timeline: Timeline?, period: Timeline.Period?): Int {
+    override fun getAdGroupIndexForAdPod(podIndex: Int, podTimeOffset: Double, player: Player?, timeline: Timeline?, period: Timeline.Period?): Int {
         val adPlaybackState = adPlaybackStateHost.adPlaybackState
         return if (podIndex == -1) {
             // This is a postroll ad.
@@ -156,25 +159,12 @@ abstract class AdsBehaviour(private val vastTimeOutInMs: Int, protected open val
     }
 
 
-    override fun onAdEvent(name: String?, creativeId: String?, advertiser: String?, adPodIndex: Int, adIndexInAdGroup: Int) {
-
-    }
-
-    override fun trackEvent(eventName: String, adGroupIndex: Int, exception: Exception?) {
-        trackEvent(eventName, adGroupIndex, -1, exception)
-    }
-
-    open fun trackEvent(eventName: String, adGroupIndex: Int, adIndexInAdGroup: Int, exception: Exception?) {
-
-    }
-
-
 
     /**
      * Returns the index of the ad group that will preload next, or [C.INDEX_UNSET] if there is
      * no such ad group.
      */
-    protected fun getLoadingAdGroupIndex(adPlaybackState: AdPlaybackState, playerPositionUs: Long): Int {
+    fun getLoadingAdGroupIndex(adPlaybackState: AdPlaybackState, playerPositionUs: Long): Int {
         var adGroupIndex = adPlaybackState.getAdGroupIndexForPositionUs(playerPositionUs, C.msToUs(contentDurationMs))
         if (adGroupIndex == C.INDEX_UNSET) {
             adGroupIndex = adPlaybackState.getAdGroupIndexAfterPositionUs(
@@ -188,16 +178,20 @@ abstract class AdsBehaviour(private val vastTimeOutInMs: Int, protected open val
         return AdPlaybackState(adId!!, *adGroupTimesUs)
     }
 
-    override val trackerName: String?
-        get() = VideoAdsTracker.IMA_DEFAULT_AD_LOADER
+    override fun obtainAdPlaybackStateHost(): AdPlaybackStateHost? {
+        return if(::adPlaybackStateHost.isInitialized) adPlaybackStateHost else null
+    }
 
+    override fun provideBehaviourTracker(): IBehaviourTracker {
+        return IBehaviourTracker.NO_OP_TRACKER
+    }
 
 
     companion object {
         private const val TAG = "AdsBehaviour"
         const val THRESHOLD_AD_MATCH_US: Long = 1000
         @JvmStatic
-        protected fun getContentPeriodPositionMs(
+         fun getContentPeriodPositionMs(
                 player: Player, timeline: Timeline, period: Timeline.Period?): Long {
             val contentWindowPositionMs = player.contentPosition
             return if (timeline.isEmpty) {

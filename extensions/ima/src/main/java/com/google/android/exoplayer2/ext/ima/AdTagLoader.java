@@ -30,6 +30,7 @@ import android.os.SystemClock;
 import android.util.Pair;
 import android.view.ViewGroup;
 import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.ads.interactivemedia.v3.api.AdDisplayContainer;
 import com.google.ads.interactivemedia.v3.api.AdError;
@@ -68,6 +69,7 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.mxplay.adloader.AdsBehaviour;
 import com.mxplay.adloader.AdsBehaviourWatchTime;
+import com.mxplay.adloader.IAdsBehaviour;
 import com.mxplay.adloader.VideoAdsTracker;
 
 import java.io.IOException;
@@ -77,6 +79,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /** Handles loading and playback of a single ad tag. */
 /* package */ final class AdTagLoader implements Player.EventListener {
@@ -143,7 +147,7 @@ import java.util.Map;
   private final BiMap<AdMediaInfo, AdInfo> adInfoByAdMediaInfo;
   private final AdDisplayContainer adDisplayContainer;
   private final AdsLoader adsLoader;
-  private final AdsBehaviour adsBehaviour;
+  private final IAdsBehaviour adsBehaviour;
 
   @Nullable private Object pendingAdRequestContext;
   @Nullable private Player player;
@@ -279,9 +283,9 @@ import java.util.Map;
     }
 
     @Override
-    public void updateAdPlaybackState(AdPlaybackState adPlaybackState) {
+    public void updateAdPlaybackState(@NonNull AdPlaybackState adPlaybackState, boolean notifyExo) {
       AdTagLoader.this.adPlaybackState = adPlaybackState;
-      AdTagLoader.this.updateAdPlaybackState();
+      if (notifyExo) AdTagLoader.this.updateAdPlaybackState();
     }
 
     @Override
@@ -513,6 +517,20 @@ import java.util.Map;
     if (reason == Player.DISCONTINUITY_REASON_SEEK || reason == Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT){
       if(adsBehaviour.handleTimelineOrPositionChanged(player, timeline, period)){
         resetFlagsIfRequired();
+      }
+    }else if (reason == Player.DISCONTINUITY_REASON_AD_INSERTION){
+      if (configuration.debugModeEnabled){
+        long contentPositionMs = getContentPeriodPositionMs(Objects.requireNonNull(player), timeline, period);
+        Log.d(TAG, " Ad inserted "+  TimeUnit.MILLISECONDS.toSeconds(contentPositionMs) + " :: Playing Ad: "+ player.isPlayingAd() + " :: waiting::  "+ isWaitingForAdToLoad());
+      }
+      if (waitingForPreloadElapsedRealtimeMs == C.TIME_UNSET && player != null && player.isPlayingAd() && player.isLoading() && isWaitingForAdToLoad()){
+        int loadingIndex = getLoadingAdGroupIndex();
+        if (loadingIndex != C.INDEX_UNSET){
+          waitingForPreloadElapsedRealtimeMs = SystemClock.elapsedRealtime();
+          if (configuration.debugModeEnabled){
+            Log.d(TAG, " Waiting for ad to load " +loadingIndex);
+          }
+        }
       }
     }
   }
@@ -790,7 +808,7 @@ import java.util.Map;
             adGroupTimeSeconds == -1.0
                 ? adPlaybackState.adGroupCount - 1
                 : getAdGroupIndexForCuePointTimeSeconds(adGroupTimeSeconds);
-        adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adGroupIndex, new Exception("Fetch error for ad "));
+        adsBehaviour.provideBehaviourTracker().trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adGroupIndex, -1, new Exception("Fetch error for ad "));
         markAdGroupInErrorStateAndClearPendingContentPosition(adGroupIndex);
         break;
       case CONTENT_PAUSE_REQUESTED:
@@ -1044,7 +1062,7 @@ import java.util.Map;
           adCallbacks.get(i).onError(adMediaInfo);
         }
       } else {
-        adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_SUCCESS, imaAdInfo.adGroupIndex, imaAdInfo.adIndexInAdGroup, null);
+        adsBehaviour.provideBehaviourTracker().trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_SUCCESS, imaAdInfo.adGroupIndex, imaAdInfo.adIndexInAdGroup, null);
       }
       updateAdProgress();
     } else {
@@ -1132,7 +1150,7 @@ import java.util.Map;
       Log.w(TAG, "Unable to determine ad group index for ad group load error", error);
       return;
     }
-    adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adGroupIndex, error);
+    adsBehaviour.provideBehaviourTracker().trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adGroupIndex, -1, error);
     markAdGroupInErrorStateAndClearPendingContentPosition(adGroupIndex);
     if (pendingAdLoadError == null) {
       pendingAdLoadError = AdLoadException.createForAdGroup(error, adGroupIndex);
@@ -1195,7 +1213,7 @@ import java.util.Map;
     }
     adPlaybackState = adPlaybackState.withAdLoadError(adGroupIndex, adIndexInAdGroup);
     updateAdPlaybackState();
-    adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adGroupIndex, adIndexInAdGroup, exception);
+    adsBehaviour.provideBehaviourTracker().trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adGroupIndex, adIndexInAdGroup, exception);
   }
 
   private void ensureSentContentCompleteIfAtEndOfStream() {
@@ -1433,7 +1451,7 @@ import java.util.Map;
           AdPodInfo adPodInfo = adEvent.getAd() != null ? adEvent.getAd().getAdPodInfo() : null;
           int adPodIndex = adPodInfo != null ? adPodInfo.getPodIndex() : -1;
           int adIndexInAdGroup = adPodInfo != null ? adPodInfo.getAdPosition() - 1 : -1;
-          adsBehaviour.onAdEvent(adEventType.name(), creativeId, advertiser, adPodIndex, adIndexInAdGroup);
+          adsBehaviour.provideBehaviourTracker().onAdEvent(adEventType.name(), creativeId, advertiser, adPodIndex, adIndexInAdGroup);
         }
       } catch (RuntimeException e) {
         maybeNotifyInternalError("onAdEvent", e);
@@ -1453,7 +1471,7 @@ import java.util.Map;
         pendingAdRequestContext = null;
         adPlaybackState = new AdPlaybackState(adsId);
         updateAdPlaybackState();
-        adsBehaviour.trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, -1, error);
+        adsBehaviour.provideBehaviourTracker().trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, -1, -1,  error);
       } else if (ImaUtil.isAdGroupLoadError(error)) {
         try {
           handleAdGroupLoadError(error);
