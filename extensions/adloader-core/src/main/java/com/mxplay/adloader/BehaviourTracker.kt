@@ -110,7 +110,6 @@ class BehaviourTracker(
         } else {
             (if (startTime == 0L) startTime else startTime - 8)
         }
-        Log.d("BehaviourTracker", " adGroupIndex:  "+ adGroupIndex + "  realStartTime "+ realStartTime + " contentPosition "+ contentPosition )
 
         if (realStartTime == contentPosition && lastRealStartTime != realStartTime) {
             lastRealStartTime = realStartTime
@@ -132,7 +131,6 @@ class BehaviourTracker(
         if (!adGroupIndexOpportunitySet.containsKey(adGroupIndex)) {
             adGroupIndexOpportunitySet[adGroupIndex] = -adGroupIndex - 1
             videoAdsTracker.onAdOpportunity(adGroupIndex)
-            Log.d("BehaviourTracker", " SendOpportunity adGroupIndex:  "+ adGroupIndex)
         }
     }
 

@@ -131,9 +131,13 @@ class ActiveAd(val ad: Ad, private val player: VideoAdPlayer?, @AdState private 
 
 
         fun onError(adMediaInfo: AdMediaInfo?, errorCode: AdError.AdErrorCode, message: String?) {
-            if (ad.getMediaInfo() != adMediaInfo) return
+            if (ad.getMediaInfo() != adMediaInfo || player == null) return
             onAdStateChanged(AdState.ERROR)
-            onErrorListener.onAdError(AdErrorEvent(AdError(AdError.AdErrorType.PLAY, errorCode , message ?: "")))
+            if (errorCode == AdError.AdErrorCode.VAST_MEDIA_LOAD_TIMEOUT){
+                adEventListener.onAdEvent(AdEventImpl(AdEvent.AdEventType.LOG, ad, AdError(AdError.AdErrorType.PLAY, errorCode, message).convertToData()))
+            }else{
+                onErrorListener.onAdError(AdErrorEvent(AdError(AdError.AdErrorType.PLAY, errorCode , message ?: "")))
+            }
         }
 
         fun skipAd(ad: Ad) {
@@ -151,7 +155,7 @@ class ActiveAd(val ad: Ad, private val player: VideoAdPlayer?, @AdState private 
         override fun run() {
             waitingMediaTimeout = false
             if (currentState() == AdState.LOADED){
-                onError(ad.getMediaInfo(), AdError.AdErrorCode.VAST_MEDIA_LOAD_TIMEOUT, "Media load timeout")
+                onError(ad.getMediaInfo(), AdError.AdErrorCode.VAST_MEDIA_LOAD_TIMEOUT, "VAST media file loading reached a timeout of 8 seconds.")
             }
         }
 
