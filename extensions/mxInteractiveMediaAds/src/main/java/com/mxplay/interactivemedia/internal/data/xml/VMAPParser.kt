@@ -4,7 +4,6 @@ package com.mxplay.interactivemedia.internal.data.xml
 
 import com.google.android.exoplayer2.util.Log
 import com.mxplay.interactivemedia.api.AdError
-import com.mxplay.interactivemedia.api.AdsManager
 import com.mxplay.interactivemedia.internal.data.model.*
 import com.mxplay.interactivemedia.internal.data.xml.XmlParserHelper.assertEndTag
 import com.mxplay.interactivemedia.internal.data.xml.XmlParserHelper.assertStartTag
@@ -79,10 +78,9 @@ class VMAPParser(private var pullParser: XmlPullParser, private var vastParser: 
                 event = pullParser.next()
             }
 
-            val breakIdMap = LinkedHashMap<String, AdBreak>()
-            var podIndex = 1
+            val adBreakGrouping = LinkedHashMap<String, AdBreak>()
             for (adBreak in adBreaks) {
-                val existingAdBreak = breakIdMap[adBreak.breakId]
+                val existingAdBreak = adBreakGrouping[adBreak.startTime!!]
                 if(existingAdBreak != null){
                     existingAdBreak.trackingEvents = existingAdBreak.trackingEvents ?: EnumMap(EventName::class.java)
                     existingAdBreak.trackingEvents!!.forEach{ entry ->
@@ -99,12 +97,12 @@ class VMAPParser(private var pullParser: XmlPullParser, private var vastParser: 
                     existingAdBreak.refreshAds()
                     continue
                 }
-                breakIdMap.put(adBreak.breakId!!, adBreak)
+                adBreakGrouping[adBreak.startTime!!] = adBreak
 
                 adBreak.refreshAds()
             }
             adBreaks.clear()
-            adBreaks.addAll(breakIdMap.values)
+            adBreaks.addAll(adBreakGrouping.values)
 
             val message = "Empty vmap response"
             vmap.adBreaks = if (adBreaks.size > 0) adBreaks else throw ProtocolException(AdError(AdError.AdErrorType.LOAD, AdError.AdErrorCode.VAST_EMPTY_RESPONSE, message))
