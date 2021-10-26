@@ -1,5 +1,7 @@
 package com.mxplay.adloader
 
+import android.net.Uri
+import android.os.Handler
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
@@ -11,18 +13,16 @@ import com.google.android.exoplayer2.util.Log
 import com.mxplay.adloader.exo.MxAdPlaybackState
 import java.util.*
 
-class AdsBehaviourWatchTime(durationSec: Long, vastTimeOutInMs: Int, videoAdsTracker: VideoAdsTracker? = null, debug : Boolean = false) : AdsBehaviourDefault(vastTimeOutInMs, videoAdsTracker, debug) {
+class AdsBehaviourWatchTime(durationSec: Long, private val adsBehaviour: AdsBehaviour,  private val mxTrackingBehaviour: BehaviourTracker, private val adTagProvider: IAdTagProvider?, val debug : Boolean = false) : IAdsBehaviour by adsBehaviour {
+    private var audioAdPosition: Int = C.POSITION_UNSET
+    private var audioAdPodIndex: Int = C.INDEX_UNSET
     private val playbackStatsListener: PlaybackStatsListener = PlaybackStatsListener(true, null)
     private var player: Player? = null
     private val contentDurationMsApprox: Long = C.MICROS_PER_SECOND * durationSec
     private var totalAdLoads = 0
     private val actualAdGroupIndexByFake: MutableMap<Int, Int> = HashMap()
 
-    override val trackerName: String
-        get() = VideoAdsTracker.WATCH_TIME_BASE_AD_LOADER
-
     override fun setPlayer(player: Player?) {
-        super.setPlayer(player)
         if (this.player != null && this.player is SimpleExoPlayer) {
             (this.player as SimpleExoPlayer?)!!.removeAnalyticsListener(playbackStatsListener)
         }
@@ -32,13 +32,35 @@ class AdsBehaviourWatchTime(durationSec: Long, vastTimeOutInMs: Int, videoAdsTra
         }
     }
 
+    override fun bind(adPlaybackStateHost: AdsBehaviour.AdPlaybackStateHost, handler: Handler) {
+        adsBehaviour.bind(adPlaybackStateHost, handler)
+        mxTrackingBehaviour.setAdPlaybackStateHost(adPlaybackStateHost)
+    }
+
+    override fun onAllAdsRequested() {
+        mxTrackingBehaviour.onAllAdsRequested()
+        adsBehaviour.onAllAdsRequested()
+    }
+
+
+    override fun provideBehaviourTracker(): IBehaviourTracker {
+        return mxTrackingBehaviour
+    }
+
+    override fun onAdsManagerLoaded(groupCount: Int) {
+        mxTrackingBehaviour.onAdsManagerLoaded(groupCount)
+        adsBehaviour.onAdsManagerLoaded(groupCount)
+    }
+
     override fun doSetupAdsRendering(contentPositionMs: Long, contentDurationMs: Long): Boolean {
-        var adPlaybackState = adPlaybackStateHost.adPlaybackState
-        val adGroupForPositionIndex = adPlaybackState.getAdGroupIndexForPositionUs(
+        val adPlaybackStateHost = adsBehaviour.obtainAdPlaybackStateHost() ?: return false
+        val adGroupForPositionIndex = adPlaybackStateHost.adPlaybackState.getAdGroupIndexForPositionUs(
                 C.msToUs(contentPositionMs), C.msToUs(contentDurationMs))
-        if (adGroupForPositionIndex != C.INDEX_UNSET && !hasPrerollAdGroups(adPlaybackState.adGroupTimesUs)) {
-            adPlaybackState = adPlaybackState.withSkippedAdGroup(adGroupForPositionIndex)
-            adPlaybackStateHost.updateAdPlaybackState(adPlaybackState)
+        if (adGroupForPositionIndex != C.INDEX_UNSET && !hasPrerollAdGroups(adPlaybackStateHost.adPlaybackState.adGroupTimesUs)) {
+            adPlaybackStateHost.updateAdPlaybackState(
+                adPlaybackStateHost.adPlaybackState.withSkippedAdGroup(adGroupForPositionIndex),
+                true
+            )
             if (debug) {
                 Log.d(TAG, "Init ad rendering settings contentPositionMs : $contentPositionMs skipped ad index $adGroupForPositionIndex")
             }
@@ -46,7 +68,10 @@ class AdsBehaviourWatchTime(durationSec: Long, vastTimeOutInMs: Int, videoAdsTra
         return true
     }
 
-    override fun handleAdLoad(adGroupIndex: Int, adIndexInAdGroup: Int) {
+    override fun onAdLoad(adGroupIndex: Int, adIndexInGroup: Int, adUri: Uri, adPodIndex: Int) {
+        val adPlaybackStateHost = adsBehaviour.obtainAdPlaybackStateHost() ?: return
+        mxTrackingBehaviour.onAdLoad(adIndexInGroup, adUri, adPodIndex) { adGroupIndex }
+
         val contentPositionMs = playbackStatsListener.contentTotalPlayTimeMs
         val adPlaybackState = adPlaybackStateHost.adPlaybackState
         val actualAdGroupIndex = getLoadingAdGroupIndexForReporting(adPlaybackState, C.msToUs(contentPositionMs))
@@ -54,8 +79,9 @@ class AdsBehaviourWatchTime(durationSec: Long, vastTimeOutInMs: Int, videoAdsTra
             actualAdGroupIndexByFake[adGroupIndex] = actualAdGroupIndex
         }
         if (adPlaybackState is MxAdPlaybackState) {
-            adPlaybackState.withActualAdGroupProcessed(actualAdGroupIndex, adIndexInAdGroup)
+            adPlaybackState.withActualAdGroupProcessed(actualAdGroupIndex, adIndexInGroup)
         }
+        adsBehaviour.onAdLoad(adGroupIndex, adIndexInGroup, adUri, adPodIndex)
     }
 
     override fun handleAudioAdLoaded(podIndex: Int, adPosition: Int): Boolean {
@@ -64,17 +90,33 @@ class AdsBehaviourWatchTime(durationSec: Long, vastTimeOutInMs: Int, videoAdsTra
         return true
     }
 
-    override fun getContentPositionMs(player: Player, timeline: Timeline, period: Timeline.Period?, contentDurationMs: Long): Long {
+    override fun getContentPositionMs(
+        player: Player,
+        timeline: Timeline,
+        period: Timeline.Period?,
+        contentDurationMs: Long
+    ): Long {
+        mxTrackingBehaviour.onContentPositionPulled(
+            player,
+            timeline,
+            period,
+            contentDurationMs
+        ) { adPlaybackState, playerPositionUs ->
+            val loadingAdGroupIndex =
+                adsBehaviour.getLoadingAdGroupIndex(adPlaybackState, playerPositionUs)
+            if (loadingAdGroupIndex == C.INDEX_UNSET)
+                getActualAdGroupIndex(loadingAdGroupIndex)
+            else C.INDEX_UNSET
+        }
+
         val hasContentDuration = contentDurationMs != C.INDEX_UNSET.toLong()
         if (hasContentDuration) {
-            cleanUnusedCuePoints(player, timeline, period)
+            cleanUnusedCuePoints(player, timeline, period, contentDurationMs)
         }
-        val contentPositionMs = playbackStatsListener.contentTotalPlayTimeMs
-        tryUpdateStartRequestTime(contentPositionMs, contentDurationMs)
-        return contentPositionMs
+        return playbackStatsListener.contentTotalPlayTimeMs
     }
 
-    override fun getActualAdGroupIndex(fakeAdGroupIndex: Int): Int {
+    fun getActualAdGroupIndex(fakeAdGroupIndex: Int): Int {
         val actualAdGroupIndex = actualAdGroupIndexByFake[fakeAdGroupIndex]
         return actualAdGroupIndex ?: C.INDEX_UNSET
     }
@@ -111,16 +153,16 @@ class AdsBehaviourWatchTime(durationSec: Long, vastTimeOutInMs: Int, videoAdsTra
     }
 
     override fun handleTimelineOrPositionChanged(player: Player?, timeline: Timeline?, period: Timeline.Period?): Boolean {
-        super.handleTimelineOrPositionChanged(player, timeline, period)
         skipAdOnUserSeek(player, timeline, period)
         return true
     }
 
     private fun skipAdOnUserSeek(player: Player?, timeline: Timeline?, period: Timeline.Period?) {
+        val adPlaybackStateHost = adsBehaviour.obtainAdPlaybackStateHost() ?: return
         if (!timeline!!.isEmpty) {
             var adPlaybackState = adPlaybackStateHost.adPlaybackState
             var updateState = false
-            val positionMs = getContentPeriodPositionMs(player!!, timeline, period)
+            val positionMs = AdsBehaviour.getContentPeriodPositionMs(player!!, timeline, period)
             timeline.getPeriod( /* periodIndex= */0, period!!)
             val newAdGroupIndex = period.getAdGroupIndexForPositionUs(C.msToUs(positionMs))
             if (newAdGroupIndex != C.INDEX_UNSET && adPlaybackState.adGroups[newAdGroupIndex].count < 0) {
@@ -130,14 +172,20 @@ class AdsBehaviourWatchTime(durationSec: Long, vastTimeOutInMs: Int, videoAdsTra
                     Log.d(TAG, "Ad skipped on user seek onTimelineChanged/onPositionDiscontinuity $newAdGroupIndex")
                 }
             }
-            if (updateState) adPlaybackStateHost.updateAdPlaybackState(adPlaybackState)
+            if (updateState) adPlaybackStateHost.updateAdPlaybackState(adPlaybackState, true)
         }
     }
 
-    private fun cleanUnusedCuePoints(player: Player, timeline: Timeline, period: Timeline.Period?) {
-        var adPlaybackState = adPlaybackStateHost.adPlaybackState
-        val positionUs = C.msToUs(getContentPeriodPositionMs(Assertions.checkNotNull(player), timeline, period))
+    private fun cleanUnusedCuePoints(
+        player: Player,
+        timeline: Timeline,
+        period: Timeline.Period?,
+        contentDurationMs: Long
+    ) {
+        val adPlaybackStateHost = adsBehaviour.obtainAdPlaybackStateHost() ?: return
+        val positionUs = C.msToUs(AdsBehaviour.getContentPeriodPositionMs(Assertions.checkNotNull(player), timeline, period))
         var shouldUpdatePlaybackState = false
+        var adPlaybackState = adPlaybackStateHost.adPlaybackState
         while (true) {
             val adGroupIndexAfterPositionUs = adPlaybackState.getAdGroupIndexAfterPositionUs(positionUs, C.msToUs(contentDurationMs))
             if (adGroupIndexAfterPositionUs != C.INDEX_UNSET && adPlaybackState.adGroups[adGroupIndexAfterPositionUs].count < 0) {
@@ -149,11 +197,12 @@ class AdsBehaviourWatchTime(durationSec: Long, vastTimeOutInMs: Int, videoAdsTra
                 } else break
             } else break
         }
-        if (shouldUpdatePlaybackState) adPlaybackStateHost.updateAdPlaybackState(adPlaybackState)
+        if (shouldUpdatePlaybackState) adPlaybackStateHost.updateAdPlaybackState(adPlaybackState, true)
     }
 
     override fun getAdGroupIndexForAdPod(podIndex: Int, podTimeOffset: Double, player: Player?, timeline: Timeline?, period: Timeline.Period?): Int {
         totalAdLoads++
+        val adPlaybackStateHost = adsBehaviour.obtainAdPlaybackStateHost() ?:  throw IllegalStateException("Failed to find cue point ad playback state not available")
         val isAudioAd = podIndex == audioAdPodIndex
         val adPlaybackState = adPlaybackStateHost.adPlaybackState
         val allAdsDone = (adPlaybackState as MxAdPlaybackState).actualAdGroupCount == totalAdLoads
@@ -164,7 +213,7 @@ class AdsBehaviourWatchTime(durationSec: Long, vastTimeOutInMs: Int, videoAdsTra
             return adPlaybackState.adGroupCount - 1
         }
         check(!isAudioAd) { "Audio ad not supported in watch-time" }
-        val positionUs = C.msToUs(getContentPeriodPositionMs(Assertions.checkNotNull(player), timeline!!, period))
+        val positionUs = C.msToUs(AdsBehaviour.getContentPeriodPositionMs(Assertions.checkNotNull(player), timeline!!, period))
         if (debug) {
             Log.d(TAG, " Player position " + C.usToMs(positionUs))
         }
@@ -176,10 +225,10 @@ class AdsBehaviourWatchTime(durationSec: Long, vastTimeOutInMs: Int, videoAdsTra
 
     private fun getFakeCuepointForLoadingAd(positionUs: Long, adPlaybackState: AdPlaybackState): Int {
         var adPlaybackState = adPlaybackState
-        val adGroupIndex = getLoadingAdGroupIndex(adPlaybackState, positionUs)
+        val adGroupIndex = adsBehaviour.getLoadingAdGroupIndex(adPlaybackState, positionUs)
         if (adGroupIndex != C.INDEX_UNSET) {
             val timeLeftMs = C.usToMs(adPlaybackState.adGroupTimesUs[adGroupIndex] - positionUs)
-            if (timeLeftMs > 0 && timeLeftMs < NEXT_FAKE_CUEPOINTS_DISTANCE_THRESHOLD) {
+            if (timeLeftMs in 1 until NEXT_FAKE_CUEPOINTS_DISTANCE_THRESHOLD) {
                 if (debug) {
                     Log.d(TAG, "Next cue-point too close  " + adGroupIndex + " time : " + C.usToMs(adPlaybackState.adGroupTimesUs[adGroupIndex]) + " time left : " + timeLeftMs)
                 }
@@ -202,7 +251,7 @@ class AdsBehaviourWatchTime(durationSec: Long, vastTimeOutInMs: Int, videoAdsTra
                 if (keepAdGroupIndex == i) continue
                 adPlaybackState = adPlaybackState.withSkippedAdGroup(i)
             }
-            adPlaybackStateHost.updateAdPlaybackState(adPlaybackState)
+            adsBehaviour.obtainAdPlaybackStateHost()!!.updateAdPlaybackState(adPlaybackState, true)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -211,12 +260,12 @@ class AdsBehaviourWatchTime(durationSec: Long, vastTimeOutInMs: Int, videoAdsTra
         }
     }
 
-    override fun getLoadingAdGroupIndexForReporting(adPlaybackState: AdPlaybackState, playerPositionUs: Long): Int {
+    fun getLoadingAdGroupIndexForReporting(adPlaybackState: AdPlaybackState, playerPositionUs: Long): Int {
         val mxAdPlaybackState = adPlaybackState as MxAdPlaybackState
-        var adGroupIndex = mxAdPlaybackState.getActualAdGroupIndexForPositionUs(playerPositionUs, C.msToUs(contentDurationMs))
+        var adGroupIndex = mxAdPlaybackState.getActualAdGroupIndexForPositionUs(playerPositionUs, C.msToUs(adsBehaviour.getContentDurationMs()))
         if (adGroupIndex == C.INDEX_UNSET) {
             adGroupIndex = mxAdPlaybackState.getActualAdGroupIndexAfterPositionUs(
-                    playerPositionUs, C.msToUs(contentDurationMs))
+                    playerPositionUs, C.msToUs(adsBehaviour.getContentDurationMs()))
         }
         return adGroupIndex
     }

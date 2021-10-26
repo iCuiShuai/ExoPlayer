@@ -41,7 +41,8 @@ import com.google.android.exoplayer2.upstream.DataSchemeDataSource;
 import com.google.android.exoplayer2.upstream.DataSpec;
 import com.google.android.exoplayer2.util.Util;
 import com.mxplay.adloader.AdsBehaviour;
-import com.mxplay.adloader.AdsBehaviourDefault;
+import com.mxplay.adloader.AdsBehaviourExactTime;
+import com.mxplay.adloader.IAdsBehaviour;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -100,7 +101,7 @@ import java.util.Set;
     @Nullable public final AdEvent.AdEventListener applicationAdEventListener;
     @Nullable public final VideoAdPlayer.VideoAdPlayerCallback applicationVideoAdPlayerCallback;
     @Nullable public final ImaSdkSettings imaSdkSettings;
-    public final AdsBehaviour adsBehaviour;
+    public final IAdsBehaviour adsBehaviour;
     public final boolean debugModeEnabled;
 
     public Configuration(
@@ -117,7 +118,7 @@ import java.util.Set;
         @Nullable AdErrorEvent.AdErrorListener applicationAdErrorListener,
         @Nullable AdEvent.AdEventListener applicationAdEventListener,
         @Nullable VideoAdPlayer.VideoAdPlayerCallback applicationVideoAdPlayerCallback,
-        @Nullable ImaSdkSettings imaSdkSettings, @Nullable AdsBehaviour adsBehaviour,
+        @Nullable ImaSdkSettings imaSdkSettings, @Nullable IAdsBehaviour adsBehaviour,
         boolean debugModeEnabled) {
       this.adPreloadTimeoutMs = adPreloadTimeoutMs;
       this.vastLoadTimeoutMs = vastLoadTimeoutMs;
@@ -133,7 +134,7 @@ import java.util.Set;
       this.applicationAdEventListener = applicationAdEventListener;
       this.applicationVideoAdPlayerCallback = applicationVideoAdPlayerCallback;
       this.imaSdkSettings = imaSdkSettings;
-      this.adsBehaviour = adsBehaviour == null ? new AdsBehaviourDefault(vastLoadTimeoutMs, null, debugModeEnabled) : adsBehaviour;
+      this.adsBehaviour = adsBehaviour == null ? new AdsBehaviour(vastLoadTimeoutMs, debugModeEnabled) : adsBehaviour;
       this.debugModeEnabled = debugModeEnabled;
     }
   }

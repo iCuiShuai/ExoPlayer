@@ -3,7 +3,8 @@ package com.mxplay.interactivemedia.api
 import android.content.Context
 import com.google.android.exoplayer2.C
 import com.mxplay.adloader.AdsBehaviour
-import com.mxplay.adloader.AdsBehaviourDefault
+import com.mxplay.adloader.AdsBehaviourExactTime
+import com.mxplay.adloader.IAdsBehaviour
 import com.mxplay.interactivemedia.api.player.VideoAdPlayer
 import com.mxplay.interactivemedia.internal.util.UrlStitchingService
 import com.mxplay.mediaads.exo.OmaUtil
@@ -41,7 +42,7 @@ class Configuration(builder : Builder) {
     val userInfo: UserInfo
     val trackersConfig: TrackersConfig
     val debugModeEnabled: Boolean
-    val adsBehaviour: AdsBehaviour
+    val adsBehaviour: IAdsBehaviour
 
     val ioDispatcher: CoroutineDispatcher
     val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main
@@ -68,7 +69,7 @@ class Configuration(builder : Builder) {
          trackersConfig = builder.trackersConfig
          debugModeEnabled = builder.debugModeEnabled
         ioDispatcher = ioExecutor.asCoroutineDispatcher()
-        adsBehaviour = builder.adsBehaviour ?: AdsBehaviourDefault(vastLoadTimeoutMs)
+        adsBehaviour = builder.adsBehaviour ?: AdsBehaviour(vastLoadTimeoutMs, debugModeEnabled)
     }
 
     private fun getUserAgentFromProperty(): String? {
@@ -115,7 +116,7 @@ class Configuration(builder : Builder) {
         var applicationVideoAdPlayerCallback: VideoAdPlayer.VideoAdPlayerCallback? = null
         var imaSdkSettings: OmSdkSettings? = null
         var debugModeEnabled: Boolean = false
-        var adsBehaviour: AdsBehaviour? = null
+        var adsBehaviour: IAdsBehaviour? = null
 
         fun appName(appName: String) = apply { this.appName = appName }
         fun adUnitId(adUnitId: String) = apply { this.adUnitId = adUnitId }
@@ -132,7 +133,7 @@ class Configuration(builder : Builder) {
         fun applicationVideoAdPlayerCallback(applicationVideoAdPlayerCallback: VideoAdPlayer.VideoAdPlayerCallback? ) = apply { this.applicationVideoAdPlayerCallback = applicationVideoAdPlayerCallback }
         fun imaSdkSettings(imaSdkSettings: OmSdkSettings) = apply { this.imaSdkSettings = imaSdkSettings }
         fun debugModeEnabled(debugModeEnabled: Boolean) = apply { this.debugModeEnabled = debugModeEnabled }
-        fun adsBehaviour(adsBehaviour: AdsBehaviour) = apply { this.adsBehaviour = adsBehaviour }
+        fun adsBehaviour(adsBehaviour: IAdsBehaviour) = apply { this.adsBehaviour = adsBehaviour }
 
 
 
