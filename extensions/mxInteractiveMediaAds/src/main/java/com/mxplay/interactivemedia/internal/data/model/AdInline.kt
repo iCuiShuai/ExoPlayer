@@ -20,6 +20,8 @@ class AdInline(id: String) : AdData(id), Ad, IMediaFilesProvider {
     /** description of the ad **/
     var adDescription: String? = ""
 
+    var advertiser: String? = ""
+
     var podInfo : AdPodInfo? = null
 
     var _adMediaInfo : AdMediaInfo?= null
@@ -35,6 +37,7 @@ class AdInline(id: String) : AdData(id), Ad, IMediaFilesProvider {
         const val AD_SYSTEM_XML_TAG = "AdSystem"
         const val AD_TITLE_XML_TAG = "AdTitle"
         const val DESCRIPTION_XML_TAG = "Description"
+        const val ADVERTISER_XML_TAG = "Advertiser"
     }
 
     fun updatePodInfo(podIndex: Int, startTimeMs: Long, adPosition: Int) : Int {
@@ -60,7 +63,7 @@ class AdInline(id: String) : AdData(id), Ad, IMediaFilesProvider {
     }
 
     override fun getAdvertiserName(): String? {
-        return ""
+        return advertiser
     }
 
     override fun getSkipTimeOffset(): Long {

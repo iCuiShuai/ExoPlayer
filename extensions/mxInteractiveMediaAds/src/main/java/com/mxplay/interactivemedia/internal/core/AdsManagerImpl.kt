@@ -10,6 +10,7 @@ import com.mxplay.interactivemedia.api.player.AdMediaInfo
 import com.mxplay.interactivemedia.api.player.ContentProgressProvider
 import com.mxplay.interactivemedia.api.player.VideoAdPlayer
 import com.mxplay.interactivemedia.api.player.VideoProgressUpdate
+import com.mxplay.interactivemedia.internal.api.AudioListener
 import com.mxplay.interactivemedia.internal.data.model.AdBreak
 import com.mxplay.interactivemedia.internal.tracking.ITrackersHandler
 import java.util.*
@@ -23,7 +24,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
                      trackersHandler: ITrackersHandler?,
                      private val adBreakLoader: AdBreakLoader,
                      private val adCompanionManager: CompanionAdManager,
-                     private val DEBUG: Boolean)   : AdsManager {
+                     private val DEBUG: Boolean)   : AdsManager, AudioListener {
 
     companion object{
         private const val DELAY_MILLIS = 300L
@@ -40,6 +41,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
     private var lastAdProgress: VideoProgressUpdate = VideoProgressUpdate.VIDEO_TIME_NOT_READY
     private var processedAdBreaks: Int = 0
     private var videoAdViewHolder: VideoAdViewHolder? = null
+    private var audioObserver: AudioSettingsContentObserver? = null
 
     private val adsEventListeners: MutableSet<AdEvent.AdEventListener> = Collections
             .synchronizedSet(HashSet())
@@ -75,7 +77,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
             activeAdBreak?.onEnded(adMediaInfo)
         }
         override  fun onError(adMediaInfo: AdMediaInfo?) {
-            activeAdBreak?.onError(adMediaInfo, AdError.AdErrorCode.VIDEO_PLAY_ERROR , "Player Error" )
+            activeAdBreak?.onError(adMediaInfo, AdError.AdErrorCode.VIDEO_PLAY_ERROR, "Player Error")
         }
 
         override  fun onBuffering(adMediaInfo: AdMediaInfo?) {
@@ -92,11 +94,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
         }
 
         override fun onVolumeChanged(volume: Float) {
-            activeAdBreak?.getCurrentActiveAd()?.currentState()?.let { state ->
-                if (state >= AdState.STARTED)
-                    onEvent(AdEventImpl(AdEvent.AdEventType.VOLUME_CHANGE, null, mutableMapOf(Pair("volume", volume.toString()))))
-
-            }
+            onEvent(AdEventImpl(AdEvent.AdEventType.VOLUME_CHANGE, null, mutableMapOf(Pair("volume", volume.toString()))))
         }
     }
 
@@ -232,6 +230,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
         state.clear()
         adBreaks!!.clear()
         adDisplayContainer.getPlayer()?.removeCallback(videoAdPlayerCallback)
+        unregisterAudioListener()
     }
 
 
@@ -329,8 +328,14 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
 
     private fun onEvent(adEvent: AdEvent) {
         when (adEvent.type) {
-            AdEvent.AdEventType.CONTENT_PAUSE_REQUESTED, AdEvent.AdEventType.AD_BREAK_STARTED, AdEvent.AdEventType.RESUMED -> handler.post { stopPullingContentProgress() }
-            AdEvent.AdEventType.CONTENT_RESUME_REQUESTED, AdEvent.AdEventType.AD_BREAK_ENDED -> handler.post { startPullingContentProgress(DELAY_MILLIS) }
+            AdEvent.AdEventType.CONTENT_PAUSE_REQUESTED, AdEvent.AdEventType.AD_BREAK_STARTED, AdEvent.AdEventType.RESUMED -> handler.post {
+                registerAudioListener()
+                stopPullingContentProgress()
+            }
+            AdEvent.AdEventType.CONTENT_RESUME_REQUESTED, AdEvent.AdEventType.AD_BREAK_ENDED -> handler.post {
+                unregisterAudioListener()
+                startPullingContentProgress(DELAY_MILLIS)
+            }
             else -> {}
         }
         synchronized(adsEventListeners) {
@@ -358,5 +363,21 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
     override val adCuePoints: List<Float?>
         get() = cuePoints
 
+    override fun registerAudioListener() {
+        if (audioObserver == null) {
+            audioObserver = AudioSettingsContentObserver(context, this, handler)
+            (audioObserver as? AudioListener)?.registerAudioListener()
+        }
+    }
+
+    override fun unregisterAudioListener() {
+        if (audioObserver != null) {
+            (audioObserver as? AudioListener)?.unregisterAudioListener()
+        }
+    }
+
+    override fun onVolumeChanged(volume: Float) {
+        videoAdPlayerCallback.onVolumeChanged(volume)
+    }
 
 }

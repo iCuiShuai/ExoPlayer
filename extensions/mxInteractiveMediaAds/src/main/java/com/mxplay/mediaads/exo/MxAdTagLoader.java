@@ -79,7 +79,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /** Handles loading and playback of a single ad tag. */
-/* package */ final class MxAdTagLoader implements Player.EventListener, AudioListener {
+/* package */ final class MxAdTagLoader implements Player.EventListener {
 
   private static final String TAG = "AdTagLoader";
 
@@ -369,7 +369,6 @@ import java.util.Objects;
   public void activate(Player player) {
     this.player = player;
     player.addListener(this);
-    Objects.requireNonNull(player.getAudioComponent()).addAudioListener(this);
 
     adsBehaviour.setPlayer(player);
     boolean playWhenReady = player.getPlayWhenReady();
@@ -414,7 +413,6 @@ import java.util.Objects;
     lastAdProgress = getAdVideoProgressUpdate();
     lastContentProgress = getContentVideoProgressUpdate();
 
-    Objects.requireNonNull(player.getAudioComponent()).removeAudioListener(this);
     player.removeListener(this);
     this.player = null;
   }
@@ -559,13 +557,6 @@ import java.util.Objects;
       for (int i = 0; i < adCallbacks.size(); i++) {
         adCallbacks.get(i).onError(adMediaInfo);
       }
-    }
-  }
-
-  @Override
-  public void onVolumeChanged(float volume) {
-    for (int i = 0; i < adCallbacks.size(); i++) {
-      adCallbacks.get(i).onVolumeChanged(volume);
     }
   }
 
