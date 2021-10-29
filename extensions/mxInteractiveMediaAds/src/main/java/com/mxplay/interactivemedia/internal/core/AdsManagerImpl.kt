@@ -1,8 +1,11 @@
 package com.mxplay.interactivemedia.internal.core
 
 import android.content.Context
+import android.database.ContentObserver
+import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings.System.CONTENT_URI
 import android.util.Log
 import com.google.android.exoplayer2.C
 import com.mxplay.interactivemedia.api.*
@@ -12,6 +15,7 @@ import com.mxplay.interactivemedia.api.player.VideoAdPlayer
 import com.mxplay.interactivemedia.api.player.VideoProgressUpdate
 import com.mxplay.interactivemedia.internal.data.model.AdBreak
 import com.mxplay.interactivemedia.internal.tracking.ITrackersHandler
+import java.lang.Exception
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -40,6 +44,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
     private var lastAdProgress: VideoProgressUpdate = VideoProgressUpdate.VIDEO_TIME_NOT_READY
     private var processedAdBreaks: Int = 0
     private var videoAdViewHolder: VideoAdViewHolder? = null
+    private var audioObserver: AudioSettingsContentObserver? = null
 
     private val adsEventListeners: MutableSet<AdEvent.AdEventListener> = Collections
             .synchronizedSet(HashSet())
@@ -75,7 +80,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
             activeAdBreak?.onEnded(adMediaInfo)
         }
         override  fun onError(adMediaInfo: AdMediaInfo?) {
-            activeAdBreak?.onError(adMediaInfo, AdError.AdErrorCode.VIDEO_PLAY_ERROR , "Player Error" )
+            activeAdBreak?.onError(adMediaInfo, AdError.AdErrorCode.VIDEO_PLAY_ERROR, "Player Error")
         }
 
         override  fun onBuffering(adMediaInfo: AdMediaInfo?) {
@@ -92,11 +97,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
         }
 
         override fun onVolumeChanged(volume: Float) {
-            activeAdBreak?.getCurrentActiveAd()?.currentState()?.let { state ->
-                if (state >= AdState.STARTED)
-                    onEvent(AdEventImpl(AdEvent.AdEventType.VOLUME_CHANGE, null, mutableMapOf(Pair("volume", volume.toString()))))
-
-            }
+            onEvent(AdEventImpl(AdEvent.AdEventType.VOLUME_CHANGE, null, mutableMapOf(Pair("volume", volume.toString()))))
         }
     }
 
@@ -232,6 +233,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
         state.clear()
         adBreaks!!.clear()
         adDisplayContainer.getPlayer()?.removeCallback(videoAdPlayerCallback)
+        unregisterAudioListener()
     }
 
 
@@ -329,8 +331,14 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
 
     private fun onEvent(adEvent: AdEvent) {
         when (adEvent.type) {
-            AdEvent.AdEventType.CONTENT_PAUSE_REQUESTED, AdEvent.AdEventType.AD_BREAK_STARTED, AdEvent.AdEventType.RESUMED -> handler.post { stopPullingContentProgress() }
-            AdEvent.AdEventType.CONTENT_RESUME_REQUESTED, AdEvent.AdEventType.AD_BREAK_ENDED -> handler.post { startPullingContentProgress(DELAY_MILLIS) }
+            AdEvent.AdEventType.CONTENT_PAUSE_REQUESTED, AdEvent.AdEventType.AD_BREAK_STARTED, AdEvent.AdEventType.RESUMED -> handler.post {
+                registerAudioListener()
+                stopPullingContentProgress()
+            }
+            AdEvent.AdEventType.CONTENT_RESUME_REQUESTED, AdEvent.AdEventType.AD_BREAK_ENDED -> handler.post {
+                unregisterAudioListener()
+                startPullingContentProgress(DELAY_MILLIS)
+            }
             else -> {}
         }
         synchronized(adsEventListeners) {
@@ -357,6 +365,38 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
 
     override val adCuePoints: List<Float?>
         get() = cuePoints
+
+    class AudioSettingsContentObserver(var context: Context, var videoAdPlayerCallback: VideoAdPlayer.VideoAdPlayerCallback, handler: Handler?) : ContentObserver(handler) {
+        override fun deliverSelfNotifications(): Boolean {
+            return super.deliverSelfNotifications()
+        }
+
+        override fun onChange(selfChange: Boolean) {
+            super.onChange(selfChange)
+            try {
+                val audioService = context.getSystemService(Context.AUDIO_SERVICE)
+                val currentVolume = (audioService as? AudioManager)?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: 0
+                val maxVolume = (audioService as? AudioManager)?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: 1
+                val minVolume = (audioService as? AudioManager)?.getStreamMinVolume(AudioManager.STREAM_MUSIC) ?: 0
+                val currentNormalisedVolume = (currentVolume * 1.0) / (maxVolume - minVolume)
+                videoAdPlayerCallback.onVolumeChanged(currentNormalisedVolume.toFloat())
+            } catch (e: Exception) {
+            }
+        }
+    }
+
+    private fun registerAudioListener() {
+        if (audioObserver == null) {
+            audioObserver = AudioSettingsContentObserver(context, videoAdPlayerCallback, handler)
+            context.applicationContext.contentResolver.registerContentObserver(CONTENT_URI, true, audioObserver!!)
+        }
+    }
+
+    private fun unregisterAudioListener() {
+        if (audioObserver != null) {
+            context.applicationContext.contentResolver.unregisterContentObserver(audioObserver!!)
+        }
+    }
 
 
 }
