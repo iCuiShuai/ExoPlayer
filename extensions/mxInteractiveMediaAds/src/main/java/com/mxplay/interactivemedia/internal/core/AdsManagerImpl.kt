@@ -1,11 +1,8 @@
 package com.mxplay.interactivemedia.internal.core
 
 import android.content.Context
-import android.database.ContentObserver
-import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
-import android.provider.Settings.System.CONTENT_URI
 import android.util.Log
 import com.google.android.exoplayer2.C
 import com.mxplay.interactivemedia.api.*
@@ -13,9 +10,9 @@ import com.mxplay.interactivemedia.api.player.AdMediaInfo
 import com.mxplay.interactivemedia.api.player.ContentProgressProvider
 import com.mxplay.interactivemedia.api.player.VideoAdPlayer
 import com.mxplay.interactivemedia.api.player.VideoProgressUpdate
+import com.mxplay.interactivemedia.internal.api.AudioListener
 import com.mxplay.interactivemedia.internal.data.model.AdBreak
 import com.mxplay.interactivemedia.internal.tracking.ITrackersHandler
-import java.lang.Exception
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -27,7 +24,7 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
                      trackersHandler: ITrackersHandler?,
                      private val adBreakLoader: AdBreakLoader,
                      private val adCompanionManager: CompanionAdManager,
-                     private val DEBUG: Boolean)   : AdsManager {
+                     private val DEBUG: Boolean)   : AdsManager, AudioListener {
 
     companion object{
         private const val DELAY_MILLIS = 300L
@@ -366,37 +363,21 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
     override val adCuePoints: List<Float?>
         get() = cuePoints
 
-    class AudioSettingsContentObserver(var context: Context, var videoAdPlayerCallback: VideoAdPlayer.VideoAdPlayerCallback, handler: Handler?) : ContentObserver(handler) {
-        override fun deliverSelfNotifications(): Boolean {
-            return super.deliverSelfNotifications()
-        }
-
-        override fun onChange(selfChange: Boolean) {
-            super.onChange(selfChange)
-            try {
-                val audioService = context.getSystemService(Context.AUDIO_SERVICE)
-                val currentVolume = (audioService as? AudioManager)?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: 0
-                val maxVolume = (audioService as? AudioManager)?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: 1
-                val minVolume = (audioService as? AudioManager)?.getStreamMinVolume(AudioManager.STREAM_MUSIC) ?: 0
-                val currentNormalisedVolume = (currentVolume * 1.0) / (maxVolume - minVolume)
-                videoAdPlayerCallback.onVolumeChanged(currentNormalisedVolume.toFloat())
-            } catch (e: Exception) {
-            }
-        }
-    }
-
-    private fun registerAudioListener() {
+    override fun registerAudioListener() {
         if (audioObserver == null) {
-            audioObserver = AudioSettingsContentObserver(context, videoAdPlayerCallback, handler)
-            context.applicationContext.contentResolver.registerContentObserver(CONTENT_URI, true, audioObserver!!)
+            audioObserver = AudioSettingsContentObserver(context, this, handler)
+            (audioObserver as? AudioListener)?.registerAudioListener()
         }
     }
 
-    private fun unregisterAudioListener() {
+    override fun unregisterAudioListener() {
         if (audioObserver != null) {
-            context.applicationContext.contentResolver.unregisterContentObserver(audioObserver!!)
+            (audioObserver as? AudioListener)?.unregisterAudioListener()
         }
     }
 
+    override fun onVolumeChanged(volume: Float) {
+        videoAdPlayerCallback.onVolumeChanged(volume)
+    }
 
 }
