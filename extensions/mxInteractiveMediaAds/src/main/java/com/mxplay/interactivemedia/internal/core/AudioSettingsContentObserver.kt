@@ -10,6 +10,13 @@ import com.mxplay.interactivemedia.internal.api.AudioListener
 import java.lang.Exception
 
 class AudioSettingsContentObserver(var context: Context, var audioListener: AudioListener, handler: Handler?) : ContentObserver(handler), AudioListener {
+    var previousVolume: Int
+
+    init {
+        val audioService = context.getSystemService(Context.AUDIO_SERVICE)
+        previousVolume = (audioService as? AudioManager)?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: 0
+    }
+
     override fun deliverSelfNotifications(): Boolean {
         return super.deliverSelfNotifications()
     }
@@ -22,7 +29,10 @@ class AudioSettingsContentObserver(var context: Context, var audioListener: Audi
             val maxVolume = (audioService as? AudioManager)?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: 1
             val minVolume = (audioService as? AudioManager)?.getStreamMinVolume(AudioManager.STREAM_MUSIC) ?: 0
             val currentNormalisedVolume = (currentVolume * 1.0) / (maxVolume - minVolume)
-            onVolumeChanged(currentNormalisedVolume.toFloat())
+            if (currentVolume != previousVolume) {
+                previousVolume = currentVolume
+                onVolumeChanged(currentNormalisedVolume.toFloat())
+            }
         } catch (e: Exception) {
         }
     }
