@@ -18,4 +18,5 @@ interface Ad : ITrackersProvider {
     fun getCompanionAds(): List<CompanionAd>?
     fun getVastMediaWidth(): Int
     fun getVastMediaHeight(): Int
+    fun getTraffickingParameters(): String?
 }

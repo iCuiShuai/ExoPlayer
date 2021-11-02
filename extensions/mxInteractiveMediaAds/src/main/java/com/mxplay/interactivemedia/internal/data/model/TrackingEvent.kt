@@ -102,6 +102,7 @@ enum class EventName(val value : String){
                 AdEvent.AdEventType.LOADED -> LOADED
                 AdEvent.AdEventType.CREATIVE_VIEW -> CREATIVEVIEW
                 AdEvent.AdEventType.VOLUME_CHANGE -> VOLUME_CHANGE
+                AdEvent.AdEventType.CLICKED -> VIDEO_CLICK
                 else -> null
             }
         }
