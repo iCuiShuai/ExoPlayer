@@ -366,8 +366,8 @@ class AdsManagerImpl(private val context: Context, private val adDisplayContaine
     override fun registerAudioListener() {
         if (audioObserver == null) {
             audioObserver = AudioSettingsContentObserver(context, this, handler)
-            (audioObserver as? AudioListener)?.registerAudioListener()
         }
+        (audioObserver as? AudioListener)?.registerAudioListener()
     }
 
     override fun unregisterAudioListener() {

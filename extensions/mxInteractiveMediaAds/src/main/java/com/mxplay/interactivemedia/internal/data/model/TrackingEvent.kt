@@ -21,6 +21,7 @@ enum class EventName(val value : String){
     LOADED("loaded"),
     IMPRESSION("Impression"),
     VIDEO_CLICK("ClickTracking"),
+    COMPANION_CLICK("CompanionClickTracking"),
     MUTE("mute"),
     UNMUTE("unmute"),
     PAUSE("pause"),
@@ -102,6 +103,8 @@ enum class EventName(val value : String){
                 AdEvent.AdEventType.LOADED -> LOADED
                 AdEvent.AdEventType.CREATIVE_VIEW -> CREATIVEVIEW
                 AdEvent.AdEventType.VOLUME_CHANGE -> VOLUME_CHANGE
+                AdEvent.AdEventType.CLICKED -> VIDEO_CLICK
+                AdEvent.AdEventType.COMPANION_CLICKED -> COMPANION_CLICK
                 else -> null
             }
         }

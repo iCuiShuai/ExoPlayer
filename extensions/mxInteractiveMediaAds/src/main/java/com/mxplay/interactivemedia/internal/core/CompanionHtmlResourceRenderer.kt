@@ -4,7 +4,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
-import android.view.View
 import android.view.ViewGroup
 import android.webkit.*
 import com.mxplay.interactivemedia.api.AdEvent
@@ -44,7 +43,6 @@ class CompanionHtmlResourceRenderer(val ioOpsScope: CoroutineScope, private val 
     private fun render(companionInfo: AdCompanionInfo) {
         val companionAd = companionInfo.companionAd as CompanionAdData
         val companionContainer = companionInfo.companionAdSlot.container
-        companionContainer.visibility = View.VISIBLE
         val resource = companionAd.resourceValue
         val width = px2dp(companionAd.width, companionContainer.context)
         val height = px2dp(companionAd.height, companionContainer.context)
@@ -79,7 +77,7 @@ class CompanionHtmlResourceRenderer(val ioOpsScope: CoroutineScope, private val 
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     }
                     companionContainer.context.startActivity(intent)
-                    onEvent(CompanionAdEvent(AdEventImpl(AdEvent.AdEventType.CLICKED, null, null), companionAd))
+                    onEvent(CompanionAdEvent(AdEventImpl(AdEvent.AdEventType.COMPANION_CLICKED, null, null), companionAd))
                     true
                 } else {
                     false

@@ -35,12 +35,26 @@ class LinearCreative(id: String) : Creative(id) {
     /** list of media files **/
     var mediaFiles: List<MediaFile>? = null
 
+    var adParameters: String? = null
+
     fun hasMedia() = mediaFiles != null && mediaFiles!!.isNotEmpty()
 
     companion object {
         const val DURATION_XML_TAG = "Duration"
+        const val AD_PARAMETERS_XML_TAG = "AdParameters"
         const val SKIP_OFFSET_XML_TAG = "skipoffset"
         const val MEDIA_FILES_XML_TAG = "MediaFiles"
         const val VIDEO_CLICKS_XML_TAG = "VideoClicks"
+    }
+
+    override fun provideTrackingEvent(): Map<EventName, MutableList<TrackingEvent>>? {
+        val eventsMapping = super.provideTrackingEvent()?.toMutableMap()
+        videoClicks?.clickTracking?.let {
+            if (it.isNotEmpty()) {
+                val key = it[0].name
+                eventsMapping?.set(key, it.toMutableList())
+            }
+        }
+        return eventsMapping
     }
 }
