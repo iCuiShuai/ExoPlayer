@@ -3,6 +3,7 @@ package com.mxplay.interactivemedia.internal.core
 import android.content.Context
 import android.text.SpannableString
 import android.text.Spanned
+import android.text.TextUtils
 import android.text.style.ForegroundColorSpan
 import android.view.LayoutInflater
 import android.view.View
@@ -38,6 +39,11 @@ class VideoAdViewHolder(private val context : Context ,private val displayContai
             adProgressText = adRootView!!.findViewById<TextView>(R.id.adCounter).also { it.visibility = View.GONE }
             skipButton = adRootView!!.findViewById<Button>(R.id.skipButton).also { it.visibility = View.GONE; it.tag = activeAd }
             learnMoreButton = adRootView!!.findViewById<TextView>(R.id.learnMoreButton).also { it.visibility = View.GONE; it.tag = activeAd }
+        }
+
+        val advertiserName = activeAd.ad.getAdvertiserName()
+        if (!TextUtils.isEmpty(advertiserName) && learnMoreButton != null) {
+            (learnMoreButton as? TextView)?.text = advertiserName
         }
 
         if (adRootView!!.tag != null && adRootView!!.tag == activeAd) return

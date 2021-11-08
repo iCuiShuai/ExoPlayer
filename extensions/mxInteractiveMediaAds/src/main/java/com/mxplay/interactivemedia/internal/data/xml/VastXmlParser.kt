@@ -185,6 +185,7 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
                     AdInline.AD_SYSTEM_XML_TAG -> inLine.adSystem = readText(pullParser)
                     AdInline.AD_TITLE_XML_TAG -> inLine.adTitle = readText(pullParser)
                     AdInline.DESCRIPTION_XML_TAG -> inLine.adDescription = readText(pullParser)
+                    AdInline.ADVERTISER_XML_TAG -> inLine.advertiser = readText(pullParser)
                     AdData.ERROR_XML_TAG -> {
                         inLine.errorUrls = (inLine.errorUrls ?: LinkedList()).apply {
                             this.add(ImpressionEvent(EventName.ERROR, readText(pullParser)

@@ -56,6 +56,7 @@ import com.google.android.exoplayer2.video.VideoRendererEventListener;
  */
 public class LibVVCVideoRenderer extends DecoderVideoRendererDav1d {
 
+  private static final String TAG = "LibVVCVideoRenderer";
   private static final int DEFAULT_NUM_OF_INPUT_BUFFERS = 4;
   private static final int DEFAULT_NUM_OF_OUTPUT_BUFFERS = 4;
   /* Default size based on 720p resolution video compressed by a factor of two. */
@@ -136,20 +137,6 @@ public class LibVVCVideoRenderer extends DecoderVideoRendererDav1d {
     this.numOutputBuffers = numOutputBuffers;
   }
 
-  @Capabilities
-  protected int supportsFormatInternal(
-      @Nullable DrmSessionManager drmSessionManager, Format format) {
-    if (!MimeTypes.VIDEO_VVC1.equalsIgnoreCase(format.sampleMimeType)
-        || !VVCLibrary.isAvailable()) {
-      return RendererCapabilities.create(FORMAT_UNSUPPORTED_TYPE);
-    }
-    //TODO VVC
-//    if (!supportsFormatDrm(drmSessionManager, format.drmInitData)) {
-//      return RendererCapabilities.create(FORMAT_UNSUPPORTED_DRM);
-//    }
-    return RendererCapabilities.create(FORMAT_HANDLED, ADAPTIVE_SEAMLESS, TUNNELING_NOT_SUPPORTED);
-  }
-
   @Override
   protected SimpleDecoderDav1d<
           VideoDecoderInputBuffer,
@@ -200,12 +187,19 @@ public class LibVVCVideoRenderer extends DecoderVideoRendererDav1d {
 
   @Override
   public String getName() {
-    return null;
+    return TAG;
   }
 
   @SuppressLint("WrongConstant")
   @Override
   public int supportsFormat(Format format) throws ExoPlaybackException {
-    return 0;
+    if (!MimeTypes.VIDEO_VVC1.equalsIgnoreCase(format.sampleMimeType)
+            || !VVCLibrary.isAvailable()) {
+      return RendererCapabilities.create(C.FORMAT_UNSUPPORTED_TYPE);
+    }
+    if (format.exoMediaCryptoType != null) {
+      return RendererCapabilities.create(C.FORMAT_UNSUPPORTED_DRM);
+    }
+    return RendererCapabilities.create(C.FORMAT_HANDLED, ADAPTIVE_SEAMLESS, TUNNELING_NOT_SUPPORTED);
   }
 }
