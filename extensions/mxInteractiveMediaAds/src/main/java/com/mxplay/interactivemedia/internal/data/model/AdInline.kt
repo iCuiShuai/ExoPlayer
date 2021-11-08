@@ -122,6 +122,10 @@ class AdInline(id: String) : AdData(id), Ad, IMediaFilesProvider {
         return _vastMediaHeight ?: 0
     }
 
+    override fun getTraffickingParameters(): String? {
+        return linearCreatives?.get(0)?.adParameters
+    }
+
 
 }
 

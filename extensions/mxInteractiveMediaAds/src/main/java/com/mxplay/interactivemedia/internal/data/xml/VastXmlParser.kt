@@ -340,6 +340,7 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
                         linearCreative.duration = readText(xmlParser)
                         linearCreative.durationInSeconds = DateTimeUtils.convertDateFormatToSeconds(linearCreative.duration)
                     }
+                    LinearCreative.AD_PARAMETERS_XML_TAG -> linearCreative.adParameters = readText(xmlParser)
                     TrackingEvent.TRACKING_EVENTS_XML_TAG -> linearCreative.trackingEvents = readTrackingEvents(xmlParser)
                     LinearCreative.MEDIA_FILES_XML_TAG -> linearCreative.mediaFiles = readMediaFiles(xmlParser)
                     LinearCreative.VIDEO_CLICKS_XML_TAG -> linearCreative.videoClicks = readVideoClicks(xmlParser)
@@ -401,6 +402,7 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
         assertStartTag(pullParser, CompanionCreative.TAG_COMPANION_AD)
         var event = pullParser.eventType
         val companionAdData = CompanionAdData()
+        val clickTracking = ArrayList<ClickEvent>()
         companionAdData.id = readAttr(pullParser, CompanionCreative.ID)
         companionAdData._width = readAttrAsInt(pullParser, CompanionCreative.ATTR_WIDTH)!!
         companionAdData._height = readAttrAsInt(pullParser, CompanionCreative.ATTR_HEIGHT)!!
@@ -427,12 +429,19 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
                     CompanionCreative.TAG_COMPANION_CLICK_THROUGH -> {
                         companionAdData.clickUrl = readText(pullParser)!!
                     }
+                    EventName.COMPANION_CLICK.value -> {
+                        clickTracking.add(ClickEvent(EventName.COMPANION_CLICK, readAttr(pullParser, ID_XML_ATTR) ?: "", readText(pullParser)!!))
+                    }
                     else -> {
                         skip(pullParser)
                     }
                 }
             }
             event = pullParser.next()
+        }
+
+        if (clickTracking.isNotEmpty()) {
+            companionAdData.companionClickTracking = clickTracking
         }
 
         assertEndTag(pullParser, CompanionCreative.TAG_COMPANION_AD)
@@ -581,14 +590,15 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
         parser.nextTag()
 
         val videoClicks = VideoClicks()
+        val clickTracking = ArrayList<ClickEvent>()
         var event = pullParser.eventType
 
         /** loop until closing tag is found **/
         while (pullParser.name != LinearCreative.VIDEO_CLICKS_XML_TAG) {
             if (event == XmlPullParser.START_TAG) {
                 when(pullParser.name){
-                    EventName.VIDEO_CLICK.name -> {
-                        videoClicks.clickTracking =  ClickEvent(EventName.VIDEO_CLICK, readAttr(pullParser, ID_XML_ATTR)!!, readText(pullParser)!!)
+                    EventName.VIDEO_CLICK.value -> {
+                        clickTracking.add(ClickEvent(EventName.VIDEO_CLICK, readAttr(pullParser, ID_XML_ATTR) ?: "", readText(pullParser)!!))
                     }
                     VideoClicks.TAG_CLICK_THROUGH -> {
                         videoClicks.clickThrough = readText(pullParser)!!
@@ -596,6 +606,10 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
                 }
             }
             event = pullParser.next()
+        }
+
+        if (clickTracking.isNotEmpty()) {
+            videoClicks.clickTracking = clickTracking
         }
 
         /** check end tag **/
