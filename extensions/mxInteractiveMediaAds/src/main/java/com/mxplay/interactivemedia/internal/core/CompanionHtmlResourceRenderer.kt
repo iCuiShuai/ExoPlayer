@@ -79,7 +79,7 @@ class CompanionHtmlResourceRenderer(val ioOpsScope: CoroutineScope, private val 
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     }
                     companionContainer.context.startActivity(intent)
-                    onEvent(CompanionAdEvent(AdEventImpl(AdEvent.AdEventType.CLICKED, null, null), companionAd))
+                    onEvent(CompanionAdEvent(AdEventImpl(AdEvent.AdEventType.COMPANION_CLICKED, null, null), companionAd))
                     true
                 } else {
                     false

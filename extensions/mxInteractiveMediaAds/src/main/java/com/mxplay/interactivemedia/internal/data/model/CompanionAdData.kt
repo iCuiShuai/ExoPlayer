@@ -12,6 +12,7 @@ class CompanionAdData : CompanionAd , ITrackersProvider {
     var staticResource : StaticResource? = null
     var htmlResource: HTMLResource? = null
     var resourceType: String = TAG_NO_RESOURCE
+    var companionClickTracking: List<ClickEvent>? = null
     var trackingEvents: MutableMap<EventName, TrackingEvent>? = null
 
 
@@ -58,6 +59,12 @@ class CompanionAdData : CompanionAd , ITrackersProvider {
         val eventsMapping =  EnumMap<EventName, MutableList<TrackingEvent>>(EventName::class.java)
         trackingEvents?.forEach{
             eventsMapping[it.key] = mutableListOf(it.value)
+        }
+        companionClickTracking?.let {
+            if (it.isNotEmpty()) {
+                val key = it[0].name
+                eventsMapping[key] = it.toMutableList()
+            }
         }
         return eventsMapping
     }

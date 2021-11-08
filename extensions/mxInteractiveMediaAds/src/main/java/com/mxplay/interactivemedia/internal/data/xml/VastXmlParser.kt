@@ -402,6 +402,7 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
         assertStartTag(pullParser, CompanionCreative.TAG_COMPANION_AD)
         var event = pullParser.eventType
         val companionAdData = CompanionAdData()
+        val clickTracking = ArrayList<ClickEvent>()
         companionAdData.id = readAttr(pullParser, CompanionCreative.ID)
         companionAdData._width = readAttrAsInt(pullParser, CompanionCreative.ATTR_WIDTH)!!
         companionAdData._height = readAttrAsInt(pullParser, CompanionCreative.ATTR_HEIGHT)!!
@@ -428,12 +429,19 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
                     CompanionCreative.TAG_COMPANION_CLICK_THROUGH -> {
                         companionAdData.clickUrl = readText(pullParser)!!
                     }
+                    EventName.COMPANION_CLICK.value -> {
+                        clickTracking.add(ClickEvent(EventName.COMPANION_CLICK, readAttr(pullParser, ID_XML_ATTR) ?: "", readText(pullParser)!!))
+                    }
                     else -> {
                         skip(pullParser)
                     }
                 }
             }
             event = pullParser.next()
+        }
+
+        if (clickTracking.isNotEmpty()) {
+            companionAdData.companionClickTracking = clickTracking
         }
 
         assertEndTag(pullParser, CompanionCreative.TAG_COMPANION_AD)
