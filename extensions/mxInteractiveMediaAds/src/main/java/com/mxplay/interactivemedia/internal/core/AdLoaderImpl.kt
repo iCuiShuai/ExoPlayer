@@ -116,7 +116,7 @@ class AdLoaderImpl(context: Context, private val configuration : Configuration, 
                         return toAdLoaderResponse(adsRequest)
                     } else {
                         AdLoaderResponse(AdErrorEvent(AdError(AdError.AdErrorType.LOAD,
-                                AdError.AdErrorCode.FAILED_TO_REQUEST_ADS, " Empty response from server"),
+                                AdError.AdErrorCode.VAST_EMPTY_RESPONSE, " Empty response from server"),
                                 adsRequest.userRequestContext))
                     }
 

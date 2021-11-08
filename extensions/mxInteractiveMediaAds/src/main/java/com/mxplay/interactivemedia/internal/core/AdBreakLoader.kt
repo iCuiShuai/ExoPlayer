@@ -2,24 +2,22 @@ package com.mxplay.interactivemedia.internal.core
 
 import android.text.TextUtils
 import android.util.Log
-import com.mxplay.interactivemedia.internal.data.RemoteDataSource
 import com.mxplay.interactivemedia.api.AdError
 import com.mxplay.interactivemedia.api.Configuration
 import com.mxplay.interactivemedia.api.OmSdkSettings
-import com.mxplay.interactivemedia.internal.data.xml.XmlParserHelper
+import com.mxplay.interactivemedia.internal.data.RemoteDataSource
 import com.mxplay.interactivemedia.internal.data.model.AdBreak
 import com.mxplay.interactivemedia.internal.data.model.AdTagUriHost
 import com.mxplay.interactivemedia.internal.data.model.VASTModel
 import com.mxplay.interactivemedia.internal.data.xml.ProtocolException
 import com.mxplay.interactivemedia.internal.data.xml.VastXmlParser
+import com.mxplay.interactivemedia.internal.data.xml.XmlParserHelper
 import kotlinx.coroutines.*
 import okhttp3.ResponseBody
 import org.xmlpull.v1.XmlPullParser
 import java.io.IOException
 import java.io.StringReader
 import java.util.*
-import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
-import kotlin.jvm.Throws
 
 
 class AdBreakLoader(
@@ -119,7 +117,7 @@ class AdBreakLoader(
                                 hostStack.push(currentUriHost.getPendingAdTagUriHost())
                                 depthStack.push(currentDepth + 1)
                             } else {
-                                onError(adBreak, currentUriHost, hostStack, depthStack, MaxRedirectLimitReachException("MAX redirect limit reached ${sdkSettings.maxRedirects}"))
+                                onError(adBreak, currentUriHost, hostStack, depthStack, MaxRedirectLimitReachException("The maximum number of VAST wrapper redirects has been reached limit ${sdkSettings.maxRedirects}"))
                             }
                         }
                     }

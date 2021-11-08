@@ -45,7 +45,7 @@ class Configuration(builder : Builder) {
     val adsBehaviour: IAdsBehaviour
 
     val ioDispatcher: CoroutineDispatcher
-    val mainDispatcher: MainCoroutineDispatcher = Dispatchers.Main
+    val mainDispatcher: CoroutineDispatcher = Dispatchers.Main
     val userAgent by lazy { getUserAgentFromProperty() }
     val urlStitchingService = UrlStitchingService(this)
 

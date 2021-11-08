@@ -699,8 +699,7 @@ import java.util.Objects;
     boolean hasContentDuration = contentDurationMs != C.TIME_UNSET;
     long contentDurationMs = hasContentDuration ? this.contentDurationMs : IMA_DURATION_UNSET;
     long contentPositionMs;
-//    resetFlagsIfRequired();
-    if (pendingContentPositionMs != C.TIME_UNSET) {
+    if (pendingContentPositionMs != C.TIME_UNSET && !sentPendingContentPositionMs) {
       sentPendingContentPositionMs = true;
       contentPositionMs = pendingContentPositionMs;
     } else if (player == null) {
@@ -728,9 +727,9 @@ import java.util.Objects;
       return lastAdProgress;
     } else if (imaAdState != IMA_AD_STATE_NONE && playingAd) {
       long adDuration = player.getDuration();
-      return adDuration == C.TIME_UNSET
-          ? VideoProgressUpdate.VIDEO_TIME_NOT_READY
-          : new VideoProgressUpdate(player.getCurrentPosition(), adDuration);
+      return adDuration == C.TIME_UNSET || player.getCurrentPosition() > adDuration
+              ? VideoProgressUpdate.VIDEO_TIME_NOT_READY
+              : new VideoProgressUpdate(player.getCurrentPosition(), adDuration);
     } else {
       return VideoProgressUpdate.VIDEO_TIME_NOT_READY;
     }
