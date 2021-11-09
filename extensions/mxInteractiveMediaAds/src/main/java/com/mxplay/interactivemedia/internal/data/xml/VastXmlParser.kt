@@ -201,6 +201,9 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
                     AdData.ADVERIFICATIONS ->{
                         inLine.adverifications = readAdVerifications(pullParser)
                     }
+                    AdData.EXTENSIONS ->{
+                        inLine.extensions = readExtensions(pullParser)
+                    }
                     AdData.CREATIVES_XML_TAG -> inLine.creatives = readCreatives(pullParser)
                     else -> skip(pullParser)
                 }
@@ -241,7 +244,9 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
                     AdData.ADVERIFICATIONS ->{
                         adWrapper.adverifications = readAdVerifications(pullParser)
                     }
-
+                    AdData.EXTENSIONS ->{
+                        adWrapper.extensions = readExtensions(pullParser)
+                    }
                     AdData.CREATIVES_XML_TAG -> adWrapper.creatives = readCreatives(pullParser)
                     else -> skip(pullParser)
                 }
@@ -441,6 +446,49 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
         assertEndTag(pullParser, CompanionCreative.TAG_COMPANION_AD)
         return companionAdData
     }
+    @Throws(IOException::class, XmlPullParserException::class)
+    private fun readExtensions(parser: XmlPullParser) : Map<String, Extension>{
+        assertStartTag(parser, AdData.EXTENSIONS)
+        parser.nextTag()
+        var event = parser.eventType
+        val extensions = mutableMapOf<String, Extension>()
+        while (parser.name !=  AdData.EXTENSIONS){
+            if (event == XmlPullParser.START_TAG){
+                when(parser.name){
+                    Extension.TAG_EXTENSION -> {
+                        try {
+                            readExtension(parser).let { extensions.put(it.type, it) }
+                        } catch (e: Exception) {
+                            Log.e(TAG, " error parsing Extensions tag ", e)
+                        }
+                    } else -> skip(parser)
+                }
+            }
+            event = parser.next()
+        }
+        assertEndTag(parser, AdData.EXTENSIONS)
+
+        return extensions
+    }
+
+    @Throws(IOException::class, XmlPullParserException::class)
+    private fun readExtension(parser: XmlPullParser) : Extension {
+        assertStartTag(parser, Extension.TAG_EXTENSION)
+        val attrs = mutableMapOf<String, String>()
+        val type = readAttr(parser, Extension.ATTR_TYPE)!!
+        parser.nextTag()
+        var event = parser.eventType
+
+        while (parser.name !=  Extension.TAG_EXTENSION){
+            if (event == XmlPullParser.START_TAG){
+                attrs[parser.name] = readText(parser)!!
+            }
+            event = parser.next()
+        }
+        assertEndTag(parser, Extension.TAG_EXTENSION)
+        return Extension(type, attrs)
+    }
+
 
     @Throws(IOException::class, XmlPullParserException::class)
     private fun readAdVerifications(parser: XmlPullParser) : List<AdVerification> {

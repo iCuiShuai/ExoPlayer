@@ -27,7 +27,7 @@ class ActiveAdBreak(
     private val DEBUG: Boolean
 ) : ContentProgressListener, AdBreakLoader.AdBreakLoadingCallback {
 
-        var viewHolder: VideoAdViewHolder? = null
+        var viewHolder: IVideoAdViewHolder? = null
         private var activeAd: ActiveAd? = null
         private var nextAd: ActiveAd? = null
         private var isActive = true

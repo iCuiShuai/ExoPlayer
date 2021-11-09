@@ -20,6 +20,8 @@ open class AdData(val id : String)  : ITrackersProvider{
     /** list of creatives in the ad **/
     var creatives: List<Creative>? = null
 
+    var extensions: Map<String, Extension>? = null
+
     val linearCreatives : List<LinearCreative>? by lazy {
         (creatives?.filterIsInstance<LinearCreative>()) as List<LinearCreative>
     }
@@ -51,6 +53,7 @@ open class AdData(val id : String)  : ITrackersProvider{
         const val ERROR_XML_TAG = "Error"
         const val IMPRESSION_XML_TAG = "Impression"
         const val ADVERIFICATIONS = "AdVerifications"
+        const val EXTENSIONS = "Extensions"
         const val ID_XML_ATTR = "id"
         const val SEQUENCE_XML_ATTR = "sequence"
 
