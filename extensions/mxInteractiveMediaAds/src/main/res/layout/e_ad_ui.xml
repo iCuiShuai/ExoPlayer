@@ -8,29 +8,7 @@
     android:background="@drawable/gradient_down_shadow_background"
     android:visibility="visible">
 
-  <TextView
-      android:id="@id/learnMoreButton"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_marginStart="5dp"
-      android:layout_marginEnd="30dp"
-      android:layout_marginLeft="5dp"
-      android:layout_marginRight="30dp"
-      android:layout_alignParentRight="true"
-      android:layout_alignParentTop="true"
-      android:paddingTop="8dp"
-      android:paddingBottom="8dp"
-      android:drawablePadding="4dp"
-      android:drawableStart="@drawable/ic_web_link"
-      android:drawableLeft="@drawable/ic_web_link"
-      android:ellipsize="end"
-      android:lines="1"
-      android:textAllCaps="false"
-      android:textColor="@android:color/white"
-      android:visibility="gone"
-      android:text="@string/cta_learn_more"
 
-      />
 
   <TextView
       android:id="@id/adCounter"
@@ -40,12 +18,33 @@
       android:layout_alignParentBottom="true"
       android:layout_marginStart="16dp"
       android:layout_marginLeft="16dp"
-      android:paddingBottom="8dp"
+      android:paddingBottom="2dp"
       android:fontFamily="sans-serif"
       android:textColor="@android:color/white"
       android:textSize="12sp"
       tools:text="Ad &#8226; 0.12 "
-      />
+      android:layout_alignParentStart="true" />
+
+  <TextView
+      android:id="@id/learnMoreButton"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginEnd="30dp"
+      android:layout_marginLeft="8dp"
+      android:layout_marginRight="30dp"
+      android:layout_toRightOf="@+id/adCounter"
+      android:layout_alignBaseline="@+id/adCounter"
+      android:drawablePadding="4dp"
+      android:drawableStart="@drawable/ic_web_link"
+      android:drawableLeft="@drawable/ic_web_link"
+      android:ellipsize="end"
+      android:lines="1"
+      android:textAllCaps="false"
+      android:textColor="@android:color/white"
+      android:visibility="gone"
+      android:text="@string/cta_learn_more"
+      android:layout_toEndOf="@+id/adCounter"
+      android:layout_marginStart="8dp" />
 
   <Button
       android:id="@id/skipButton"

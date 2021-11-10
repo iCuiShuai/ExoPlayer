@@ -10,6 +10,7 @@ import com.mxplay.interactivemedia.internal.data.model.ICompanionInfoProvider
 import com.mxplay.interactivemedia.internal.data.model.IMediaFilesProvider
 import com.mxplay.interactivemedia.internal.data.xml.ProtocolException
 import kotlinx.coroutines.TimeoutCancellationException
+import java.io.IOException
 
 
 class ActiveAdBreak(
@@ -26,7 +27,7 @@ class ActiveAdBreak(
     private val DEBUG: Boolean
 ) : ContentProgressListener, AdBreakLoader.AdBreakLoadingCallback {
 
-        var viewHolder: VideoAdViewHolder? = null
+        var viewHolder: IVideoAdViewHolder? = null
         private var activeAd: ActiveAd? = null
         private var nextAd: ActiveAd? = null
         private var isActive = true
@@ -231,9 +232,10 @@ class ActiveAdBreak(
                 if (activeAd == null){
                     var code  =  AdError.AdErrorCode.FAILED_TO_REQUEST_ADS
                     when(e){
-                        is AdBreakLoader.MaxRedirectLimitReachException -> code = AdError.AdErrorCode.FAILED_TO_REQUEST_ADS
+                        is AdBreakLoader.MaxRedirectLimitReachException -> code = AdError.AdErrorCode.VAST_TOO_MANY_REDIRECTS
                         is TimeoutCancellationException -> code  =  AdError.AdErrorCode.VAST_LOAD_TIMEOUT
                         is ProtocolException -> code = e.error.errorCode
+                        is IOException -> code = AdError.AdErrorCode.FAILED_TO_REQUEST_ADS
                     }
                     adEventListener.onAdEvent(AdEventImpl(AdEvent.AdEventType.LOG, null, AdError(AdError.AdErrorType.LOAD, code, e.message).convertToData()))
                     adEventListener.onAdEvent(AdEventImpl(AdEvent.AdEventType.AD_BREAK_FETCH_ERROR, null, mutableMapOf(Pair("adBreakTime", adBreak.startTimeSec.toString()))))

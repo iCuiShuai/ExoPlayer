@@ -118,19 +118,10 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
                             }
                             AdData.INLINE_XML_TAG -> {
                                 /** inline tag found **/
-                                try {
-                                    currentAd  = readInLine(pullParser, currentAd!!)
-                                } catch (e: Exception) {
-                                    Log.e(TAG, " error parsing inline tag ", e)
-                                }
+                                currentAd  = readInLine(pullParser, currentAd!!)
                             }
                             AdData.WRAPPER_XML_TAG -> {
-                                /** inline tag found **/
-                                try {
-                                    currentAd  = readWrapper(pullParser, currentAd!!)
-                                } catch (e: Exception) {
-                                    Log.e(TAG, " error parsing inline tag ", e)
-                                }
+                                currentAd  = readWrapper(pullParser, currentAd!!)
                             }
 
                             else -> skip(pullParser)
@@ -156,7 +147,10 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
 
             vastData.ads = ads
             return vastData
-        } catch (e: Exception) {
+        } catch (e : ProtocolException){
+            throw e
+        }
+        catch (e: Exception) {
             throw ProtocolException(AdError(AdError.AdErrorType.LOAD, AdError.AdErrorCode.VAST_MALFORMED_RESPONSE, e.message ?: "Vast parsing failure"), e)
         }
     }
@@ -172,7 +166,7 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
     }
 
     /**
-     * Read and build [InLine] model
+     * Read and build [AdInline] model
      */
     @Throws(IOException::class, XmlPullParserException::class)
     private fun readInLine(pullParser: XmlPullParser, parent: AdData): AdInline {
@@ -206,6 +200,9 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
                     }
                     AdData.ADVERIFICATIONS ->{
                         inLine.adverifications = readAdVerifications(pullParser)
+                    }
+                    AdData.EXTENSIONS ->{
+                        inLine.extensions = readExtensions(pullParser)
                     }
                     AdData.CREATIVES_XML_TAG -> inLine.creatives = readCreatives(pullParser)
                     else -> skip(pullParser)
@@ -247,7 +244,9 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
                     AdData.ADVERIFICATIONS ->{
                         adWrapper.adverifications = readAdVerifications(pullParser)
                     }
-
+                    AdData.EXTENSIONS ->{
+                        adWrapper.extensions = readExtensions(pullParser)
+                    }
                     AdData.CREATIVES_XML_TAG -> adWrapper.creatives = readCreatives(pullParser)
                     else -> skip(pullParser)
                 }
@@ -291,7 +290,7 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
 
 
 
-    @Throws(IOException::class, XmlPullParserException::class)
+    @Throws(IOException::class, XmlPullParserException::class, ProtocolException::class)
     private fun readCreative(xmlParser: XmlPullParser): Creative? {
         assertStartTag(xmlParser, Creative.CREATIVE_XML_TAG)
         val id = readAttr(xmlParser, Creative.ID_XML_ATTR) ?: ""
@@ -304,7 +303,7 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
                     Creative.LINEAR_XML_TAG -> {
                         val linearCreative = LinearCreative(id).apply { this.sequence = sequence }
                         readLinearCreative(xmlParser, linearCreative)
-                        return linearCreative;
+                        return linearCreative
                     }
                     Creative.TAG_COMPANIONS_ADS -> {
                         return readCompanionCreative(xmlParser, id, sequence)
@@ -321,7 +320,7 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
         return null
     }
 
-    @Throws(IOException::class, XmlPullParserException::class)
+    @Throws(IOException::class, XmlPullParserException::class, ProtocolException::class)
     private fun readLinearCreative(xmlParser: XmlPullParser, linearCreative: LinearCreative) {
         /** check start tag **/
         assertStartTag(xmlParser, Creative.LINEAR_XML_TAG)
@@ -366,7 +365,7 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
 
     }
 
-    @Throws(IOException::class, XmlPullParserException::class)
+    @Throws(IOException::class, XmlPullParserException::class, ProtocolException::class)
     fun readCompanionCreative(xmlParser: XmlPullParser,  id : String, sequence : String): CompanionCreative {
         assertStartTag(xmlParser, Creative.TAG_COMPANIONS_ADS)
         val companionCreative =  CompanionCreative(id).apply { this.sequence = sequence  }
@@ -380,7 +379,7 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
                         try {
                             companionAds.add(readCompanionAd(xmlParser))
                         } catch (e: Exception) {
-                            Log.e(TAG, "error parsing companion ad", e)
+                           throw ProtocolException(AdError(AdError.AdErrorType.LOAD, AdError.AdErrorCode.COMPANION_GENERAL_ERROR, e.message ?: "Companion parsing failure"), e)
                         }
                     }
                     else -> {
@@ -394,7 +393,7 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
 
         assertEndTag(xmlParser, Creative.TAG_COMPANIONS_ADS)
         companionCreative.companionAds = companionAds
-        return companionCreative;
+        return companionCreative
     }
 
     @Throws(IOException::class, XmlPullParserException::class)
@@ -447,6 +446,49 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
         assertEndTag(pullParser, CompanionCreative.TAG_COMPANION_AD)
         return companionAdData
     }
+    @Throws(IOException::class, XmlPullParserException::class)
+    private fun readExtensions(parser: XmlPullParser) : Map<String, Extension>{
+        assertStartTag(parser, AdData.EXTENSIONS)
+        parser.nextTag()
+        var event = parser.eventType
+        val extensions = mutableMapOf<String, Extension>()
+        while (parser.name !=  AdData.EXTENSIONS){
+            if (event == XmlPullParser.START_TAG){
+                when(parser.name){
+                    Extension.TAG_EXTENSION -> {
+                        try {
+                            readExtension(parser).let { extensions.put(it.type, it) }
+                        } catch (e: Exception) {
+                            Log.e(TAG, " error parsing Extensions tag ", e)
+                        }
+                    } else -> skip(parser)
+                }
+            }
+            event = parser.next()
+        }
+        assertEndTag(parser, AdData.EXTENSIONS)
+
+        return extensions
+    }
+
+    @Throws(IOException::class, XmlPullParserException::class)
+    private fun readExtension(parser: XmlPullParser) : Extension {
+        assertStartTag(parser, Extension.TAG_EXTENSION)
+        val attrs = mutableMapOf<String, String>()
+        val type = readAttr(parser, Extension.ATTR_TYPE)!!
+        parser.nextTag()
+        var event = parser.eventType
+
+        while (parser.name !=  Extension.TAG_EXTENSION){
+            if (event == XmlPullParser.START_TAG){
+                attrs[parser.name] = readText(parser)!!
+            }
+            event = parser.next()
+        }
+        assertEndTag(parser, Extension.TAG_EXTENSION)
+        return Extension(type, attrs)
+    }
+
 
     @Throws(IOException::class, XmlPullParserException::class)
     private fun readAdVerifications(parser: XmlPullParser) : List<AdVerification> {
@@ -505,7 +547,7 @@ class VastXmlParser(private val pullParser: XmlPullParser) : Parser<VASTModel> {
     }
 
     /**
-     * Read and build the list of [Tracking] model
+     * Read and build the list of trackers model
      */
     @Throws(IOException::class, XmlPullParserException::class)
     private fun readTrackingEvents(parser: XmlPullParser): MutableMap<EventName, TrackingEvent> {

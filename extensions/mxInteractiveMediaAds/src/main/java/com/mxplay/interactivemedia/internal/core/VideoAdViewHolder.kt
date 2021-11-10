@@ -1,6 +1,7 @@
 package com.mxplay.interactivemedia.internal.core
 
 import android.content.Context
+import android.graphics.Color
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.TextUtils
@@ -16,10 +17,12 @@ import com.mxplay.interactivemedia.api.AdProgressListener
 import com.mxplay.interactivemedia.api.player.AdMediaInfo
 import com.mxplay.interactivemedia.api.player.VideoProgressUpdate
 import com.mxplay.interactivemedia.internal.data.model.AdInline
+import com.mxplay.interactivemedia.internal.data.model.Extension
+import com.mxplay.interactivemedia.internal.data.model.ExtensionTypes
 import com.mxplay.interactivemedia.internal.util.DateTimeUtils.formatTime
 import java.util.*
 
-class VideoAdViewHolder(private val context : Context ,private val displayContainer: AdDisplayContainer) : AdProgressListener {
+class VideoAdViewHolder(private val context : Context ,private val displayContainer: AdDisplayContainer) : IVideoAdViewHolder {
     private var adRootView : View? = null
     private var adProgressText: TextView? = null
     private var skipButton: Button? = null
@@ -32,7 +35,7 @@ class VideoAdViewHolder(private val context : Context ,private val displayContai
         return inflatedView!!
     }
 
-    fun bind(activeAd : ActiveAd){
+    override fun bind(activeAd : ActiveAd){
         this.activeAd = activeAd
         if (adRootView == null) {
             adRootView = createView()
@@ -42,7 +45,11 @@ class VideoAdViewHolder(private val context : Context ,private val displayContai
         }
 
         val advertiserName = activeAd.ad.getAdvertiserName()
-        if (!TextUtils.isEmpty(advertiserName) && learnMoreButton != null) {
+        if (activeAd.ad is AdInline && activeAd.ad.extensions != null && activeAd.ad.extensions!!.containsKey(ExtensionTypes.MX_CTA.value)){
+            val extension = activeAd.ad.extensions!![ExtensionTypes.MX_CTA.value]
+            (learnMoreButton as? TextView)?.text = extension!!.attrs[Extension.KEY_CTATEXT]
+            (learnMoreButton as? TextView)?.setTextColor(Color.parseColor(extension.attrs[Extension.KEY_CTATEXTCOLOR]))
+        }else if (!TextUtils.isEmpty(advertiserName)) {
             (learnMoreButton as? TextView)?.text = advertiserName
         }
 
@@ -100,7 +107,7 @@ class VideoAdViewHolder(private val context : Context ,private val displayContai
         }
     }
 
-    fun unbind(){
+    override fun unbind(){
         if (adRootView == null || adRootView!!.tag == null) return
         adRootView!!.tag = null
         displayContainer.getAdContainer()!!.removeView(adRootView)
@@ -129,11 +136,11 @@ class VideoAdViewHolder(private val context : Context ,private val displayContai
         return spannableString
     }
 
-    fun hide() {
+    override fun hide() {
         adRootView?.visibility = View.GONE
     }
 
-    fun show() {
+    override fun show() {
         adRootView?.visibility = View.VISIBLE
     }
 
