@@ -33,6 +33,7 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import androidx.annotation.CheckResult;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.database.DatabaseProvider;
@@ -256,7 +257,15 @@ public final class DownloadManager {
     listeners = new CopyOnWriteArraySet<>();
 
     @SuppressWarnings("methodref.receiver.bound.invalid")
-    Handler mainHandler = Util.createHandlerForCurrentOrMainLooper(this::handleMainMessage);
+//    Handler mainHandler = Util.createHandlerForCurrentOrMainLooper(this::handleMainMessage);
+    Handler mainHandler = new Handler(Looper.getMainLooper()) {
+      @Override
+      public void handleMessage(@NonNull Message msg) {
+        handleMainMessage(msg);
+        super.handleMessage(msg);
+
+      }
+    };
     this.applicationHandler = mainHandler;
     HandlerThread internalThread = new HandlerThread("ExoPlayer:DownloadManager");
     internalThread.start();
