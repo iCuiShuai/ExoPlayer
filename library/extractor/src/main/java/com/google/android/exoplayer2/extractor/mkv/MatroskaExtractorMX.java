@@ -1435,10 +1435,10 @@ public class MatroskaExtractorMX implements Extractor {
   @RequiresNonNull("#2.output")
   private int writeSampleData(ExtractorInput input, Track track, int size) throws IOException {
     if (CODEC_ID_SUBRIP.equals(track.codecId)) {
-      writeSubtitleSampleData(input, SUBRIP_PREFIX, size);
+      writeSubtitleSampleData(input, SUBRIP_PREFIX, size, track);
       return finishWriteSampleData();
     } else if (CODEC_ID_ASS.equals(track.codecId)) {
-      writeSubtitleSampleData(input, SSA_PREFIX, size);
+      writeSubtitleSampleData(input, SSA_PREFIX, size, track);
       return finishWriteSampleData();
     }
 
@@ -1670,7 +1670,7 @@ public class MatroskaExtractorMX implements Extractor {
     sampleStrippedBytes.reset(/* limit= */ 0);
   }
 
-  private void writeSubtitleSampleData(ExtractorInput input, byte[] samplePrefix, int size)
+/*  private void writeSubtitleSampleData(ExtractorInput input, byte[] samplePrefix, int size)
       throws IOException {
     int sizeWithPrefix = samplePrefix.length + size;
     if (subtitleSample.capacity() < sizeWithPrefix) {
@@ -1685,6 +1685,36 @@ public class MatroskaExtractorMX implements Extractor {
     subtitleSample.setLimit(sizeWithPrefix);
     // Defer writing the data to the track output. We need to modify the sample data by setting
     // the correct end timecode, which we might not have yet.
+  }*/
+
+  private void writeSubtitleSampleData(ExtractorInput input, byte[] samplePrefix, int size, Track track)
+      throws IOException {
+    int sizeWithPrefix = samplePrefix.length + size;
+    if (subtitleSample.capacity() < sizeWithPrefix) {
+      // Initialize subripSample to contain the required prefix and have space to hold a subtitle
+      // twice as long as this one.
+      subtitleSample.reset(Arrays.copyOf(samplePrefix, sizeWithPrefix + size));
+    } else {
+      System.arraycopy(samplePrefix, 0, subtitleSample.getData(), 0, samplePrefix.length);
+    }
+//    input.readFully(subtitleSample.getData(), samplePrefix.length, size);
+    if (track.hasContentEncryption) {
+      byte [] srcBuffer = new byte[size];
+      input.readFully(srcBuffer, 0, size);
+      try {
+        byte [] dstByte = SnifferMX.decrypt(srcBuffer, track.cryptoData.encryptionKey);
+        System.arraycopy(dstByte, 0, subtitleSample.getData(), samplePrefix.length, size);
+      } catch (Exception e) {
+        throw new ParserException("Decrypt failed!");
+      }
+    }else {
+      input.readFully(subtitleSample.getData(), samplePrefix.length, size);
+    }
+    subtitleSample.setPosition(0);
+    subtitleSample.setLimit(sizeWithPrefix);
+    // Defer writing the data to the track output. We need to modify the sample data by setting
+    // the correct end timecode, which we might not have yet.
+
   }
 
   /**
