@@ -23,7 +23,6 @@ import android.content.Context;
 import android.os.Looper;
 import android.view.View;
 import android.view.ViewGroup;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.C;
@@ -38,10 +37,8 @@ import com.google.common.collect.ImmutableList;
 import com.mxplay.interactivemedia.api.AdDisplayContainer;
 import com.mxplay.interactivemedia.api.AdsRenderingSettings;
 import com.mxplay.interactivemedia.api.AdsRequest;
-import com.mxplay.interactivemedia.api.Configuration;
 import com.mxplay.interactivemedia.api.FriendlyObstruction;
 import com.mxplay.interactivemedia.api.FriendlyObstructionPurpose;
-import com.mxplay.interactivemedia.api.OmSdkSettings;
 import com.mxplay.interactivemedia.api.OmaSdkFactory;
 import com.mxplay.interactivemedia.api.player.VideoAdPlayer;
 import java.io.IOException;
@@ -160,15 +157,6 @@ public final class MxMediaAdLoader implements Player.EventListener, AdsLoader {
     }
   }
 
-  /**
-   * Moves UI focus to the skip button (or other interactive elements), if currently shown. See
-   * {@link AdsManager#focus()}.
-   */
-  public void focusSkipButton() {
-    if (currentMxAdTagLoader != null) {
-      currentMxAdTagLoader.focusSkipButton();
-    }
-  }
 
   // AdsLoader implementation.
 
@@ -397,16 +385,19 @@ public final class MxMediaAdLoader implements Player.EventListener, AdsLoader {
 
 
   public static final class DefaultOmaFactory implements OmaUtil.OmaFactory {
-    @Override
-    public OmSdkSettings createImaSdkSettings() {
-      OmSdkSettings settings = OmaSdkFactory.getInstance().createImaSdkSettings();
-      settings.setLanguage(Util.getSystemLanguageCodes()[0]);
-      return settings;
+
+    @Nullable
+    private AdsRenderingSettings.BandwidthMeter bandwidthMeter;
+
+    public DefaultOmaFactory(@Nullable AdsRenderingSettings.BandwidthMeter bandwidthMeter) {
+      this.bandwidthMeter = bandwidthMeter;
     }
 
     @Override
     public AdsRenderingSettings createAdsRenderingSettings() {
-      return OmaSdkFactory.getInstance().createAdsRenderingSettings();
+      AdsRenderingSettings adsRenderingSettings = OmaSdkFactory.getInstance().createAdsRenderingSettings();
+      if (bandwidthMeter != null) adsRenderingSettings.setBandwidthMeter(bandwidthMeter);
+      return adsRenderingSettings;
     }
 
     @Override
@@ -442,10 +433,11 @@ public final class MxMediaAdLoader implements Player.EventListener, AdsLoader {
     @Nullable
     @Override
     public com.mxplay.interactivemedia.api.AdsLoader createAdsLoader(
-        @Nullable Context context, @Nullable OmSdkSettings imaSdkSettings, @Nullable AdDisplayContainer adDisplayContainer,
+        @NonNull Context context, @Nullable AdDisplayContainer adDisplayContainer,
         @NotNull Configuration configuration) {
+
       return OmaSdkFactory.getInstance()
-          .createAdsLoader(context, configuration, new OmaUtil(), imaSdkSettings,  adDisplayContainer);
+          .createAdsLoader(context,configuration.getMxMediaSdkConfig(), adDisplayContainer);
     }
   }
 }

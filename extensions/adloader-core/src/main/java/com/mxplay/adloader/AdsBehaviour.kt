@@ -5,12 +5,27 @@ import android.os.Handler
 import android.util.Log
 import android.util.Pair
 import androidx.annotation.CallSuper
+import com.google.ads.interactivemedia.v3.api.AdErrorEvent
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.Timeline
 import com.google.android.exoplayer2.source.ads.AdPlaybackState
+import com.mxplay.interactivemedia.api.AdEvent
 
-open class AdsBehaviour(private val vastTimeOutInMs: Int, protected open val debug : Boolean = false) : IAdsBehaviour {
+open class AdsBehaviour private constructor(
+    private val vastTimeOutInMs: Int,
+    protected open val debug: Boolean = false,
+    private val composedAdEventListener: ComposedAdEventListener,
+    private val composedAdErrorListener: ComposedAdErrorListener
+) : IAdsBehaviour,
+    com.mxplay.interactivemedia.api.AdEvent.AdEventListener by composedAdEventListener,
+    com.google.ads.interactivemedia.v3.api.AdEvent.AdEventListener by composedAdEventListener,
+    AdErrorEvent.AdErrorListener by composedAdErrorListener,
+    com.mxplay.interactivemedia.api.AdErrorEvent.AdErrorListener by composedAdErrorListener{
+
+
+    constructor(vastTimeOutInMs: Int,  debug : Boolean = false) : this(vastTimeOutInMs, debug, ComposedAdEventListener(), ComposedAdErrorListener())
+
     interface AdPlaybackStateHost {
         val adPlaybackState: AdPlaybackState
         fun updateAdPlaybackState(adPlaybackState: AdPlaybackState, notifyExo: Boolean)
@@ -18,6 +33,13 @@ open class AdsBehaviour(private val vastTimeOutInMs: Int, protected open val deb
         fun onVastCallMaxWaitingTimeOver() {}
     }
 
+    override fun registerAdEventListener(adEventListener: AdEvent.AdEventListener?){
+        composedAdEventListener.eventListener = adEventListener
+    }
+
+    override fun registerAdErrorEventListener(adErrorListener: com.mxplay.interactivemedia.api.AdErrorEvent.AdErrorListener?){
+        composedAdErrorListener.adErrorListener = adErrorListener
+    }
 
     private lateinit var adPlaybackStateHost: AdPlaybackStateHost
     private var contentDurationMs = C.TIME_UNSET

@@ -22,7 +22,11 @@ android {
 
 dependencies {
     implementation 'androidx.annotation:annotation:' + androidxAnnotationVersion
-    implementation project(modulePrefix + 'library-core')
+    api project(modulePrefix + 'library-core')
+    api("com.mxplay.code:mxvideoadlib:1.0.0"){
+        exclude group: 'com.mxplay.code', module: 'omsdk'
+    }
+    api 'com.google.ads.interactivemedia.v3:interactivemedia:3.23.0'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
 

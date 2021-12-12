@@ -18,8 +18,6 @@ package com.mxplay.mediaads.exo;
 
 import static com.google.android.exoplayer2.util.Assertions.checkNotNull;
 import static com.google.android.exoplayer2.util.Assertions.checkState;
-import static com.mxplay.mediaads.exo.OmaUtil.BITRATE_UNSET;
-import static com.mxplay.mediaads.exo.OmaUtil.TIMEOUT_UNSET;
 import static com.mxplay.mediaads.exo.OmaUtil.getAdGroupTimesUsForCuePoints;
 import static com.mxplay.mediaads.exo.OmaUtil.getImaLooper;
 import static java.lang.Math.max;
@@ -37,7 +35,6 @@ import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.Timeline;
-import com.google.android.exoplayer2.audio.AudioListener;
 import com.google.android.exoplayer2.source.ads.AdPlaybackState;
 import com.google.android.exoplayer2.source.ads.AdsLoader.AdViewProvider;
 import com.google.android.exoplayer2.source.ads.AdsLoader.EventListener;
@@ -63,8 +60,6 @@ import com.mxplay.interactivemedia.api.AdsManager;
 import com.mxplay.interactivemedia.api.AdsManagerLoadedEvent;
 import com.mxplay.interactivemedia.api.AdsRenderingSettings;
 import com.mxplay.interactivemedia.api.AdsRequest;
-import com.mxplay.interactivemedia.api.Configuration;
-import com.mxplay.interactivemedia.api.OmSdkSettings;
 import com.mxplay.interactivemedia.api.player.AdMediaInfo;
 import com.mxplay.interactivemedia.api.player.ContentProgressProvider;
 import com.mxplay.interactivemedia.api.player.VideoAdPlayer;
@@ -223,13 +218,6 @@ import java.util.Objects;
       @Nullable ViewGroup adViewGroup) {
     this.configuration = configuration;
     this.omaFactory = omaFactory;
-    @Nullable OmSdkSettings imaSdkSettings = configuration.getImaSdkSettings();
-    if (imaSdkSettings == null) {
-      imaSdkSettings = omaFactory.createImaSdkSettings();
-      if (configuration.getDebugModeEnabled()) {
-        imaSdkSettings.setDebugMode(true);
-      }
-    }
     this.supportedMimeTypes = supportedMimeTypes;
     this.adTagDataSpec = adTagDataSpec;
     this.adsId = adsId;
@@ -259,12 +247,12 @@ import java.util.Objects;
       adDisplayContainer =
           omaFactory.createAudioAdDisplayContainer(context, /* player= */ componentListener);
     }
-    if (configuration.getCompanionAdSlots() != null) {
-      adDisplayContainer.setCompanionSlots(configuration.getCompanionAdSlots());
+    if (configuration.getMxMediaSdkConfig().getCompanionAdSlots() != null) {
+      adDisplayContainer.setCompanionSlots(configuration.getMxMediaSdkConfig().getCompanionAdSlots());
     }
     adsBehaviour = configuration.getAdsBehaviour();
     adsBehaviour.bind(createAdPlaybackStateHost(), handler);
-    adsLoader = requestAds(context, imaSdkSettings, adDisplayContainer);
+    adsLoader = requestAds(context, adDisplayContainer);
   }
 
   private  AdsBehaviour.AdPlaybackStateHost createAdPlaybackStateHost() {
@@ -435,9 +423,8 @@ import java.util.Objects;
     destroyAdsManager();
     adsLoader.removeAdsLoadedListener(componentListener);
     adsLoader.removeAdErrorListener(componentListener);
-    if (configuration.getApplicationAdErrorListener() != null) {
-      adsLoader.removeAdErrorListener(configuration.getApplicationAdErrorListener());
-    }
+    adsLoader.removeAdErrorListener(adsBehaviour);
+
     adsLoader.release();
     imaPausedContent = false;
     imaAdState = IMA_AD_STATE_NONE;
@@ -563,12 +550,10 @@ import java.util.Objects;
   // Internal methods.
 
   private AdsLoader requestAds(
-      Context context, OmSdkSettings imaSdkSettings, AdDisplayContainer adDisplayContainer) {
-    AdsLoader adsLoader = omaFactory.createAdsLoader(context, imaSdkSettings, adDisplayContainer,  configuration);
+      Context context, AdDisplayContainer adDisplayContainer) {
+    AdsLoader adsLoader = omaFactory.createAdsLoader(context, adDisplayContainer,  configuration);
     adsLoader.addAdErrorListener(componentListener);
-    if (configuration.getApplicationAdErrorListener() != null) {
-      adsLoader.addAdErrorListener(configuration.getApplicationAdErrorListener());
-    }
+    adsLoader.addAdErrorListener(adsBehaviour);
     adsLoader.addAdsLoadedListener(componentListener);
     AdsRequest request;
     try {
@@ -582,10 +567,6 @@ import java.util.Objects;
     }
     pendingAdRequestContext = new Object();
     request.setUserRequestContext(pendingAdRequestContext);
-
-    if (configuration.getVastLoadTimeoutMs() != TIMEOUT_UNSET) {
-      request.setVastLoadTimeout(configuration.getVastLoadTimeoutMs());
-    }
     request.setContentProgressProvider(componentListener);
     adsBehaviour.onAllAdsRequested();
     if (request.getAdTagUrl() != null) {
@@ -628,15 +609,9 @@ import java.util.Objects;
     AdsRenderingSettings adsRenderingSettings = omaFactory.createAdsRenderingSettings();
     adsRenderingSettings.setEnablePreloading(true);
     adsRenderingSettings.setMimeTypes(
-        configuration.getAdMediaMimeTypes() != null
-            ? configuration.getAdMediaMimeTypes()
+        configuration.getMxMediaSdkConfig().getAdMediaMimeTypes() != null
+            ? configuration.getMxMediaSdkConfig().getAdMediaMimeTypes()
             : supportedMimeTypes);
-    adsRenderingSettings.setLoadVideoTimeout(configuration.getMediaLoadTimeoutMs());
-    if (configuration.getMediaBitrate() != BITRATE_UNSET) {
-      adsRenderingSettings.setBitrateKbps(configuration.getMediaBitrate() / 1000);
-    }
-    adsRenderingSettings.setFocusSkipButtonWhenAvailable(
-        configuration.getFocusSkipButtonWhenAvailable());
 
     boolean isSetupDone = adsBehaviour.doSetupAdsRendering(contentPositionMs, contentDurationMs);
     if (isSetupDone) {
@@ -836,7 +811,6 @@ import java.util.Objects;
 
   /**
    * Returns whether this instance is expecting the first ad in an the upcoming ad group to load
-   * within the {@link Configuration#adPreloadTimeoutMs preload timeout}.
    */
   private boolean isWaitingForAdToLoad() {
     @Nullable Player player = this.player;
@@ -1326,13 +1300,9 @@ import java.util.Objects;
   private void destroyAdsManager() {
     if (adsManager != null) {
       adsManager.removeAdErrorListener(componentListener);
-      if (configuration.getApplicationAdErrorListener() != null) {
-        adsManager.removeAdErrorListener(configuration.getApplicationAdErrorListener());
-      }
+      adsManager.removeAdErrorListener(adsBehaviour);
       adsManager.removeAdEventListener(componentListener);
-      if (configuration.getApplicationAdEventListener() != null) {
-        adsManager.removeAdEventListener(configuration.getApplicationAdEventListener());
-      }
+      adsManager.removeAdEventListener(adsBehaviour);
       adsManager.destroy();
       adsManager = null;
     }
@@ -1358,13 +1328,9 @@ import java.util.Objects;
       pendingAdRequestContext = null;
       MxAdTagLoader.this.adsManager = adsManager;
       adsManager.addAdErrorListener(this);
-      if (configuration.getApplicationAdErrorListener() != null) {
-        adsManager.addAdErrorListener(configuration.getApplicationAdErrorListener());
-      }
+      adsManager.addAdErrorListener(adsBehaviour);
       adsManager.addAdEventListener(this);
-      if (configuration.getApplicationAdEventListener() != null) {
-        adsManager.addAdEventListener(configuration.getApplicationAdEventListener());
-      }
+      adsManager.addAdEventListener(adsBehaviour);
       try {
         adPlaybackState =
             adsBehaviour.createAdPlaybackState(adsId, getAdGroupTimesUsForCuePoints(adsManager.getAdCuePoints()));

@@ -1,4 +1,4 @@
-package com.mxplay.interactivemedia.internal.util
+package com.mxplay.mediaads.exo
 
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.upstream.DataSource
