@@ -5,7 +5,7 @@ import android.os.Handler
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.Timeline
 
-open class AdsBehaviourExactTime(private val adsBehaviour: AdsBehaviour, private val mxTrackingBehaviour: BehaviourTracker, private val adTagProvider: IAdTagProvider?) : IAdsBehaviour by adsBehaviour {
+open class AdsBehaviourExactTime(private val adsBehaviour: AdsBehaviour, private val mxTrackingBehaviour: IBehaviourTracker, private val adTagProvider: IAdTagProvider?) : IAdsBehaviour by adsBehaviour {
 
 
     override fun provideAdTagUri(actualUri: Uri?, listener: IAdTagProvider.Listener) {

@@ -13,7 +13,7 @@ import com.google.android.exoplayer2.util.Log
 import com.mxplay.adloader.exo.MxAdPlaybackState
 import java.util.*
 
-class AdsBehaviourWatchTime(durationSec: Long, private val adsBehaviour: AdsBehaviour,  private val mxTrackingBehaviour: BehaviourTracker, private val adTagProvider: IAdTagProvider?, val debug : Boolean = false) : IAdsBehaviour by adsBehaviour {
+class AdsBehaviourWatchTime(durationSec: Long, private val adsBehaviour: AdsBehaviour,  private val mxTrackingBehaviour: IBehaviourTracker, private val adTagProvider: IAdTagProvider?, val debug : Boolean = false) : IAdsBehaviour by adsBehaviour {
     private var audioAdPosition: Int = C.POSITION_UNSET
     private var audioAdPodIndex: Int = C.INDEX_UNSET
     private val playbackStatsListener: PlaybackStatsListener = PlaybackStatsListener(true, null)
@@ -70,11 +70,11 @@ class AdsBehaviourWatchTime(durationSec: Long, private val adsBehaviour: AdsBeha
 
     override fun onAdLoad(adGroupIndex: Int, adIndexInGroup: Int, adUri: Uri, adPodIndex: Int) {
         val adPlaybackStateHost = adsBehaviour.obtainAdPlaybackStateHost() ?: return
-        mxTrackingBehaviour.onAdLoad(adIndexInGroup, adUri, adPodIndex) { adGroupIndex }
 
         val contentPositionMs = playbackStatsListener.contentTotalPlayTimeMs
         val adPlaybackState = adPlaybackStateHost.adPlaybackState
         val actualAdGroupIndex = getLoadingAdGroupIndexForReporting(adPlaybackState, C.msToUs(contentPositionMs))
+        mxTrackingBehaviour.onAdLoad(adIndexInGroup, adUri, adPodIndex) { actualAdGroupIndex }
         if (!actualAdGroupIndexByFake.containsValue(actualAdGroupIndex)) {
             actualAdGroupIndexByFake[adGroupIndex] = actualAdGroupIndex
         }

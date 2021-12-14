@@ -5,7 +5,7 @@ import android.os.Handler
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.Timeline
 
-class AdsBehaviourOffline(private val adsBehaviour: AdsBehaviour, private val mxTrackingBehaviour: BehaviourTracker) : IAdsBehaviour by adsBehaviour {
+class AdsBehaviourOffline(private val adsBehaviour: AdsBehaviour, private val mxTrackingBehaviour: IBehaviourTracker) : IAdsBehaviour by adsBehaviour {
     override fun bind(adPlaybackStateHost: AdsBehaviour.AdPlaybackStateHost, handler: Handler) {
         adsBehaviour.bind(adPlaybackStateHost, handler)
         mxTrackingBehaviour.setAdPlaybackStateHost(adPlaybackStateHost)

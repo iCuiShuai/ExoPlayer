@@ -808,7 +808,6 @@ import java.util.concurrent.TimeUnit;
             adGroupTimeSeconds == -1.0
                 ? adPlaybackState.adGroupCount - 1
                 : getAdGroupIndexForCuePointTimeSeconds(adGroupTimeSeconds);
-        adsBehaviour.provideBehaviourTracker().trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adGroupIndex, -1, new Exception("Fetch error for ad "));
         markAdGroupInErrorStateAndClearPendingContentPosition(adGroupIndex);
         break;
       case CONTENT_PAUSE_REQUESTED:
@@ -1061,8 +1060,6 @@ import java.util.concurrent.TimeUnit;
         for (int i = 0; i < adCallbacks.size(); i++) {
           adCallbacks.get(i).onError(adMediaInfo);
         }
-      } else {
-        adsBehaviour.provideBehaviourTracker().trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_SUCCESS, imaAdInfo.adGroupIndex, imaAdInfo.adIndexInAdGroup, null);
       }
       updateAdProgress();
     } else {
@@ -1150,7 +1147,6 @@ import java.util.concurrent.TimeUnit;
       Log.w(TAG, "Unable to determine ad group index for ad group load error", error);
       return;
     }
-    adsBehaviour.provideBehaviourTracker().trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adGroupIndex, -1, error);
     markAdGroupInErrorStateAndClearPendingContentPosition(adGroupIndex);
     if (pendingAdLoadError == null) {
       pendingAdLoadError = AdLoadException.createForAdGroup(error, adGroupIndex);
@@ -1213,7 +1209,6 @@ import java.util.concurrent.TimeUnit;
     }
     adPlaybackState = adPlaybackState.withAdLoadError(adGroupIndex, adIndexInAdGroup);
     updateAdPlaybackState();
-    adsBehaviour.provideBehaviourTracker().trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, adGroupIndex, adIndexInAdGroup, exception);
   }
 
   private void ensureSentContentCompleteIfAtEndOfStream() {
@@ -1387,10 +1382,12 @@ import java.util.concurrent.TimeUnit;
       pendingAdRequestContext = null;
       AdTagLoader.this.adsManager = adsManager;
       adsManager.addAdErrorListener(this);
+      adsManager.addAdErrorListener(adsBehaviour.provideBehaviourTracker());
       if (configuration.applicationAdErrorListener != null) {
         adsManager.addAdErrorListener(configuration.applicationAdErrorListener);
       }
       adsManager.addAdEventListener(this);
+      adsManager.addAdEventListener(adsBehaviour.provideBehaviourTracker());
       if (configuration.applicationAdEventListener != null) {
         adsManager.addAdEventListener(configuration.applicationAdEventListener);
       }
@@ -1445,14 +1442,6 @@ import java.util.concurrent.TimeUnit;
       }
       try {
         handleAdEvent(adEvent);
-        if (adEventType == AdEventType.STARTED || adEventType == AdEventType.COMPLETED){
-          @Nullable String creativeId = adEvent.getAd() != null ? adEvent.getAd().getCreativeId() : null;
-          @Nullable String advertiser = adEvent.getAd() != null ? adEvent.getAd().getAdvertiserName() : null;
-          AdPodInfo adPodInfo = adEvent.getAd() != null ? adEvent.getAd().getAdPodInfo() : null;
-          int adPodIndex = adPodInfo != null ? adPodInfo.getPodIndex() : -1;
-          int adIndexInAdGroup = adPodInfo != null ? adPodInfo.getAdPosition() - 1 : -1;
-          adsBehaviour.provideBehaviourTracker().onAdEvent(adEventType.name(), creativeId, advertiser, adPodIndex, adIndexInAdGroup);
-        }
       } catch (RuntimeException e) {
         maybeNotifyInternalError("onAdEvent", e);
       }
@@ -1471,7 +1460,6 @@ import java.util.concurrent.TimeUnit;
         pendingAdRequestContext = null;
         adPlaybackState = new AdPlaybackState(adsId);
         updateAdPlaybackState();
-        adsBehaviour.provideBehaviourTracker().trackEvent(VideoAdsTracker.EVENT_VIDEO_AD_PLAY_FAILED, -1, -1,  error);
       } else if (ImaUtil.isAdGroupLoadError(error)) {
         try {
           handleAdGroupLoadError(error);

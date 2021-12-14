@@ -18,7 +18,7 @@ open class AdsBehaviour private constructor(
     private val composedAdEventListener: ComposedAdEventListener,
     private val composedAdErrorListener: ComposedAdErrorListener
 ) : IAdsBehaviour,
-    com.mxplay.interactivemedia.api.AdEvent.AdEventListener by composedAdEventListener,
+    AdEvent.AdEventListener by composedAdEventListener,
     com.google.ads.interactivemedia.v3.api.AdEvent.AdEventListener by composedAdEventListener,
     AdErrorEvent.AdErrorListener by composedAdErrorListener,
     com.mxplay.interactivemedia.api.AdErrorEvent.AdErrorListener by composedAdErrorListener{

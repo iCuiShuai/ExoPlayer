@@ -16,14 +16,16 @@ public abstract class VideoAdsTracker {
     public static final String WATCH_TIME_BASE_AD_LOADER = "WATCH_TIME_BASE_AD_LOADER";
     public static final String OFFLINE_AD_LOADER = "OFFLINE-AD-LOADER";
     public static final String PRE_ROLL_AD_LOADER = "PRE_ROLL_AD_LOADER";
+    public static final String CATEGORY_DFP_ADS = "IMAVideoAds";
 
 
-    public static final String EVENT_ALL_ADS_REQUESTED = "allAdsRequested";
-    public static final String EVENT_AD_MANAGER_LOADED = "adsManagerLoaded";
-
-    public static final String EVENT_AD_REQUESTED = "adRequested";
-    public static final String EVENT_AD_LOAD = "onAdLoad";
-    public static final String EVENT_AD_OPPORTUNITY = "adOpportunity";
+    public static final String EVENT_VMAP_REQUESTED = "vmapRequested";
+    public static final String EVENT_VMAP_SUCCESS = "vmapSuccess";
+    public static final String EVENT_VMAP_FAIL = "vmapFail";
+    public static final String EVENT_VAST_REQUESTED = "vastRequested";
+    public static final String EVENT_VAST_SUCCESS = "vastSuccess";
+    public static final String EVENT_VAST_FAIL = "vastFail";
+    public static final String EVENT_ERROR = "error";
 
 
     public static final String EVENT_VIDEO_AD_PLAY_SUCCESS = "VideoAdPlaySuccess";
@@ -34,22 +36,29 @@ public abstract class VideoAdsTracker {
     public static final String AD_URI = "uri";
     public static final String SESSION_ID = "s_id";
     public static final String REASON = "reason";
+    public static final String ERROR_CODE = "code";
     public static final String UNKNOWN = "unknown";
     public static final String REQUEST_TIME = "requestTime";
-    public static final String AD_GROUP_COUNT = "adGroupCount";
-    public static final String AD_GROUP_INDEX = "adGroupIndex";
-    public static final String AD_INDEX_IN_GROUP = "adIndexInGroup";
+    public static final String AD_PODS_COUNT = "adPodsCount";
+    public static final String AD_POD_INDEX = "adPodIndex";
+    public static final String AD_INDEX_IN_POD = "adIndexInPod";
     public static final String LOAD_MEDIA_TIME = "loadMediaTime";
     public static final String TOTAL_COST_TIME = "totalCostTime";
     public static final String AD_INDEX_IN_AD_GROUP = "adIndexInAdGroup";
     public static final String START_TIME = "startTime";
     public static final String TIME_STAMP = "timeStamp";
+    public static final String CATEGORY = "categoryName";
 
     public final static String AD_UNIT_ID = "adUnitId";
     public final static String AD_UNIT_NAME = "adUnitName";
 
     public static VideoAdsTracker getNoOpTracker(){
         return new VideoAdsTracker("") {
+            @Override
+            public boolean isVmapRequest() {
+                return false;
+            }
+
             @Override
             public void trackEvent(@NonNull String eventName, @NonNull Map<String, String> params) {
                 
@@ -68,10 +77,9 @@ public abstract class VideoAdsTracker {
         result.put(REQUEST_TIME, String.valueOf(adLoadedTime - startRequestTime));
         result.put(LOAD_MEDIA_TIME, String.valueOf(System.currentTimeMillis() - startLoadMediaTime));
         result.put(TOTAL_COST_TIME, String.valueOf(System.currentTimeMillis() - startRequestTime));
-        result.put(AD_GROUP_INDEX, String.valueOf(adGroupIndex));
-        result.put(AD_INDEX_IN_GROUP, String.valueOf(adIndexInAdGroup));
-        result.put(AD_GROUP_COUNT, String.valueOf(adGroupCount));
-        result.put(START_TIME,String.valueOf(startTime));
+        result.put(AD_POD_INDEX, String.valueOf(adGroupIndex));
+        result.put(AD_INDEX_IN_POD, String.valueOf(adIndexInAdGroup));
+        result.put(AD_PODS_COUNT, String.valueOf(adGroupCount));
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
         result.put(SESSION_ID, sessionId);
         if (adUri != null) {
@@ -92,13 +100,13 @@ public abstract class VideoAdsTracker {
         Map<String, String> result = new HashMap<>();
         result.put(AD_LOADER_NAME, adLoaderName);
         if (adGroupIndex >= 0) {
-            result.put(AD_GROUP_INDEX, String.valueOf(adGroupIndex));
+            result.put(AD_POD_INDEX, String.valueOf(adGroupIndex));
         }
         if (adIndexInAdGroup >= 0) {
             result.put(AD_INDEX_IN_AD_GROUP, String.valueOf(adIndexInAdGroup));
         }
         if (adGroupCount > 0) {
-            result.put(AD_GROUP_COUNT, String.valueOf(adGroupCount));
+            result.put(AD_PODS_COUNT, String.valueOf(adGroupCount));
         }
         if (adUri != null) {
             result.put(AD_URI, adUri.toString());
@@ -111,22 +119,36 @@ public abstract class VideoAdsTracker {
         return result;
     }
 
-    public Map<String, String> buildEventParams(@Nullable String creativeId, @Nullable String advertiser, int adGroupIndex, int adIndexInAdGroup, Uri adUri) {
+    public Map<String, String> buildEventParams(@Nullable String creativeId, @Nullable String advertiser, int adPodIndex, int adIndexInPod, Uri adUri) {
         Map<String, String> result = new HashMap<>();
         result.put(AD_LOADER_NAME, adLoaderName);
         if (creativeId != null)
             result.put(CREATIVE_ID, creativeId);
         if (advertiser != null)
             result.put(ADVERTISER, advertiser);
-        result.put(REQUEST_TIME, String.valueOf(System.currentTimeMillis()));
         result.put(SESSION_ID, sessionId);
-        result.put(START_TIME,String.valueOf(startTime));
+        result.put(CATEGORY, CATEGORY_DFP_ADS);
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
-        result.put(AD_GROUP_INDEX, String.valueOf(adGroupIndex));
-        result.put(AD_INDEX_IN_GROUP, String.valueOf(adIndexInAdGroup));
+        result.put(AD_POD_INDEX, String.valueOf(adPodIndex));
+        result.put(AD_INDEX_IN_POD, String.valueOf(adIndexInPod));
         if (adUri != null) {
             result.put(AD_URI, adUri.toString());
         }
+        return result;
+    }
+
+    public Map<String, String> buildErrorParams(int errorCode, @Nullable Exception exception, int adPodIndex, int adIndexInPod) {
+        Map<String, String> result = new HashMap<>();
+        result.put(AD_LOADER_NAME, adLoaderName);
+        result.put(SESSION_ID, sessionId);
+        result.put(CATEGORY, CATEGORY_DFP_ADS);
+        result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
+        if (adPodIndex >= 0)
+            result.put(AD_POD_INDEX, String.valueOf(adPodIndex));
+        if (adIndexInPod >= 0)
+            result.put(AD_INDEX_IN_POD, String.valueOf(adIndexInPod));
+        result.put(ERROR_CODE, String.valueOf(errorCode));
+        result.put(REASON, exception == null ? UNKNOWN : exception.getMessage());
         return result;
     }
 
@@ -151,36 +173,35 @@ public abstract class VideoAdsTracker {
         sessionId = UUID.randomUUID().toString();
         Map<String, String> result = new HashMap<>();
         result.put(AD_LOADER_NAME, adLoaderName);
-        result.put(REQUEST_TIME, String.valueOf(System.currentTimeMillis()));
         result.put(SESSION_ID, sessionId);
-        result.put(START_TIME,String.valueOf(startTime));
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
+        result.put(CATEGORY, CATEGORY_DFP_ADS);
         if(extraParams != null && !extraParams.isEmpty()){
             result.putAll(extraParams);
         }
-        trackEvent(EVENT_ALL_ADS_REQUESTED, result);
+        trackEvent(isVmapRequest() ? EVENT_VMAP_REQUESTED : EVENT_VAST_REQUESTED, result);
     }
 
-    public void onAdsManagerLoaded(int groupCount) {
+    public void onAdsManagerLoaded(int podsCount) {
         Map<String, String> result = new HashMap<>();
         result.put(AD_LOADER_NAME, adLoaderName);
         result.put(SESSION_ID, sessionId);
-        result.put(AD_GROUP_COUNT, String.valueOf(groupCount));
+        result.put(CATEGORY, CATEGORY_DFP_ADS);
+        result.put(AD_PODS_COUNT, String.valueOf(podsCount));
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
-        trackEvent(EVENT_AD_MANAGER_LOADED, result);
+        trackEvent(isVmapRequest() ? EVENT_VMAP_SUCCESS : EVENT_VAST_SUCCESS, result);
     }
     
-    public void onAdLoad(int adGroupIndex, int adIndexInGroup, Uri adUri){
+    public void onAdLoad(int adPodIndex, int adIndexInPod, Uri adUri){
         Map<String, String> result = new HashMap<>();
         result.put(AD_LOADER_NAME, adLoaderName);
-        result.put(REQUEST_TIME, String.valueOf(System.currentTimeMillis()));
         result.put(SESSION_ID, sessionId);
-        result.put(AD_GROUP_INDEX, String.valueOf(adGroupIndex));
-        result.put(AD_INDEX_IN_GROUP, String.valueOf(adIndexInGroup));
+        result.put(CATEGORY, CATEGORY_DFP_ADS);
+        result.put(AD_POD_INDEX, String.valueOf(adPodIndex));
+        result.put(AD_INDEX_IN_POD, String.valueOf(adIndexInPod));
         result.put(AD_URI, adUri.toString());
-        result.put(START_TIME,String.valueOf(startTime));
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
-        trackEvent(EVENT_AD_LOAD, result);
+        trackEvent(EVENT_VAST_SUCCESS, result);
     }
 
     public void onAdEvent(String name, @Nullable String creativeId, @Nullable String advertiser){
@@ -190,22 +211,24 @@ public abstract class VideoAdsTracker {
         result.put(CREATIVE_ID, creativeId);
         if (advertiser != null)
         result.put(ADVERTISER, advertiser);
-        result.put(REQUEST_TIME, String.valueOf(System.currentTimeMillis()));
         result.put(SESSION_ID, sessionId);
-        result.put(START_TIME,String.valueOf(startTime));
+        result.put(CATEGORY, CATEGORY_DFP_ADS);
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
         trackEvent(name, result);
     }
 
-    public void onAdOpportunity(int adGroupIndex) {
+    public void onVastRequested(int adPodIndex) {
         Map<String, String> result = new HashMap<>();
         result.put(AD_LOADER_NAME, adLoaderName);
         result.put(SESSION_ID, sessionId);
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
-        result.put(AD_GROUP_INDEX, String.valueOf(adGroupIndex));
-        trackEvent(EVENT_AD_OPPORTUNITY, result);
+        result.put(CATEGORY, CATEGORY_DFP_ADS);
+        result.put(AD_POD_INDEX, String.valueOf(adPodIndex));
+        trackEvent(EVENT_VAST_REQUESTED, result);
     }
 
     
     public abstract void trackEvent(@NonNull String eventName, @NonNull Map<String, String> params);
+
+    public abstract boolean isVmapRequest();
 }
