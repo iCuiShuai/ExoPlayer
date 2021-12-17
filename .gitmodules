@@ -1,0 +1,3 @@
+[submodule "extensions/mxMediaAdsLib"]
+	path = extensions/mxMediaAdsLib
+	url = git@github.com:ZenMX/mxMediaAdsLib.git
