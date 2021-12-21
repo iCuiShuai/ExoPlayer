@@ -1567,6 +1567,13 @@ public class MediaCodecVideoRenderer extends MediaCodecRenderer {
       // Google OMX decoders are not known to have this issue on any API level.
       return false;
     }
+    if (Util.SDK_INT == 29 && "OMX.hisi.video.decoder.hevc".equals(name)) {
+      // workaround fix
+      /*
+       * Huawei android10 device are affected on hevc.
+       * */
+      return true;
+    }
     synchronized (MediaCodecVideoRenderer.class) {
       if (!evaluatedDeviceNeedsSetOutputSurfaceWorkaround) {
         deviceNeedsSetOutputSurfaceWorkaround = evaluateDeviceNeedsSetOutputSurfaceWorkaround();
@@ -1779,6 +1786,8 @@ public class MediaCodecVideoRenderer extends MediaCodecRenderer {
         case "XT1663":
         case "Z12_PRO":
         case "Z80":
+        case "nikel":
+        case "aura":
           return true;
         default:
           break; // Do nothing.
