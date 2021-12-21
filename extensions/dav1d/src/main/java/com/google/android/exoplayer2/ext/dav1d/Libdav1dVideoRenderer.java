@@ -180,7 +180,7 @@ public class Libdav1dVideoRenderer extends DecoderVideoRendererDav1d {
     }
   }
 
-  @Override
+ /* @Override
   protected DecoderReuseEvaluation canReuseDecoder(
       String decoderName, Format oldFormat, Format newFormat) {
     return new DecoderReuseEvaluation(
@@ -188,6 +188,6 @@ public class Libdav1dVideoRenderer extends DecoderVideoRendererDav1d {
         oldFormat,
         newFormat,
             REUSE_RESULT_NO,
-        /* discardReasons= */ 0);
-  }
+        *//* discardReasons= *//* 0);
+  }*/
 }
