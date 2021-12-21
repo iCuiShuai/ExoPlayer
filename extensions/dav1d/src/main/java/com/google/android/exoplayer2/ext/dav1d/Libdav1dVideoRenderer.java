@@ -15,6 +15,7 @@
  */
 package com.google.android.exoplayer2.ext.dav1d;
 
+import static com.google.android.exoplayer2.decoder.DecoderReuseEvaluation.REUSE_RESULT_NO;
 import static com.google.android.exoplayer2.decoder.DecoderReuseEvaluation.REUSE_RESULT_YES_WITHOUT_RECONFIGURATION;
 import static java.lang.Runtime.getRuntime;
 
@@ -29,11 +30,12 @@ import com.google.android.exoplayer2.drm.ExoMediaCrypto;
 import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.TraceUtil;
 import com.google.android.exoplayer2.video.DecoderVideoRenderer;
+import com.google.android.exoplayer2.video.DecoderVideoRendererDav1d;
 import com.google.android.exoplayer2.video.VideoDecoderOutputBuffer;
 import com.google.android.exoplayer2.video.VideoRendererEventListener;
 
 /** Decodes and renders video using the native VP9 decoder. */
-public class Libdav1dVideoRenderer extends DecoderVideoRenderer {
+public class Libdav1dVideoRenderer extends DecoderVideoRendererDav1d {
 
   private static final String TAG = "LibvpxVideoRenderer";
 
@@ -185,7 +187,7 @@ public class Libdav1dVideoRenderer extends DecoderVideoRenderer {
         decoderName,
         oldFormat,
         newFormat,
-        REUSE_RESULT_YES_WITHOUT_RECONFIGURATION,
+            REUSE_RESULT_NO,
         /* discardReasons= */ 0);
   }
 }
