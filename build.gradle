@@ -58,8 +58,8 @@ ext {
     buildNumber = System.getenv("BUILD_NUMBER") as Integer ?: 0
 
     publishGroupId = 'com.mxplay.code.exo'
-    publishVersion = "2.11.8.${buildNumber}"
-    publishVersionCode = 2118
+    publishVersion = "2.13.3.${buildNumber}"
+    publishVersionCode = 2133
 //    publishScript = 'https://raw.githubusercontent.com/ZenMX/mavenPublisher/master/publish.gradle'
 //    publishScript = '../publish.gradle'
 }
