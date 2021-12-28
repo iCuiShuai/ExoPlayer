@@ -9,10 +9,8 @@ import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.Timeline
 import com.google.android.exoplayer2.source.ads.AdPlaybackState
 import com.mxplay.adloader.exo.MxAdPlaybackState
-import com.mxplay.interactivemedia.internal.core.toMxAdEventType
-import com.mxplay.interactivemedia.internal.data.model.EventName
+import com.mxplay.interactivemedia.api.getEventName
 import java.util.concurrent.TimeUnit
-import kotlin.collections.HashSet
 import kotlin.collections.set
 import kotlin.math.abs
 
@@ -61,13 +59,13 @@ class BehaviourTracker(
             videoAdsTracker.run { onAdLoad(adPodIndex, adIndexInGroup, adUri) }
             vastReqForAdGroudIndex.add(adPodIndex);
         }
-        videoAdsTracker.run { trackEvent(EventName.LOADED.value, buildEventParams(null, null, adPodIndex, adIndexInGroup, adUri))}
+        videoAdsTracker.run { trackEvent("loaded", buildEventParams(null, null, adPodIndex, adIndexInGroup, adUri))}
         adMediaUriByAdInfo[getKeyForAdInfo(adPodIndex, adIndexInGroup)] = adUri
     }
 
     override fun onAdEvent(adEvent: AdEvent?) {
         if (adEvent != null) {
-            var adEventName = EventName.getType(adEvent.type.toMxAdEventType())?.value
+            val adEventName = getEventName(adEvent)
             val creativeId = if (adEvent.ad != null) adEvent.ad.creativeId else null
             val advertiser = if (adEvent.ad != null) adEvent.ad.advertiserName else null
             val adPodInfo = if (adEvent.ad != null) adEvent.ad.adPodInfo else null

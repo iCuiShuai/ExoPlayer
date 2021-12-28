@@ -6,8 +6,8 @@ import com.google.android.exoplayer2.C
 import com.mxplay.adloader.AdsBehaviour
 import com.mxplay.adloader.AdsBehaviourOffline
 import com.mxplay.adloader.IAdsBehaviour
+import com.mxplay.interactivemedia.api.IMxAdCustomTracker
 import com.mxplay.interactivemedia.api.MxMediaSdkConfig
-import com.mxplay.interactivemedia.internal.tracking.IMxAdCustomTracker
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 import java.util.concurrent.ExecutorService

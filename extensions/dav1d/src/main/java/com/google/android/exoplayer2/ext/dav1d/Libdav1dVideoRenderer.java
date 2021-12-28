@@ -15,6 +15,7 @@
  */
 package com.google.android.exoplayer2.ext.dav1d;
 
+import static com.google.android.exoplayer2.decoder.DecoderReuseEvaluation.REUSE_RESULT_NO;
 import static com.google.android.exoplayer2.decoder.DecoderReuseEvaluation.REUSE_RESULT_YES_WITHOUT_RECONFIGURATION;
 import static java.lang.Runtime.getRuntime;
 
@@ -28,14 +29,16 @@ import com.google.android.exoplayer2.decoder.DecoderReuseEvaluation;
 import com.google.android.exoplayer2.drm.ExoMediaCrypto;
 import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.TraceUtil;
+import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.video.DecoderVideoRenderer;
+import com.google.android.exoplayer2.video.DecoderVideoRendererDav1d;
 import com.google.android.exoplayer2.video.VideoDecoderOutputBuffer;
 import com.google.android.exoplayer2.video.VideoRendererEventListener;
 
 /** Decodes and renders video using the native VP9 decoder. */
-public class Libdav1dVideoRenderer extends DecoderVideoRenderer {
+public class Libdav1dVideoRenderer extends DecoderVideoRendererDav1d {
 
-  private static final String TAG = "LibvpxVideoRenderer";
+  private static final String TAG = "Libdav1dVideoRenderer";
 
   /** The number of input buffers. */
   private final int numInputBuffers;
@@ -48,7 +51,9 @@ public class Libdav1dVideoRenderer extends DecoderVideoRenderer {
    * The default input buffer size. The value is based on <a
    * href="https://android.googlesource.com/platform/frameworks/av/+/d42b90c5183fbd9d6a28d9baee613fddbf8131d6/media/libstagefright/codecs/on2/dec/SoftVPX.cpp">SoftVPX.cpp</a>.
    */
-  private static final int DEFAULT_INPUT_BUFFER_SIZE = 768 * 1024;
+//  private static final int DEFAULT_INPUT_BUFFER_SIZE = 768 * 1024;
+  private static final int DEFAULT_INPUT_BUFFER_SIZE =
+          Util.ceilDivide(1280, 64) * Util.ceilDivide(720, 64) * (64 * 64 * 3 / 2) / 2;
 
   private final int threads;
 
@@ -178,14 +183,14 @@ public class Libdav1dVideoRenderer extends DecoderVideoRenderer {
     }
   }
 
-  @Override
+ /* @Override
   protected DecoderReuseEvaluation canReuseDecoder(
       String decoderName, Format oldFormat, Format newFormat) {
     return new DecoderReuseEvaluation(
         decoderName,
         oldFormat,
         newFormat,
-        REUSE_RESULT_YES_WITHOUT_RECONFIGURATION,
-        /* discardReasons= */ 0);
-  }
+            REUSE_RESULT_NO,
+        *//* discardReasons= *//* 0);
+  }*/
 }
