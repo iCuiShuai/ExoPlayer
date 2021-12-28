@@ -121,15 +121,16 @@ class OmaUtil {
 
         /** Returns whether the ad error indicates that an entire ad group failed to load.  */
         @JvmStatic
-        fun isAdGroupLoadError(adError: com.mxplay.interactivemedia.api.AdError): Boolean {
+        fun isAdGroupLoadError(adError: AdError): Boolean {
             // TODO: Find out what other errors need to be handled (if any), and whether each one relates to
             // a single ad, ad group or the whole timeline.
             return (adError.errorCode == com.mxplay.interactivemedia.api.AdError.AdErrorCode.VAST_LINEAR_ASSET_MISMATCH
+                    || adError.errorCode == AdError.AdErrorCode.MEDIA_DURATION_MISMATCH
                     || adError.errorCode == com.mxplay.interactivemedia.api.AdError.AdErrorCode.UNKNOWN_ERROR)
-        }// IMA SDK callbacks occur on the main thread. This method can be used to check that the player
-        // is using the same looper, to ensure all interaction with this class is on the main thread.
+        }
 
-        /** Returns the looper on which all IMA SDK interaction must occur.  */
+
+
         @JvmStatic
         val imaLooper: Looper
             get() =// IMA SDK callbacks occur on the main thread. This method can be used to check that the player

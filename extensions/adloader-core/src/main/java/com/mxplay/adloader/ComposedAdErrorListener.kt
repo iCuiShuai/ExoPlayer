@@ -2,8 +2,8 @@ package com.mxplay.adloader
 
 import com.mxplay.interactivemedia.api.AdError
 import com.mxplay.interactivemedia.api.AdErrorEvent
-import com.mxplay.interactivemedia.internal.core.toMxAdErrorCode
-import com.mxplay.interactivemedia.internal.core.toMxAdErrorType
+import com.mxplay.interactivemedia.api.toMxAdErrorCode
+import com.mxplay.interactivemedia.api.toMxAdErrorType
 
 internal class ComposedAdErrorListener : com.google.ads.interactivemedia.v3.api.AdErrorEvent.AdErrorListener, AdErrorEvent.AdErrorListener {
 

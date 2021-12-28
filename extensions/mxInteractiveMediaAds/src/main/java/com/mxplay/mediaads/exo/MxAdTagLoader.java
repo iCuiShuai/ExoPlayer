@@ -76,7 +76,7 @@ import java.util.Objects;
 /** Handles loading and playback of a single ad tag. */
 /* package */ final class MxAdTagLoader implements Player.EventListener {
 
-  private static final String TAG = "AdTagLoader";
+  private static final String TAG = "MxAdTagLoader";
 
   /**
    * Interval at which ad progress updates are provided to the IMA SDK, in milliseconds. 100 ms is
@@ -706,7 +706,7 @@ import java.util.Objects;
     if (configuration.getDebugModeEnabled()) {
       Log.d(TAG, "Ad progress: " + OmaUtil.getStringForVideoProgressUpdate(videoProgressUpdate));
     }
-
+    if (imaAdState == IMA_AD_STATE_NONE || imaAdMediaInfo == null) return;
     AdMediaInfo adMediaInfo = checkNotNull(imaAdMediaInfo);
     for (int i = 0; i < adCallbacks.size(); i++) {
       adCallbacks.get(i).onAdProgress(adMediaInfo, videoProgressUpdate);
