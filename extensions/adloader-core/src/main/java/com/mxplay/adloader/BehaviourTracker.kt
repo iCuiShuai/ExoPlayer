@@ -18,6 +18,7 @@ import kotlin.math.abs
 
 class BehaviourTracker(
     val videoAdsTracker: VideoAdsTracker,
+    val adTrackingEventsList : Set<String> = trackingEvents
 ) : IBehaviourTracker {
 
     private var adPlaybackStateHost: AdsBehaviour.AdPlaybackStateHost? = null
@@ -32,8 +33,11 @@ class BehaviourTracker(
     private var lastRequestedAdIndexInPod = C.INDEX_UNSET
     private var skippedAdGroups = 0
 
+
     companion object{
         private const val THRESHOLD_AD_MATCH_US: Long = 1000
+        @JvmStatic
+        val trackingEvents = setOf("loaded","started", "firstQuartile", "midpoint", "thirdQuartile" , "completed")
     }
 
     override fun setAdPlaybackStateHost(adPlaybackStateHost: AdsBehaviour.AdPlaybackStateHost) {
@@ -111,7 +115,7 @@ class BehaviourTracker(
                 }
                 else -> { }
             }
-            if (!TextUtils.isEmpty(adEventName)) {
+            if (!TextUtils.isEmpty(adEventName) && adTrackingEventsList.contains(adEventName)) {
                 videoAdsTracker.run { trackEvent(adEventName!!, buildEventParams(creativeId, advertiser, adPodIndex, adIndexInAdGroup, adUri)) }
             }
         }
