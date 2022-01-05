@@ -135,10 +135,11 @@ open class AdsBehaviour private constructor(
         return false
     }
 
-    override fun handleTimelineOrPositionChanged(player: Player?, timeline: Timeline?, period: Timeline.Period?): Boolean {
+    override fun onPositionDiscontinuity(player: Player?, timeline: Timeline?, period: Timeline.Period?): Boolean {
         return false
     }
 
+    override fun handleTimelineOrPositionChanged(player: Player?, timeline: Timeline?, period: Timeline.Period?) {}
 
 
     override fun setPlayer(player: Player?) {}

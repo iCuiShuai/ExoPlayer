@@ -19,7 +19,7 @@ interface IAdsBehaviour : AdEvent.AdEventListener, com.google.ads.interactivemed
     fun bind(adPlaybackStateHost: AdsBehaviour.AdPlaybackStateHost, handler: Handler)
     fun onAllAdsRequested()
     fun doSetupAdsRendering(contentPositionMs: Long, contentDurationMs: Long): Boolean
-    fun handleTimelineOrPositionChanged(player: Player?, timeline: Timeline?, period: Timeline.Period?): Boolean
+    fun onPositionDiscontinuity(player: Player?, timeline: Timeline?, period: Timeline.Period?): Boolean
     fun setPlayer(player: Player?)
     fun getContentPositionMs(player: Player, timeline: Timeline, period: Timeline.Period?, contentDurationMs: Long): Long
     fun onAdsManagerLoaded(groupCount: Int)
@@ -30,4 +30,5 @@ interface IAdsBehaviour : AdEvent.AdEventListener, com.google.ads.interactivemed
     fun provideBehaviourTracker(): IBehaviourTracker
     fun registerAdEventListener(adEventListener: AdEvent.AdEventListener?)
     fun registerAdErrorEventListener(adErrorListener: AdErrorEvent.AdErrorListener?)
+    fun handleTimelineOrPositionChanged(player: Player?, timeline: Timeline?, period: Timeline.Period?)
 }

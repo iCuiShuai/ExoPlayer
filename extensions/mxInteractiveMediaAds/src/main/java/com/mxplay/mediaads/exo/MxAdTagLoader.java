@@ -49,7 +49,6 @@ import com.google.common.collect.HashBiMap;
 import com.mxplay.adloader.AdsBehaviour;
 import com.mxplay.adloader.AdsBehaviourWatchTime;
 import com.mxplay.adloader.IAdsBehaviour;
-import com.mxplay.adloader.VideoAdsTracker;
 import com.mxplay.interactivemedia.api.AdDisplayContainer;
 import com.mxplay.interactivemedia.api.AdError;
 import com.mxplay.interactivemedia.api.AdErrorEvent;
@@ -494,7 +493,7 @@ import java.util.Objects;
     if (configuration.getDebugModeEnabled()) Log.d(TAG, " onPositionDiscontinuity "+ playingAd + "  reason "+ reason);
     handleTimelineOrPositionChanged();
     if (reason == Player.DISCONTINUITY_REASON_SEEK || reason == Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT){
-      if (adsBehaviour.handleTimelineOrPositionChanged(player, timeline, period)){
+      if (adsBehaviour.onPositionDiscontinuity(player, timeline, period)){
         resetFlagsIfRequired();
       }
     }
@@ -872,6 +871,7 @@ import java.util.Objects;
     if (adsManager == null || player == null) {
       return;
     }
+    adsBehaviour.handleTimelineOrPositionChanged(player, timeline, period);
     if (!playingAd && !player.isPlayingAd()) {
       ensureSentContentCompleteIfAtEndOfStream();
       if (!sentContentComplete && !timeline.isEmpty()) {

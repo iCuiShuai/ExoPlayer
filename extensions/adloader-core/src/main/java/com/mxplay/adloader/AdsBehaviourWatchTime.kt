@@ -96,11 +96,10 @@ class AdsBehaviourWatchTime(durationSec: Long, private val adsBehaviour: AdsBeha
         period: Timeline.Period?,
         contentDurationMs: Long
     ): Long {
-        mxTrackingBehaviour.onContentPositionPulled(
+        mxTrackingBehaviour.onContentPositionChanged(
             player,
             timeline,
-            period,
-            contentDurationMs
+            period
         ) { adPlaybackState, playerPositionUs ->
             val loadingAdGroupIndex =
                 adsBehaviour.getLoadingAdGroupIndex(adPlaybackState, playerPositionUs)
@@ -152,7 +151,7 @@ class AdsBehaviourWatchTime(durationSec: Long, private val adsBehaviour: AdsBeha
         return MxAdPlaybackState(adId, fakeAdGroupTimesUs, adGroupTimesUs)
     }
 
-    override fun handleTimelineOrPositionChanged(player: Player?, timeline: Timeline?, period: Timeline.Period?): Boolean {
+    override fun onPositionDiscontinuity(player: Player?, timeline: Timeline?, period: Timeline.Period?): Boolean {
         skipAdOnUserSeek(player, timeline, period)
         return true
     }

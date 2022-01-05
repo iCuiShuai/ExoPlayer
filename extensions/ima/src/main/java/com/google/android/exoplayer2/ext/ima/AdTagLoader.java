@@ -70,7 +70,6 @@ import com.google.common.collect.HashBiMap;
 import com.mxplay.adloader.AdsBehaviour;
 import com.mxplay.adloader.AdsBehaviourWatchTime;
 import com.mxplay.adloader.IAdsBehaviour;
-import com.mxplay.adloader.VideoAdsTracker;
 
 import java.io.IOException;
 import java.lang.annotation.Documented;
@@ -515,7 +514,7 @@ import java.util.concurrent.TimeUnit;
   public void onPositionDiscontinuity(@Player.DiscontinuityReason int reason) {
     handleTimelineOrPositionChanged();
     if (reason == Player.DISCONTINUITY_REASON_SEEK || reason == Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT){
-      if(adsBehaviour.handleTimelineOrPositionChanged(player, timeline, period)){
+      if(adsBehaviour.onPositionDiscontinuity(player, timeline, period)){
         resetFlagsIfRequired();
       }
     }else if (reason == Player.DISCONTINUITY_REASON_AD_INSERTION){
@@ -930,6 +929,7 @@ import java.util.concurrent.TimeUnit;
     if (adsManager == null || player == null) {
       return;
     }
+    adsBehaviour.handleTimelineOrPositionChanged(player, timeline, period);
     if (!playingAd && !player.isPlayingAd()) {
       ensureSentContentCompleteIfAtEndOfStream();
       if (!sentContentComplete && !timeline.isEmpty()) {

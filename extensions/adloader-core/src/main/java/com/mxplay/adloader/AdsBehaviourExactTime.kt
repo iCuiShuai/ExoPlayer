@@ -37,7 +37,7 @@ open class AdsBehaviourExactTime(private val adsBehaviour: AdsBehaviour, private
         timeline: Timeline,
         period: Timeline.Period?,
         contentDurationMs: Long): Long {
-        mxTrackingBehaviour.onContentPositionPulled(player, timeline, period, contentDurationMs) { adPlaybackState, playerPositionUs ->
+        mxTrackingBehaviour.onContentPositionChanged(player, timeline, period) { adPlaybackState, playerPositionUs ->
             adsBehaviour.getLoadingAdGroupIndex(adPlaybackState, playerPositionUs)
         }
         return adsBehaviour.getContentPositionMs(player, timeline, period, contentDurationMs)
@@ -55,5 +55,14 @@ open class AdsBehaviourExactTime(private val adsBehaviour: AdsBehaviour, private
     override fun onAdsManagerLoaded(groupCount: Int) {
         mxTrackingBehaviour.onAdsManagerLoaded(groupCount)
         adsBehaviour.onAdsManagerLoaded(groupCount)
+    }
+
+    override fun handleTimelineOrPositionChanged(player: Player?, timeline: Timeline?, period: Timeline.Period?) {
+        if (player != null && timeline != null) {
+            mxTrackingBehaviour.onContentPositionChanged(player, timeline, period) { adPlaybackState, playerPositionUs ->
+                adsBehaviour.getLoadingAdGroupIndex(adPlaybackState, playerPositionUs)
+            }
+        }
+        adsBehaviour.onPositionDiscontinuity(player, timeline, period)
     }
 }
