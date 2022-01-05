@@ -22,7 +22,7 @@ class AdsBehaviourOffline(private val adsBehaviour: AdsBehaviour, private val mx
         timeline: Timeline,
         period: Timeline.Period?,
         contentDurationMs: Long): Long {
-        mxTrackingBehaviour.onContentPositionPulled(player, timeline, period, contentDurationMs) { adPlaybackState, playerPositionUs ->
+        mxTrackingBehaviour.onContentPositionChanged(player, timeline, period) { adPlaybackState, playerPositionUs ->
             adsBehaviour.getLoadingAdGroupIndex(adPlaybackState, playerPositionUs)
         }
         return adsBehaviour.getContentPositionMs(player, timeline, period, contentDurationMs)

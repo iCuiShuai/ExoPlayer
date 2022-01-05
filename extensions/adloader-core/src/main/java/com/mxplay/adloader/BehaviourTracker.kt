@@ -2,12 +2,14 @@ package com.mxplay.adloader
 
 import android.net.Uri
 import android.text.TextUtils
+import com.google.ads.interactivemedia.v3.api.AdError
 import com.google.ads.interactivemedia.v3.api.AdErrorEvent
 import com.google.ads.interactivemedia.v3.api.AdEvent
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.Timeline
 import com.google.android.exoplayer2.source.ads.AdPlaybackState
+import com.google.android.exoplayer2.util.Assertions
 import com.mxplay.adloader.exo.MxAdPlaybackState
 import com.mxplay.interactivemedia.api.getEventName
 import java.util.concurrent.TimeUnit
@@ -30,6 +32,10 @@ class BehaviourTracker(
     private var lastRequestedAdIndexInPod = C.INDEX_UNSET
     private var skippedAdGroups = 0
 
+    companion object{
+        private const val THRESHOLD_AD_MATCH_US: Long = 1000
+    }
+
     override fun setAdPlaybackStateHost(adPlaybackStateHost: AdsBehaviour.AdPlaybackStateHost) {
         this.adPlaybackStateHost = adPlaybackStateHost
     }
@@ -38,9 +44,9 @@ class BehaviourTracker(
         videoAdsTracker.onAdManagerRequested(emptyMap())
     }
 
-    override fun onContentPositionPulled(player: Player, timeline: Timeline, period: Timeline.Period?, contentDurationMs: Long, adGroupIndexProvider: (adPlaybackState: AdPlaybackState, playerPositionUs: Long) -> Int) {
+    override fun onContentPositionChanged(player: Player, timeline: Timeline, period: Timeline.Period?, adGroupIndexProvider: (adPlaybackState: AdPlaybackState, playerPositionUs: Long) -> Int) {
         val contentPositionMs = AdsBehaviour.getContentPeriodPositionMs(player, timeline, period)
-        tryTrackingVastRequest(contentPositionMs, contentDurationMs, adGroupIndexProvider)
+        tryTrackingVastRequest(contentPositionMs, adGroupIndexProvider)
     }
 
     override fun onAdsManagerLoaded(groupCount: Int) {
@@ -74,16 +80,31 @@ class BehaviourTracker(
             val adUri = adMediaUriByAdInfo[getKeyForAdInfo(adPodIndex, adIndexInAdGroup)]
             when(adEvent.type) {
                 AdEvent.AdEventType.AD_BREAK_FETCH_ERROR -> {
-                    videoAdsTracker.run { trackEvent(VideoAdsTracker.EVENT_VAST_FAIL, buildErrorParams(-1, Exception("Fetch error for ad "), adPodIndex, adIndexInAdGroup)) }
+                    kotlin.runCatching {
+                        val adGroupTimeSecondsString = Assertions.checkNotNull(adEvent.adData["adBreakTime"])
+                        val adGroupTimeSeconds = adGroupTimeSecondsString.toDouble()
+                        val adBreakIndex = getAdGroupIndexForCuePointTimeSeconds(adGroupTimeSeconds)
+                        videoAdsTracker.run {
+                            trackEvent(
+                                VideoAdsTracker.EVENT_VAST_FAIL,
+                                buildErrorParams(AdError.AdErrorCode.VAST_EMPTY_RESPONSE.errorNumber, Exception("Fetch error for ad "), adBreakIndex, -1)
+                            )
+                        }
+                    }
                     return
                 }
                 AdEvent.AdEventType.LOG -> {
-                    val adData = adEvent.adData
-                    val message = "AdEvent: $adData"
-                    if ("adLoadError" == adData["type"] || "adPlayError" == adData["type"] && "403" == adData["errorCode"]) {
-                        videoAdsTracker.run { trackEvent(VideoAdsTracker.EVENT_ERROR, buildErrorParams(-1, Exception(message), adPodIndex, adIndexInAdGroup)) }
+                    if (adEvent.adData != null) {
+                        val adData = adEvent.adData
+                        if ("adPlayError" == adData["type"]) {
+                            kotlin.runCatching {
+                                val code = adData["errorCode"]!!.toInt()
+                                val message = adData["errorMessage"]
+                                videoAdsTracker.trackEvent(VideoAdsTracker.EVENT_ERROR, videoAdsTracker.buildErrorParams(code, Exception(message), adPodIndex, adIndexInAdGroup))
+                            }
+                        }
                     }
-                    return
+
                 }
                 AdEvent.AdEventType.LOADED -> {
                     return
@@ -104,17 +125,16 @@ class BehaviourTracker(
     }
 
     private fun tryTrackingVastRequest(
-            contentPositionMs: Long,
-            contentDurationMs: Long,
-            adGroupIndexProvider: (adPlaybackState: AdPlaybackState, playerPositionUs: Long) -> Int
+        contentPositionMs: Long,
+        adGroupIndexProvider: (adPlaybackState: AdPlaybackState, playerPositionUs: Long) -> Int
     ) {
-        if (contentPositionMs < 0 || contentDurationMs < 0 || adPlaybackStateHost == null) {
+        if (adPlaybackStateHost == null) {
             return
         }
         val adPlaybackState = adPlaybackStateHost!!.adPlaybackState
         val adGroupIndex = adGroupIndexProvider(adPlaybackState, C.msToUs(contentPositionMs))
         if (adGroupIndex == C.INDEX_UNSET) return
-        val contentPosition = TimeUnit.MILLISECONDS.toSeconds(contentPositionMs)
+        var contentPosition = if (contentPositionMs >= 0) TimeUnit.MILLISECONDS.toSeconds(contentPositionMs) else 0
         val realStartTime: Long
         var startTime = TimeUnit.MICROSECONDS.toSeconds(adPlaybackState.adGroupTimesUs[adGroupIndex])
         if (adPlaybackState is MxAdPlaybackState) {
@@ -122,9 +142,13 @@ class BehaviourTracker(
         }
         realStartTime = if (startTime.toDouble() == -1.0) {
             (contentPosition - 8)
-        } else {
-            (if (startTime == 0L) startTime else startTime - 8)
+        } else if (startTime == 0L) startTime
+        else if(startTime < contentPosition) {
+            contentPosition = startTime
+            startTime
         }
+        else startTime - 8
+
 
         if (realStartTime == contentPosition && lastRealStartTime != realStartTime) {
             lastRealStartTime = realStartTime
@@ -147,5 +171,34 @@ class BehaviourTracker(
         return adGroupIndex.toString() + "_" + adIndexInAdGroup
     }
 
+    private fun getAdGroupIndexForCuePointTimeSeconds(cuePointTimeSeconds: Double): Int {
+
+        val groupCount : Int;
+        val adGroupTimesUs: LongArray
+
+        if (adPlaybackStateHost?.adPlaybackState is MxAdPlaybackState) {
+            groupCount = (adPlaybackStateHost?.adPlaybackState as MxAdPlaybackState).actualAdGroupCount
+            adGroupTimesUs = (adPlaybackStateHost?.adPlaybackState as MxAdPlaybackState).actualAdGroupTimeUs
+        }else{
+            groupCount = adPlaybackStateHost?.adPlaybackState!!.adGroupCount
+            adGroupTimesUs = adPlaybackStateHost?.adPlaybackState!!.adGroupTimesUs
+        }
+        if (cuePointTimeSeconds == -1.0) return groupCount - 1
+
+        // We receive initial cue points from IMA SDK as floats. This code replicates the same
+        // calculation used to populate adGroupTimesUs (having truncated input back to float, to avoid
+        // failures if the behavior of the IMA SDK changes to provide greater precision).
+        val cuePointTimeSecondsFloat = cuePointTimeSeconds.toFloat()
+        val adPodTimeUs = Math.round(cuePointTimeSecondsFloat.toDouble() * C.MICROS_PER_SECOND)
+        for (adGroupIndex in 0 until groupCount) {
+            val adGroupTimeUs: Long = adGroupTimesUs.get(adGroupIndex)
+            if (adGroupTimeUs != C.TIME_END_OF_SOURCE
+                && Math.abs(adGroupTimeUs - adPodTimeUs) < THRESHOLD_AD_MATCH_US
+            ) {
+                return adGroupIndex
+            }
+        }
+        throw IllegalStateException("Failed to find cue point")
+    }
 
 }

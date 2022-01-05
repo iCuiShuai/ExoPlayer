@@ -11,11 +11,10 @@ interface IBehaviourTracker: AdEvent.AdEventListener, AdErrorEvent.AdErrorListen
     object NO_OP_TRACKER : IBehaviourTracker {
         override fun onAllAdsRequested() {}
 
-        override fun onContentPositionPulled(
+        override fun onContentPositionChanged(
             player: Player,
             timeline: Timeline,
             period: Timeline.Period?,
-            contentDurationMs: Long,
             adGroupIndexProvider: (adPlaybackState: AdPlaybackState, playerPositionUs: Long) -> Int
         ) {}
 
@@ -42,11 +41,11 @@ interface IBehaviourTracker: AdEvent.AdEventListener, AdErrorEvent.AdErrorListen
     }
 
     fun onAllAdsRequested()
-    fun onContentPositionPulled(
+    fun onContentPositionChanged(
         player: Player,
         timeline: Timeline,
         period: Timeline.Period?,
-        contentDurationMs: Long, adGroupIndexProvider:(adPlaybackState: AdPlaybackState, playerPositionUs: Long) -> Int
+        adGroupIndexProvider:(adPlaybackState: AdPlaybackState, playerPositionUs: Long) -> Int
     )
 
     fun onAdsManagerLoaded(groupCount: Int)
