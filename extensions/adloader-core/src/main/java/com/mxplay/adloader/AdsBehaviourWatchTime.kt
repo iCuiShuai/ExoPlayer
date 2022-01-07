@@ -52,7 +52,7 @@ class AdsBehaviourWatchTime(durationSec: Long, private val adsBehaviour: AdsBeha
         adsBehaviour.onAdsManagerLoaded(groupCount)
     }
 
-    override fun doSetupAdsRendering(contentPositionMs: Long, contentDurationMs: Long): Boolean {
+    override fun doSetupAdsRendering(contentPositionMs: Long, contentDurationMs: Long, playAdBeforeStartPosition: Boolean): Boolean {
         val adPlaybackStateHost = adsBehaviour.obtainAdPlaybackStateHost() ?: return false
         val adGroupForPositionIndex = adPlaybackStateHost.adPlaybackState.getAdGroupIndexForPositionUs(
                 C.msToUs(contentPositionMs), C.msToUs(contentDurationMs))
@@ -74,7 +74,7 @@ class AdsBehaviourWatchTime(durationSec: Long, private val adsBehaviour: AdsBeha
         val contentPositionMs = playbackStatsListener.contentTotalPlayTimeMs
         val adPlaybackState = adPlaybackStateHost.adPlaybackState
         val actualAdGroupIndex = getLoadingAdGroupIndexForReporting(adPlaybackState, C.msToUs(contentPositionMs))
-        mxTrackingBehaviour.onAdLoad(adIndexInGroup, adUri, adPodIndex) { actualAdGroupIndex }
+        mxTrackingBehaviour.onAdLoad(adIndexInGroup, adUri, adPodIndex)
         if (!actualAdGroupIndexByFake.containsValue(actualAdGroupIndex)) {
             actualAdGroupIndexByFake[adGroupIndex] = actualAdGroupIndex
         }

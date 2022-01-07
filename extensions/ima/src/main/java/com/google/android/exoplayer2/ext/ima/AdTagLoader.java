@@ -77,6 +77,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -295,7 +296,9 @@ import java.util.concurrent.TimeUnit;
     @Override
     public void onVastCallMaxWaitingTimeOver() {
         if (pendingAdRequestContext != null){
-            componentListener.onAdError(new AdsLoadRequestTimeoutEvent(pendingAdRequestContext));
+          AdsLoadRequestTimeoutEvent adsLoadRequestTimeoutEvent = new AdsLoadRequestTimeoutEvent(pendingAdRequestContext);
+          componentListener.onAdError(adsLoadRequestTimeoutEvent);
+            adsBehaviour.onAdError(adsLoadRequestTimeoutEvent);
             adsLoader.removeAdsLoadedListener(componentListener);
             adsLoader.removeAdErrorListener(componentListener);
             if (configuration.debugModeEnabled) Log.w(TAG, "Vast call forced time out");
@@ -667,7 +670,7 @@ import java.util.concurrent.TimeUnit;
     if (configuration.adUiElements != null) {
       adsRenderingSettings.setUiElements(configuration.adUiElements);
     }
-    boolean isSetupDone = adsBehaviour.doSetupAdsRendering(contentPositionMs, contentDurationMs);
+    boolean isSetupDone = adsBehaviour.doSetupAdsRendering(contentPositionMs, contentDurationMs, configuration.playAdBeforeStartPosition);
     if (isSetupDone) return adsRenderingSettings;
     // Skip ads based on the start position as required.
     long[] adGroupTimesUs = adPlaybackState.adGroupTimesUs;

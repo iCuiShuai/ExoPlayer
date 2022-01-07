@@ -131,8 +131,25 @@ open class AdsBehaviour private constructor(
         handler.postDelayed(vastCallWaitingRunnable, vastCallMaxWaitingTime)
     }
 
-    override fun doSetupAdsRendering(contentPositionMs: Long, contentDurationMs: Long): Boolean {
+    override fun doSetupAdsRendering(contentPositionMs: Long, contentDurationMs: Long, playAdBeforeStartPosition: Boolean): Boolean {
         return false
+    }
+
+    fun getFirstPlayingAdIndex(contentPositionMs: Long, contentDurationMs: Long, playAdBeforeStartPosition: Boolean) : Int{
+        if (!::adPlaybackStateHost.isInitialized ) return -1
+        val adPlaybackState = adPlaybackStateHost.adPlaybackState;
+        val adGroupTimesUs: LongArray = adPlaybackState.adGroupTimesUs
+        var adGroupForPositionIndex: Int = adPlaybackState.getAdGroupIndexForPositionUs(
+            C.msToUs(contentPositionMs), C.msToUs(contentDurationMs)
+        )
+        if (adGroupForPositionIndex != C.INDEX_UNSET) {
+            val playAdWhenStartingPlayback = (playAdBeforeStartPosition
+                    || adGroupTimesUs[adGroupForPositionIndex] == C.msToUs(contentPositionMs))
+            if (!playAdWhenStartingPlayback) {
+                adGroupForPositionIndex++
+            }
+        }
+        return adGroupForPositionIndex
     }
 
     override fun onPositionDiscontinuity(player: Player?, timeline: Timeline?, period: Timeline.Period?): Boolean {

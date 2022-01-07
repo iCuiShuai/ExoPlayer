@@ -29,7 +29,7 @@ class AdsBehaviourOffline(private val adsBehaviour: AdsBehaviour, private val mx
     }
 
     override fun onAdLoad(adGroupIndex: Int, adIndexInGroup: Int, adUri: Uri, adPodIndex: Int) {
-        mxTrackingBehaviour.onAdLoad(adIndexInGroup, adUri, adPodIndex) { adGroupIndex }
+        mxTrackingBehaviour.onAdLoad(adIndexInGroup, adUri, adPodIndex)
         adsBehaviour.onAdLoad(adGroupIndex, adIndexInGroup, adUri, adPodIndex)
     }
 
