@@ -9,6 +9,8 @@ import com.google.android.exoplayer2.source.ads.AdPlaybackState
 
 interface IBehaviourTracker: AdEvent.AdEventListener, AdErrorEvent.AdErrorListener {
     object NO_OP_TRACKER : IBehaviourTracker {
+        override fun doSetupAdsRendering(firstPlayingAdIndex: Int) {}
+
         override fun onAllAdsRequested() {}
 
         override fun onContentPositionChanged(
@@ -24,8 +26,7 @@ interface IBehaviourTracker: AdEvent.AdEventListener, AdErrorEvent.AdErrorListen
         override fun onAdLoad(
             adIndexInGroup: Int,
             adUri: Uri,
-            adPodIndex: Int,
-            realAdGroupIndexProvider: () -> Int
+            adPodIndex: Int
         ) {
         }
 
@@ -39,7 +40,7 @@ interface IBehaviourTracker: AdEvent.AdEventListener, AdErrorEvent.AdErrorListen
         }
 
     }
-
+    fun doSetupAdsRendering(firstPlayingAdIndex : Int)
     fun onAllAdsRequested()
     fun onContentPositionChanged(
         player: Player,
@@ -50,7 +51,7 @@ interface IBehaviourTracker: AdEvent.AdEventListener, AdErrorEvent.AdErrorListen
 
     fun onAdsManagerLoaded(groupCount: Int)
 
-    fun onAdLoad(adIndexInGroup: Int, adUri: Uri, adPodIndex: Int, realAdGroupIndexProvider:() -> Int)
+    fun onAdLoad(adIndexInGroup: Int, adUri: Uri, adPodIndex: Int)
 
     fun setAdPlaybackStateHost(adPlaybackStateHost: AdsBehaviour.AdPlaybackStateHost)
 }

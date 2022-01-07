@@ -612,7 +612,7 @@ import java.util.Objects;
             ? configuration.getMxMediaSdkConfig().getAdMediaMimeTypes()
             : supportedMimeTypes);
 
-    boolean isSetupDone = adsBehaviour.doSetupAdsRendering(contentPositionMs, contentDurationMs);
+    boolean isSetupDone = adsBehaviour.doSetupAdsRendering(contentPositionMs, contentDurationMs, configuration.getPlayAdBeforeStartPosition());
     if (isSetupDone) {
       pendingContentPositionMs = 0;
       return adsRenderingSettings;

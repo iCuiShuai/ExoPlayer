@@ -18,7 +18,7 @@ interface IAdsBehaviour : AdEvent.AdEventListener, com.google.ads.interactivemed
     fun setContentDuration(contentDurationMs: Long)
     fun bind(adPlaybackStateHost: AdsBehaviour.AdPlaybackStateHost, handler: Handler)
     fun onAllAdsRequested()
-    fun doSetupAdsRendering(contentPositionMs: Long, contentDurationMs: Long): Boolean
+    fun doSetupAdsRendering(contentPositionMs: Long, contentDurationMs: Long, playAdBeforeStartPosition: Boolean): Boolean
     fun onPositionDiscontinuity(player: Player?, timeline: Timeline?, period: Timeline.Period?): Boolean
     fun setPlayer(player: Player?)
     fun getContentPositionMs(player: Player, timeline: Timeline, period: Timeline.Period?, contentDurationMs: Long): Long

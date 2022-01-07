@@ -44,7 +44,7 @@ open class AdsBehaviourExactTime(private val adsBehaviour: AdsBehaviour, private
     }
 
     override fun onAdLoad(adGroupIndex: Int, adIndexInGroup: Int, adUri: Uri, adPodIndex: Int) {
-        mxTrackingBehaviour.onAdLoad(adIndexInGroup, adUri, adPodIndex) { adGroupIndex }
+        mxTrackingBehaviour.onAdLoad(adIndexInGroup, adUri, adPodIndex)
         adsBehaviour.onAdLoad(adGroupIndex, adIndexInGroup, adUri, adPodIndex)
     }
 
@@ -64,5 +64,10 @@ open class AdsBehaviourExactTime(private val adsBehaviour: AdsBehaviour, private
             }
         }
         adsBehaviour.onPositionDiscontinuity(player, timeline, period)
+    }
+
+    override fun doSetupAdsRendering(contentPositionMs: Long, contentDurationMs: Long, playAdBeforeStartPosition: Boolean): Boolean {
+        mxTrackingBehaviour.doSetupAdsRendering(adsBehaviour.getFirstPlayingAdIndex(contentPositionMs, contentDurationMs, playAdBeforeStartPosition))
+        return false
     }
 }

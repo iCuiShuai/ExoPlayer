@@ -14,7 +14,6 @@ import com.mxplay.adloader.exo.MxAdPlaybackState
 import com.mxplay.interactivemedia.api.getEventName
 import java.util.concurrent.TimeUnit
 import kotlin.collections.set
-import kotlin.math.abs
 
 class BehaviourTracker(
     val videoAdsTracker: VideoAdsTracker,
@@ -31,17 +30,21 @@ class BehaviourTracker(
     private var lastRealStartTime = C.INDEX_UNSET.toLong()
     private var lastStartRequestAdPodIndex = C.INDEX_UNSET
     private var lastRequestedAdIndexInPod = C.INDEX_UNSET
-    private var skippedAdGroups = 0
+    private var firstPlayingAdIndex = 0
 
 
     companion object{
         private const val THRESHOLD_AD_MATCH_US: Long = 1000
         @JvmStatic
-        val trackingEvents = setOf("loaded","started", "firstQuartile", "midpoint", "thirdQuartile" , "completed")
+        val trackingEvents = setOf("loaded", "start", "firstQuartile", "midpoint", "thirdQuartile", "skip", "resume", "pause", "complete", "ClickTracking")
     }
 
     override fun setAdPlaybackStateHost(adPlaybackStateHost: AdsBehaviour.AdPlaybackStateHost) {
         this.adPlaybackStateHost = adPlaybackStateHost
+    }
+
+    override fun doSetupAdsRendering(firstPlayingAdIndex: Int) {
+        this.firstPlayingAdIndex = firstPlayingAdIndex
     }
 
     override fun onAllAdsRequested() {
@@ -57,31 +60,20 @@ class BehaviourTracker(
         videoAdsTracker.onAdsManagerLoaded(groupCount)
     }
 
-    override fun onAdLoad(adIndexInGroup: Int, adUri: Uri, adPodIndex: Int, realAdGroupIndexProvider: () -> Int) {
-        val actualAdGroupIndex = realAdGroupIndexProvider()
-        skippedAdGroups = abs(actualAdGroupIndex - adPodIndex)
+    override fun onAdLoad(adIndexInGroup: Int, adUri: Uri, adPodIndex: Int) {
         lastRequestedAdIndexInPod = adIndexInGroup
-        if (!adPodIndexOpportunitySet.contains(adPodIndex)) {
-            onVastRequested(adPodIndex)
-        }
-        adPodIndexOpportunitySet.add(adPodIndex)
-        if (!vastReqForAdGroudIndex.contains(adPodIndex)) {
-            videoAdsTracker.run { onAdLoad(adPodIndex, adIndexInGroup, adUri) }
-            vastReqForAdGroudIndex.add(adPodIndex);
-        }
-        videoAdsTracker.run { trackEvent("loaded", buildEventParams(null, null, adPodIndex, adIndexInGroup, adUri))}
         adMediaUriByAdInfo[getKeyForAdInfo(adPodIndex, adIndexInGroup)] = adUri
     }
 
     override fun onAdEvent(adEvent: AdEvent?) {
         if (adEvent != null) {
+            if (adEvent.type == AdEvent.AdEventType.AD_PROGRESS) return
             val adEventName = getEventName(adEvent)
             val creativeId = if (adEvent.ad != null) adEvent.ad.creativeId else null
             val advertiser = if (adEvent.ad != null) adEvent.ad.advertiserName else null
             val adPodInfo = if (adEvent.ad != null) adEvent.ad.adPodInfo else null
             val adPodIndex = adPodInfo?.podIndex ?: -1
             val adIndexInAdGroup = if (adPodInfo != null) adPodInfo.adPosition - 1 else -1
-            val adUri = adMediaUriByAdInfo[getKeyForAdInfo(adPodIndex, adIndexInAdGroup)]
             when(adEvent.type) {
                 AdEvent.AdEventType.AD_BREAK_FETCH_ERROR -> {
                     kotlin.runCatching {
@@ -108,15 +100,22 @@ class BehaviourTracker(
                             }
                         }
                     }
-
+                    return
                 }
                 AdEvent.AdEventType.LOADED -> {
-                    return
+                    if (!adPodIndexOpportunitySet.contains(adPodIndex)) {
+                        onVastRequested(adPodIndex)
+                    }
+                    adPodIndexOpportunitySet.add(adPodIndex)
+                    if (!vastReqForAdGroudIndex.contains(adPodIndex)) {
+                        videoAdsTracker.run { onVastSuccess(adPodIndex, adIndexInAdGroup) }
+                        vastReqForAdGroudIndex.add(adPodIndex);
+                    }
                 }
                 else -> { }
             }
             if (!TextUtils.isEmpty(adEventName) && adTrackingEventsList.contains(adEventName)) {
-                videoAdsTracker.run { trackEvent(adEventName!!, buildEventParams(creativeId, advertiser, adPodIndex, adIndexInAdGroup, adUri)) }
+                videoAdsTracker.run { trackEvent(adEventName!!, buildEventParams(creativeId, advertiser, adPodIndex, adIndexInAdGroup)) }
             }
         }
     }
@@ -124,7 +123,11 @@ class BehaviourTracker(
     override fun onAdError(adErrorEvent: AdErrorEvent?) {
         val adError = adErrorEvent?.error
         if (adError != null) {
-            videoAdsTracker.run { trackEvent(VideoAdsTracker.EVENT_ERROR, buildErrorParams(adError.errorCodeNumber, adError, lastStartRequestAdPodIndex, lastRequestedAdIndexInPod)) }
+            if (adPlaybackStateHost?.adPlaybackState == AdPlaybackState.NONE){
+                videoAdsTracker.run { onAdsManagerRequestFailed(adError.errorCodeNumber, Exception(adError.message)) }
+            }else{
+                videoAdsTracker.run { trackEvent(VideoAdsTracker.EVENT_ERROR, buildErrorParams(adError.errorCodeNumber, Exception(adError.message), lastStartRequestAdPodIndex, lastRequestedAdIndexInPod)) }
+            }
         }
     }
 
@@ -144,24 +147,27 @@ class BehaviourTracker(
         if (adPlaybackState is MxAdPlaybackState) {
             startTime = TimeUnit.MICROSECONDS.toSeconds(adPlaybackState.actualAdGroupTimeUs[adGroupIndex])
         }
-        realStartTime = if (startTime.toDouble() == -1.0) {
+        realStartTime = if (startTime.toDouble() == -1.0)
             (contentPosition - 8)
-        } else if (startTime == 0L) startTime
-        else if(startTime < contentPosition) {
+        else if(startTime <= contentPosition) {
             contentPosition = startTime
             startTime
         }
         else startTime - 8
 
-
         if (realStartTime == contentPosition && lastRealStartTime != realStartTime) {
             lastRealStartTime = realStartTime
-            val adPodIndex = adGroupIndex - skippedAdGroups
-            onVastRequested(adPodIndex)
+            onVastRequested(getPodIndex(adGroupIndex, startTime))
         }
     }
 
-    private fun onVastRequested(adPodIndex: Int) {
+    private fun getPodIndex(adGroupIndex : Int, adGroupTime : Long) : Int{
+        return if (adGroupTime == -1L) -1 else if (adGroupTime == 0L) 0 else{
+            adGroupIndex - firstPlayingAdIndex + if (firstPlayingAdIndex > 0) 1 else 0
+        }
+    }
+
+    fun onVastRequested(adPodIndex: Int) {
         if (lastStartRequestAdPodIndex != adPodIndex) {
             lastStartRequestAdPodIndex = adPodIndex
             if (!adPodIndexOpportunitySet.contains(adPodIndex)) {

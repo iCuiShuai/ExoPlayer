@@ -28,8 +28,6 @@ public abstract class VideoAdsTracker {
     public static final String EVENT_ERROR = "error";
 
 
-    public static final String EVENT_VIDEO_AD_PLAY_SUCCESS = "VideoAdPlaySuccess";
-    public static final String EVENT_VIDEO_AD_PLAY_FAILED = "VideoAdPlayFailed";
 
     public static final String CREATIVE_ID = "creativeId";
     public static final String ADVERTISER = "advertiser";
@@ -119,7 +117,7 @@ public abstract class VideoAdsTracker {
         return result;
     }
 
-    public Map<String, String> buildEventParams(@Nullable String creativeId, @Nullable String advertiser, int adPodIndex, int adIndexInPod, Uri adUri) {
+    public Map<String, String> buildEventParams(@Nullable String creativeId, @Nullable String advertiser, int adPodIndex, int adIndexInPod) {
         Map<String, String> result = new HashMap<>();
         result.put(AD_LOADER_NAME, adLoaderName);
         if (creativeId != null)
@@ -131,9 +129,6 @@ public abstract class VideoAdsTracker {
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
         result.put(AD_POD_INDEX, String.valueOf(adPodIndex));
         result.put(AD_INDEX_IN_POD, String.valueOf(adIndexInPod));
-        if (adUri != null) {
-            result.put(AD_URI, adUri.toString());
-        }
         return result;
     }
 
@@ -179,7 +174,7 @@ public abstract class VideoAdsTracker {
         if(extraParams != null && !extraParams.isEmpty()){
             result.putAll(extraParams);
         }
-        trackEvent(isVmapRequest() ? EVENT_VMAP_REQUESTED : EVENT_VAST_REQUESTED, result);
+        trackEvent(EVENT_VMAP_REQUESTED, result);
     }
 
     public void onAdsManagerLoaded(int podsCount) {
@@ -189,17 +184,27 @@ public abstract class VideoAdsTracker {
         result.put(CATEGORY, CATEGORY_DFP_ADS);
         result.put(AD_PODS_COUNT, String.valueOf(podsCount));
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
-        trackEvent(isVmapRequest() ? EVENT_VMAP_SUCCESS : EVENT_VAST_SUCCESS, result);
+        trackEvent(EVENT_VMAP_SUCCESS, result);
+    }
+
+    public void onAdsManagerRequestFailed(int errorCode, @Nullable Exception exception){
+        Map<String, String> result = new HashMap<>();
+        result.put(AD_LOADER_NAME, adLoaderName);
+        result.put(SESSION_ID, sessionId);
+        result.put(CATEGORY, CATEGORY_DFP_ADS);
+        result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
+        result.put(ERROR_CODE, String.valueOf(errorCode));
+        result.put(REASON, exception == null ? UNKNOWN : exception.getMessage());
+        trackEvent(EVENT_VMAP_FAIL, result);
     }
     
-    public void onAdLoad(int adPodIndex, int adIndexInPod, Uri adUri){
+    public void onVastSuccess(int adPodIndex, int adIndexInPod){
         Map<String, String> result = new HashMap<>();
         result.put(AD_LOADER_NAME, adLoaderName);
         result.put(SESSION_ID, sessionId);
         result.put(CATEGORY, CATEGORY_DFP_ADS);
         result.put(AD_POD_INDEX, String.valueOf(adPodIndex));
         result.put(AD_INDEX_IN_POD, String.valueOf(adIndexInPod));
-        result.put(AD_URI, adUri.toString());
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
         trackEvent(EVENT_VAST_SUCCESS, result);
     }
