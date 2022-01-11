@@ -236,7 +236,8 @@ import java.io.IOException;
 
     ParsableByteArray buffer = new ParsableByteArray(64);
     int bytesSearched = 0;
-
+    boolean foundGoodFileType = false;
+    boolean isFragmented = false;
     while (bytesSearched < bytesToSearch) {
       // Read an atom header.
       int headerSize = Atom.HEADER_SIZE;
@@ -266,6 +267,58 @@ import java.io.IOException;
       if (atomSize < headerSize) {
         // The file is invalid because the atom size is too small for its header.
         return false;
+      }
+      bytesSearched += headerSize;
+
+      if (atomType == Atom.TYPE_moov) {
+        // We have seen the moov atom. We increase the search size to make sure we don't miss an
+        // mvex atom because the moov's size exceeds the search length.
+        bytesToSearch += (int) atomSize;
+        if (inputLength != C.LENGTH_UNSET && bytesToSearch > inputLength) {
+          // Make sure we don't exceed the file size.
+          bytesToSearch = (int) inputLength;
+        }
+        // Check for an mvex atom inside the moov atom to identify whether the file is fragmented.
+        continue;
+      }
+
+      if (atomType == Atom.TYPE_moof || atomType == Atom.TYPE_mvex) {
+        // The movie is fragmented. Stop searching as we must have read any ftyp atom already.
+        isFragmented = true;
+        break;
+      }
+
+      if (bytesSearched + atomSize - headerSize >= bytesToSearch) {
+        // Stop searching as peeking this atom would exceed the search limit.
+        break;
+      }
+
+      int atomDataSize = (int) (atomSize - headerSize);
+      bytesSearched += atomDataSize;
+      if (atomType == Atom.TYPE_ftyp) {
+        // Parse the atom and check the file type/brand is compatible with the extractors.
+        if (atomDataSize < 8) {
+          return false;
+        }
+        buffer.reset(atomDataSize);
+        input.peekFully(buffer.getData(), 0, atomDataSize);
+        int brandsCount = atomDataSize / 4;
+        for (int i = 0; i < brandsCount; i++) {
+          if (i == 1) {
+            // This index refers to the minorVersion, not a brand, so skip it.
+            buffer.skipBytes(4);
+          } else if (isCompatibleBrand(buffer.readInt(), false)) {
+            foundGoodFileType = true;
+            break;
+          }
+        }
+        if (!foundGoodFileType) {
+          // The types were not compatible and there is only one ftyp atom, so reject the file.
+          return false;
+        }
+      } else if (atomDataSize != 0) {
+        // Skip the atom.
+        input.advancePeekPosition(atomDataSize);
       }
 
       if(atomType == Atom.TYPE_mxv) {
