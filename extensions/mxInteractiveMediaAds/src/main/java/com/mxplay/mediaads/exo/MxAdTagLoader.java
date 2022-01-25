@@ -692,6 +692,12 @@ import java.util.Objects;
       return lastAdProgress;
     } else if (imaAdState != IMA_AD_STATE_NONE && playingAd) {
       long adDuration = player.getDuration();
+      // handle exo bug. player return last ad duration when it skip in pod
+      if (imaAdInfo != null
+              && (imaAdInfo.adGroupIndex != player.getCurrentAdGroupIndex()
+              || imaAdInfo.adIndexInAdGroup != player.getCurrentAdIndexInAdGroup())){
+        return VideoProgressUpdate.VIDEO_TIME_NOT_READY;
+      }
       return adDuration == C.TIME_UNSET || player.getCurrentPosition() > adDuration
               ? VideoProgressUpdate.VIDEO_TIME_NOT_READY
               : new VideoProgressUpdate(player.getCurrentPosition(), adDuration);

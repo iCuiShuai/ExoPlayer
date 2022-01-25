@@ -29,9 +29,11 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Pair;
 import android.view.ViewGroup;
+
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import com.google.ads.interactivemedia.v3.api.AdDisplayContainer;
 import com.google.ads.interactivemedia.v3.api.AdError;
 import com.google.ads.interactivemedia.v3.api.AdErrorEvent;
@@ -77,7 +79,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -747,6 +748,13 @@ import java.util.concurrent.TimeUnit;
       return lastAdProgress;
     } else if (imaAdState != IMA_AD_STATE_NONE && playingAd && imaAdInfo != null && imaAdInfo.isPrepareComplete) {
       long adDuration = player.getDuration();
+      // handle exo bug. player return last ad duration when it skip in pod
+      if (imaAdInfo != null
+              && (imaAdInfo.adGroupIndex != player.getCurrentAdGroupIndex()
+              || imaAdInfo.adIndexInAdGroup != player.getCurrentAdIndexInAdGroup())){
+        return VideoProgressUpdate.VIDEO_TIME_NOT_READY;
+      }
+
       return adDuration == C.TIME_UNSET || player.getCurrentPosition() > adDuration
           ? VideoProgressUpdate.VIDEO_TIME_NOT_READY
           : new VideoProgressUpdate(player.getCurrentPosition(), adDuration);
