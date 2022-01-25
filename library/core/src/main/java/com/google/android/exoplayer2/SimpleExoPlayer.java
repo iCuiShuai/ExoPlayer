@@ -1890,7 +1890,7 @@ public class SimpleExoPlayer extends BasePlayer
                 new ExoTimeoutException(ExoTimeoutException.TIMEOUT_OPERATION_DETACH_SURFACE)));
       }
       // If we created the previous surface, we are responsible for releasing it.
-      if (this.ownsSurface) {
+      if (this.ownsSurface && this.surface != null) { // not sure why this.surface == null, may be release by other thread
         this.surface.release();
       }
     }
