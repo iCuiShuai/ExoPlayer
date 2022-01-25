@@ -78,7 +78,7 @@ class AdsBehaviourWatchTime(durationSec: Long, private val adsBehaviour: AdsBeha
         if (!actualAdGroupIndexByFake.containsValue(actualAdGroupIndex)) {
             actualAdGroupIndexByFake[adGroupIndex] = actualAdGroupIndex
         }
-        if (adPlaybackState is MxAdPlaybackState) {
+        if (adPlaybackState is MxAdPlaybackState && actualAdGroupIndex != C.INDEX_UNSET) {
             adPlaybackState.withActualAdGroupProcessed(actualAdGroupIndex, adIndexInGroup)
         }
         adsBehaviour.onAdLoad(adGroupIndex, adIndexInGroup, adUri, adPodIndex)
