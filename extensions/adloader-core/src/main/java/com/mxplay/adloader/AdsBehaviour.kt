@@ -191,7 +191,7 @@ open class AdsBehaviour private constructor(
         throw IllegalStateException("Failed to find cue point")
     }
 
-    override fun onAdsManagerLoaded(groupCount: Int) {
+    override fun onAdsManagerLoaded(cuePoints: List<Float>?) {
     }
 
     override fun onAdLoad(adGroupIndex: Int, adIndexInGroup: Int, adUri: Uri, adPodIndex: Int) {

@@ -1325,7 +1325,7 @@ import java.util.Objects;
         adsManager.destroy();
         return;
       }
-      adsBehaviour.onAdsManagerLoaded(adsManager.getAdCuePoints().size());
+      adsBehaviour.onAdsManagerLoaded(adsManager.getAdCuePoints());
       pendingAdRequestContext = null;
       MxAdTagLoader.this.adsManager = adsManager;
       adsManager.addAdErrorListener(this);

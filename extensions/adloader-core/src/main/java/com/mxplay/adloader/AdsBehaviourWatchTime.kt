@@ -47,9 +47,9 @@ class AdsBehaviourWatchTime(durationSec: Long, private val adsBehaviour: AdsBeha
         return mxTrackingBehaviour
     }
 
-    override fun onAdsManagerLoaded(groupCount: Int) {
-        mxTrackingBehaviour.onAdsManagerLoaded(groupCount)
-        adsBehaviour.onAdsManagerLoaded(groupCount)
+    override fun onAdsManagerLoaded(cuePoints: List<Float>?) {
+        mxTrackingBehaviour.onAdsManagerLoaded(cuePoints)
+        adsBehaviour.onAdsManagerLoaded(cuePoints)
     }
 
     override fun doSetupAdsRendering(contentPositionMs: Long, contentDurationMs: Long, playAdBeforeStartPosition: Boolean): Boolean {
