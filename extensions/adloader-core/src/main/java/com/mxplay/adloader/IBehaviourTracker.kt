@@ -20,7 +20,7 @@ interface IBehaviourTracker: AdEvent.AdEventListener, AdErrorEvent.AdErrorListen
             adGroupIndexProvider: (adPlaybackState: AdPlaybackState, playerPositionUs: Long) -> Int
         ) {}
 
-        override fun onAdsManagerLoaded(groupCount: Int) {
+        override fun onAdsManagerLoaded(cuePoints: List<Float>?) {
         }
 
         override fun onAdLoad(
@@ -49,7 +49,7 @@ interface IBehaviourTracker: AdEvent.AdEventListener, AdErrorEvent.AdErrorListen
         adGroupIndexProvider:(adPlaybackState: AdPlaybackState, playerPositionUs: Long) -> Int
     )
 
-    fun onAdsManagerLoaded(groupCount: Int)
+    fun onAdsManagerLoaded(cuePoints: List<Float>?)
 
     fun onAdLoad(adIndexInGroup: Int, adUri: Uri, adPodIndex: Int)
 

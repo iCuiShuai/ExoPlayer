@@ -37,8 +37,8 @@ class AdsBehaviourOffline(private val adsBehaviour: AdsBehaviour, private val mx
         return mxTrackingBehaviour
     }
 
-    override fun onAdsManagerLoaded(groupCount: Int) {
-        mxTrackingBehaviour.onAdsManagerLoaded(groupCount)
-        adsBehaviour.onAdsManagerLoaded(groupCount)
+    override fun onAdsManagerLoaded(cuePoints: List<Float>?) {
+        mxTrackingBehaviour.onAdsManagerLoaded(cuePoints)
+        adsBehaviour.onAdsManagerLoaded(cuePoints)
     }
 }

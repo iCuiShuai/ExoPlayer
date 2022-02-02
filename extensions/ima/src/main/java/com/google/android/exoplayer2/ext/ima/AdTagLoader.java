@@ -1389,7 +1389,7 @@ import java.util.concurrent.TimeUnit;
         adsManager.destroy();
         return;
       }
-      adsBehaviour.onAdsManagerLoaded(adsManager.getAdCuePoints().size());
+      adsBehaviour.onAdsManagerLoaded(adsManager.getAdCuePoints());
       pendingAdRequestContext = null;
       AdTagLoader.this.adsManager = adsManager;
       adsManager.addAdErrorListener(this);

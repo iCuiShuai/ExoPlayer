@@ -38,8 +38,8 @@ class AdsBehaviourMusic(private val adsBehaviour: AdsBehaviour, private val mxTr
         return mxTrackingBehaviour
     }
 
-    override fun onAdsManagerLoaded(groupCount: Int) {
-        mxTrackingBehaviour.onAdsManagerLoaded(groupCount)
-        adsBehaviour.onAdsManagerLoaded(groupCount)
+    override fun onAdsManagerLoaded(cuePoints: List<Float>?) {
+        mxTrackingBehaviour.onAdsManagerLoaded(cuePoints)
+        adsBehaviour.onAdsManagerLoaded(cuePoints)
     }
 }

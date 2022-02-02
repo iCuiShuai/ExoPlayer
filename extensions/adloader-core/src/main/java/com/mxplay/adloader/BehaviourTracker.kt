@@ -56,8 +56,8 @@ class BehaviourTracker(
         tryTrackingVastRequest(contentPositionMs, adGroupIndexProvider)
     }
 
-    override fun onAdsManagerLoaded(groupCount: Int) {
-        videoAdsTracker.onAdsManagerLoaded(groupCount)
+    override fun onAdsManagerLoaded(cuePoints: List<Float>?) {
+        videoAdsTracker.onAdsManagerLoaded(cuePoints?.size ?: 0)
     }
 
     override fun onAdLoad(adIndexInGroup: Int, adUri: Uri, adPodIndex: Int) {

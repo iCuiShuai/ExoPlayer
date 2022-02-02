@@ -52,9 +52,9 @@ open class AdsBehaviourExactTime(private val adsBehaviour: AdsBehaviour, private
         return mxTrackingBehaviour
     }
 
-    override fun onAdsManagerLoaded(groupCount: Int) {
-        mxTrackingBehaviour.onAdsManagerLoaded(groupCount)
-        adsBehaviour.onAdsManagerLoaded(groupCount)
+    override fun onAdsManagerLoaded(cuePoints: List<Float>?) {
+        mxTrackingBehaviour.onAdsManagerLoaded(cuePoints)
+        adsBehaviour.onAdsManagerLoaded(cuePoints)
     }
 
     override fun handleTimelineOrPositionChanged(player: Player?, timeline: Timeline?, period: Timeline.Period?) {

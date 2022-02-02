@@ -22,7 +22,7 @@ interface IAdsBehaviour : AdEvent.AdEventListener, com.google.ads.interactivemed
     fun onPositionDiscontinuity(player: Player?, timeline: Timeline?, period: Timeline.Period?): Boolean
     fun setPlayer(player: Player?)
     fun getContentPositionMs(player: Player, timeline: Timeline, period: Timeline.Period?, contentDurationMs: Long): Long
-    fun onAdsManagerLoaded(groupCount: Int)
+    fun onAdsManagerLoaded(cuePoints: List<Float>?)
     fun getAdGroupIndexForAdPod(podIndex: Int, podTimeOffset: Double, player: Player?, timeline: Timeline?, period: Timeline.Period?): Int
     fun onAdLoad(adGroupIndex: Int, adIndexInGroup: Int, adUri: Uri, adPodIndex: Int)
     fun createAdPlaybackState(adId: Any?, adGroupTimesUs: LongArray): AdPlaybackState
