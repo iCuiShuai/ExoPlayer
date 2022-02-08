@@ -266,6 +266,8 @@ public abstract class SimpleDecoderDav1d<
               outputBuffer.addFlag(C.BUFFER_FLAG_DECODE_ONLY);
             }
 //            outputBuffer.addFlag(flushFrames ? C.BUFFER_FLAG_END_OF_STREAM : C.BUFFER_FLAG_DECODE_ONLY);
+          }else if(getFrameResult == DAV1D_DECODE_AGAIN) {
+            outputBuffer.addFlag(C.BUFFER_FLAG_DECODE_ONLY);
           }
           if(getFrameResult == DAV1D_ERROR) {
             exception = getDav1dErrorMessage("decodeSendData error: ");
