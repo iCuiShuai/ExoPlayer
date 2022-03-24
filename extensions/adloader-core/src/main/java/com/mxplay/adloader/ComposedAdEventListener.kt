@@ -1,30 +1,47 @@
 package com.mxplay.adloader
 
 import com.google.ads.interactivemedia.v3.api.Ad
+import com.mxplay.adloader.nativeCompanion.NativeCompanion
+import com.mxplay.adloader.nativeCompanion.NativeCompanionAdManager
 import com.mxplay.interactivemedia.api.AdEvent
+import com.mxplay.interactivemedia.api.MxMediaSdkConfig
 import com.mxplay.interactivemedia.api.toMxAd
 import com.mxplay.interactivemedia.api.toMxAdEvent
+import com.mxplay.interactivemedia.internal.core.AdEventImpl
 import java.util.*
 
-internal class ComposedAdEventListener : AdEvent.AdEventListener, com.google.ads.interactivemedia.v3.api.AdEvent.AdEventListener  {
+internal class ComposedAdEventListener : AdEvent.AdEventListener, com.google.ads.interactivemedia.v3.api.AdEvent.AdEventListener, NativeCompanion.NativeCompanionListener  {
 
-    var eventListener : AdEvent.AdEventListener? = null
+    private val eventListeners = mutableListOf<AdEvent.AdEventListener>()
     private val imaAdToMxAdMap = lruCache<Ad, com.mxplay.interactivemedia.api.Ad>(3)
+
+    fun registerMxMediaSdkConfig(mxMediaSdkConfig: MxMediaSdkConfig) {
+        eventListeners.add(NativeCompanionAdManager(mxMediaSdkConfig, this))
+    }
+
+    fun registerEventListener(listener: AdEvent.AdEventListener?) {
+        if(listener != null) {
+            eventListeners.add(listener)
+        }
+    }
 
 
     override fun onAdEvent(adEvent: AdEvent) {
-        eventListener ?: return
-        eventListener?.onAdEvent(adEvent)
+        eventListeners.forEach {
+            it.onAdEvent(adEvent)
+        }
     }
 
     override fun onAdEvent(adEvent: com.google.ads.interactivemedia.v3.api.AdEvent?) {
-        if (adEvent == null || adEvent.type == null || eventListener == null) return
-        var ad = adEvent.ad?.let { imaAdToMxAdMap[adEvent.ad] }
-        if (ad == null && adEvent.ad != null) {
-            ad = adEvent.ad.toMxAd()
-            imaAdToMxAdMap[adEvent.ad] = ad
+        eventListeners.forEach {
+            if (adEvent == null || adEvent.type == null || it == null) return
+            var ad = adEvent.ad?.let { imaAdToMxAdMap[adEvent.ad] }
+            if (ad == null && adEvent.ad != null) {
+                ad = adEvent.ad.toMxAd()
+                imaAdToMxAdMap[adEvent.ad] = ad
+            }
+            it.onAdEvent(adEvent.toMxAdEvent(ad, adEvent.adData))
         }
-        eventListener?.onAdEvent(adEvent.toMxAdEvent(ad, adEvent.adData))
     }
 
     fun <K, V> lruCache(maxSize: Int): MutableMap<K, V> {
@@ -33,6 +50,10 @@ internal class ComposedAdEventListener : AdEvent.AdEventListener, com.google.ads
                 return this.size > maxSize
             }
         }
+    }
+
+    override fun onVideoSizeChanged(width: Int, height: Int) {
+        onAdEvent(AdEventImpl(AdEvent.AdEventType.VIDEO_SIZE_CHANGED, null, mapOf("width" to width.toString(), "height" to height.toString())))
     }
 }
 

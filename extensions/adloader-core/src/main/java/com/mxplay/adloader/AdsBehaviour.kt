@@ -11,6 +11,7 @@ import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.Timeline
 import com.google.android.exoplayer2.source.ads.AdPlaybackState
 import com.mxplay.interactivemedia.api.AdEvent
+import com.mxplay.interactivemedia.api.MxMediaSdkConfig
 
 open class AdsBehaviour private constructor(
     private val vastTimeOutInMs: Int,
@@ -34,11 +35,15 @@ open class AdsBehaviour private constructor(
     }
 
     override fun registerAdEventListener(adEventListener: AdEvent.AdEventListener?){
-        composedAdEventListener.eventListener = adEventListener
+        composedAdEventListener.registerEventListener(adEventListener)
     }
 
     override fun registerAdErrorEventListener(adErrorListener: com.mxplay.interactivemedia.api.AdErrorEvent.AdErrorListener?){
         composedAdErrorListener.adErrorListener = adErrorListener
+    }
+
+    override fun registerMxMediaSdkConfig(mxMediaSdkConfig: MxMediaSdkConfig?) {
+        mxMediaSdkConfig?.let { composedAdEventListener.registerMxMediaSdkConfig(it) }
     }
 
     private lateinit var adPlaybackStateHost: AdPlaybackStateHost

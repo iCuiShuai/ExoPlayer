@@ -7,6 +7,7 @@ import com.google.android.exoplayer2.Timeline
 import com.google.android.exoplayer2.source.ads.AdPlaybackState
 import com.mxplay.interactivemedia.api.AdErrorEvent
 import com.mxplay.interactivemedia.api.AdEvent
+import com.mxplay.interactivemedia.api.MxMediaSdkConfig
 
 
 interface IAdsBehaviour : AdEvent.AdEventListener, com.google.ads.interactivemedia.v3.api.AdEvent.AdEventListener, AdErrorEvent.AdErrorListener, com.google.ads.interactivemedia.v3.api.AdErrorEvent.AdErrorListener  {
@@ -31,4 +32,5 @@ interface IAdsBehaviour : AdEvent.AdEventListener, com.google.ads.interactivemed
     fun registerAdEventListener(adEventListener: AdEvent.AdEventListener?)
     fun registerAdErrorEventListener(adErrorListener: AdErrorEvent.AdErrorListener?)
     fun handleTimelineOrPositionChanged(player: Player?, timeline: Timeline?, period: Timeline.Period?)
+    fun registerMxMediaSdkConfig(mxMediaSdkConfig: MxMediaSdkConfig?)
 }

@@ -40,7 +40,7 @@ class Configuration(builder: Builder) {
         ioDispatcher = ioExecutor.asCoroutineDispatcher()
         adsBehaviour = builder.adsBehaviour ?: AdsBehaviour(builder.vastLoadTimeoutMs
                 ?: MxMediaSdkConfig.VAST_LOAD_TIMEOUT_MS, debugModeEnabled)
-        mxMediaSdkConfig = MxMediaSdkConfig.Builder(context, this.ioDispatcher, builder.userInfo, builder.trackersConfig).apply {
+        mxMediaSdkConfig = MxMediaSdkConfig.Builder(context, this.ioExecutor, builder.userInfo, builder.trackersConfig).apply {
             builder.adMediaMimeTypes?.let { this.adMediaMimeTypes = it }
             builder.vastLoadTimeoutMs?.let { this.vastLoadTimeoutMs = it }
             builder.mediaLoadTimeoutMs?.let { this.mediaLoadTimeoutMs = it }
