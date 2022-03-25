@@ -27,5 +27,6 @@ class SurveyNativeCompanion(override val json: JSONObject, private val companion
                     .listener(template as? SurveyBaseTemplate).build()
             surveyAdRequest.request()
         }
+        template.loadCompanionTemplate()
     }
 }

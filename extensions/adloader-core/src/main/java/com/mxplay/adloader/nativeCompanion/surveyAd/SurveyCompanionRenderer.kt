@@ -41,7 +41,7 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
     private var submitBtn: TextView? = null
     private var answerView: TextView? = null
 
-    lateinit var surveyAdsResponse: SurveyAdsResponse
+    var surveyAdsResponse: SurveyAdsResponse? = null
 
     override fun render() {
         container.removeAllViews()
@@ -66,13 +66,23 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
     }
 
     private fun bindView(adView: View) {
-        val surveyQuery = surveyAdsResponse.getQuery()
+        val loadingView: View? = adView.findViewById(R.id.loading_view)
+        val surveyContainer: View? = adView.findViewById(R.id.survey_container)
+
+        if(surveyAdsResponse == null) {
+            loadingView?.visibility = View.VISIBLE
+            surveyContainer?.visibility = View.GONE
+            return
+        } else {
+            loadingView?.visibility = View.GONE
+            surveyContainer?.visibility = View.VISIBLE
+        }
+        val surveyQuery = surveyAdsResponse?.getQuery()
         val answer = surveyQuery?.answer
         val type = surveyQuery?.answer?.type
 
         val iconView: ImageView? = adView.findViewById(R.id.native_ad_icon)
         val titleView: TextView? = adView.findViewById(R.id.native_ad_title)
-        val tag_view: View? = adView.findViewById(R.id.ad_tag_view)
         val questionView: TextView? = adView.findViewById(R.id.survey_question)
         val optionView: TableLayout? = adView.findViewById(R.id.survey_options_grid)
         answerView = adView.findViewById(R.id.suvery_answer)
@@ -85,10 +95,6 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
             }
         } catch (e: Exception) {
             e.printStackTrace()
-        }
-
-        if (tag_view != null) {
-            tag_view.visibility = View.GONE
         }
 
         if (questionView != null && surveyQuery != null) {
@@ -122,7 +128,7 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
         }
 
         submitBtn?.isEnabled = false
-//        enableSubmitButton(false)
+        enableSubmitButton(false)
         submitBtn?.setOnClickListener {
             submitSurveyResponse(answer, surveyQuery)
         }
