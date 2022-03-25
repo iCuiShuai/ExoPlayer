@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root_view"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#f5f5f5"
+    android:background="?survey_ads_bg"
     android:clipChildren="false"
     android:clipToPadding="false"
-    android:paddingBottom="16dp"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    android:paddingBottom="16dp">
 
     <FrameLayout
         android:id="@+id/native_ad_icon_container"
@@ -48,9 +49,10 @@
             android:focusableInTouchMode="false"
             android:maxLines="1"
             android:singleLine="true"
-            android:textColor="#35344c"
+            android:textColor="?survey_title_color"
             android:textSize="16sp"
-            app:mxSkin="textColor" />
+            android:fontFamily="?survey_font_extra_bold"
+            tools:text="One Plus 6T" />
     </FrameLayout>
 
     <FrameLayout
@@ -69,9 +71,10 @@
             android:layout_height="wrap_content"
             android:focusable="false"
             android:focusableInTouchMode="false"
-            android:textColor="#35344c"
+            android:textColor="?survey_question_color"
             android:textSize="16sp"
-            app:mxSkin="textColor" />
+            android:fontFamily="?survey_font_semi_bold"
+            tools:text="One Plus 6T" />
     </FrameLayout>
 
     <TableLayout
@@ -87,7 +90,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/survey_question_container">
     </TableLayout>
-    <!--    add col count for survey-->
 
     <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/suvery_answer"
@@ -98,17 +100,17 @@
         android:layout_marginTop="8dp"
         android:maxLength="200"
         android:padding="6dp"
-        android:background="#ffffff"
+        android:background="?survey_answer_bg"
         android:visibility="gone"
         android:gravity="start"
         android:inputType="text|textMultiLine|textCapSentences"
         android:textSize="12sp"
-        android:textColor="#35344c"
+        android:textColor="?survey_answer_color"
+        android:fontFamily="?survey_font_semi_bold"
         android:hint="Please write you answer here"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/survey_question_container"
-        app:mxSkin="background|textColor"/>
+        app:layout_constraintTop_toBottomOf="@id/survey_question_container" />
 
     <androidx.constraintlayout.widget.Barrier
         android:id="@+id/survey_ads_barrier"
@@ -128,20 +130,19 @@
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
         android:text="SUBMIT"
-        android:textColor="#3396a2ba"
+        android:textColor="?survey_submit_disable_color"
         android:gravity="center"
         android:textSize="13sp"
-        android:background="#3396a2ba"/>
+        android:fontFamily="?survey_font_extra_bold"
+        android:background="?survey_submit_disable_bg"/>
 
-    <androidx.appcompat.widget.AppCompatTextView
+    <ImageView
         android:id="@+id/ad_tag_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:src="?survey_ad_tag_src"
         android:layout_marginStart="8dp"
         android:layout_marginLeft="8dp"
-        android:background="#3396a2ba"
-        android:text="Ad"
-        android:textColor="#ffffff"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
 

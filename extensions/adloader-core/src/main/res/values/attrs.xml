@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="NativeCompanionTheme">
+        <attr name="survey_ads_bg" format="reference" />
+        <attr name="survey_title_color" format="reference" />
+        <attr name="survey_question_color" format="reference" />
+        <attr name="survey_answer_bg" format="reference" />
+        <attr name="survey_answer_color" format="reference" />
+        <attr name="survey_submit_enable_color" format="reference" />
+        <attr name="survey_submit_enable_bg" format="reference" />
+        <attr name="survey_submit_disable_color" format="reference" />
+        <attr name="survey_submit_disable_bg" format="reference" />
+        <attr name="survey_ad_tag_src" format="reference" />
+        <attr name="survey_option_color" format="reference" />
+        <attr name="survey_option_btn" format="reference" />
+        <attr name="survey_font_semi_bold" format="string" />
+        <attr name="survey_font_extra_bold" format="string" />
+    </declare-styleable>
+</resources>

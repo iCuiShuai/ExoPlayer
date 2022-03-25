@@ -15,12 +15,15 @@
         android:paddingStart="10dp"
         android:paddingLeft="10dp"
         android:textSize="13sp"
-        android:textColor="#505a78"
+        android:textColor="?survey_option_color"
+        android:fontFamily="?survey_font_semi_bold"
         android:layout_marginTop="3dp"
         android:layout_marginBottom="3dp"
+        android:button="?survey_option_btn"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="One Plus 6T"/>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

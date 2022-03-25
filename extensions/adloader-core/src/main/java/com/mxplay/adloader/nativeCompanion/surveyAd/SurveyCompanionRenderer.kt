@@ -2,9 +2,9 @@ package com.mxplay.adloader.nativeCompanion.surveyAd
 
 import android.content.Intent
 import android.content.res.Resources
+import android.content.res.TypedArray
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
@@ -14,6 +14,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.core.content.ContextCompat
 import ccom.mxplay.adloader.R
 import com.google.android.material.snackbar.Snackbar
 import com.mxplay.adloader.nativeCompanion.NativeCompanion
@@ -214,12 +215,27 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
 
     private fun enableSubmitButton(isEnable: Boolean) {
         submitBtn?.isEnabled = isEnable
-        val backGroundResource = if(isEnable) "#3C8CF0" else "#3396A2BA"
-        val textColor = if(isEnable) "#FFFFFF" else "#B8BECD"
-        Log.d(NativeCompanionAdManager.TAG, "setting enable btn back1: ${isEnable}")
-        submitBtn?.setBackgroundColor(Color.parseColor(backGroundResource))
-        submitBtn?.setTextColor(Color.parseColor(textColor))
-        Log.d(NativeCompanionAdManager.TAG, "setting enable btn back2: ${isEnable}")
+        try {
+            val array: TypedArray = context.obtainStyledAttributes(R.styleable.NativeCompanionTheme)
+            var textColor: Int = -1
+            var background: Int = -1
+
+            if(isEnable && array.hasValue(R.styleable.NativeCompanionTheme_survey_submit_enable_color)) {
+                textColor = array.getResourceId(R.styleable.NativeCompanionTheme_survey_submit_enable_color, -1)
+            } else if(!isEnable && array.hasValue(R.styleable.NativeCompanionTheme_survey_submit_disable_color)) {
+                textColor = array.getResourceId(R.styleable.NativeCompanionTheme_survey_submit_disable_color, -1)
+            }
+            if (textColor > 0) submitBtn?.setTextColor(ContextCompat.getColor(context, textColor))
+
+            if(isEnable && array.hasValue(R.styleable.NativeCompanionTheme_survey_submit_enable_bg)) {
+                background = array.getResourceId(R.styleable.NativeCompanionTheme_survey_submit_enable_bg, -1)
+            } else if (!isEnable && array.hasValue(R.styleable.NativeCompanionTheme_survey_submit_disable_bg)) {
+                background = array.getResourceId(R.styleable.NativeCompanionTheme_survey_submit_disable_bg, -1)
+            }
+            if(background > 0 && ContextCompat.getDrawable(context, background) != null) submitBtn?.background = ContextCompat.getDrawable(context, background)
+
+            Log.d(NativeCompanionAdManager.TAG, "setting enable btn back2: ${isEnable}")
+        } catch (e: Exception){}
     }
 
     private fun submitSurveyResponse(answer: SurveyAnswer?, surveyQuery: SurveyQuery?) {
