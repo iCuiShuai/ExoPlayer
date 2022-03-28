@@ -21,9 +21,7 @@ import com.mxplay.adloader.nativeCompanion.NativeCompanion
 import com.mxplay.adloader.nativeCompanion.NativeCompanionAdManager
 import com.mxplay.interactivemedia.api.CompanionAdSlot
 import com.mxplay.interactivemedia.internal.data.RemoteDataSource
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.*
 import org.json.JSONObject
 
 class SurveyCompanionRenderer(private val json: JSONObject, private val companionAdSlot: CompanionAdSlot, private val ioOpsScope: CoroutineScope,
@@ -142,26 +140,27 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
     }
 
     private fun loadIcon(imageView: ImageView) {
-        ioOpsScope.launch {
+        val mainScope = CoroutineScope(SupervisorJob() + remoteDataSource.mxMediaSdkConfig.mainDispatcher)
+        mainScope.launch {
             try {
-                withTimeout(8000L) {
-                    val response = remoteDataSource.fetchCompanionResource(json.optString("logo"))
-                    if (response.isSuccessful){
-                        val companionContainer = companionAdSlot.container
-                        val lp = imageView.layoutParams
-                        val width = lp.width
-                        val height = lp.height
-                        val scaledBitmap = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(response.body()?.byteStream()), width, height, false)
-                        val bitmapDrawable = BitmapDrawable(companionContainer.context.resources, scaledBitmap)
-                        imageView.setImageDrawable(bitmapDrawable)
-                        imageView.scaleType = ImageView.ScaleType.CENTER_INSIDE
-                        imageView.setOnClickListener {
-                            val intent = Intent(Intent.ACTION_VIEW).apply {
-                                data = Uri.parse(json.optString("clickThroughUrl"))
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                            }
-                            context.startActivity(intent)
+                val response = withTimeout(8000L) {
+                    remoteDataSource.fetchCompanionResource(json.optString("logo"))
+                }
+                if (response.isSuccessful){
+                    val companionContainer = companionAdSlot.container
+                    val lp = imageView.layoutParams
+                    val width = lp.width
+                    val height = lp.height
+                    val scaledBitmap = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(response.body()?.byteStream()), width, height, false)
+                    val bitmapDrawable = BitmapDrawable(companionContainer.context.resources, scaledBitmap)
+                    imageView.setImageDrawable(bitmapDrawable)
+                    imageView.scaleType = ImageView.ScaleType.CENTER_INSIDE
+                    imageView.setOnClickListener {
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            data = Uri.parse(json.optString("clickThroughUrl"))
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
                         }
+                        context.startActivity(intent)
                     }
                 }
             } catch (e: Exception) {

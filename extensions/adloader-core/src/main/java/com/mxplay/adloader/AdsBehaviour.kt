@@ -10,6 +10,7 @@ import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.Timeline
 import com.google.android.exoplayer2.source.ads.AdPlaybackState
+import com.mxplay.adloader.nativeCompanion.NativeCompanion
 import com.mxplay.interactivemedia.api.AdEvent
 import com.mxplay.interactivemedia.api.MxMediaSdkConfig
 
@@ -22,7 +23,8 @@ open class AdsBehaviour private constructor(
     AdEvent.AdEventListener by composedAdEventListener,
     com.google.ads.interactivemedia.v3.api.AdEvent.AdEventListener by composedAdEventListener,
     AdErrorEvent.AdErrorListener by composedAdErrorListener,
-    com.mxplay.interactivemedia.api.AdErrorEvent.AdErrorListener by composedAdErrorListener{
+    com.mxplay.interactivemedia.api.AdErrorEvent.AdErrorListener by composedAdErrorListener,
+    NativeCompanion.NativeCompanionListener {
 
 
     constructor(vastTimeOutInMs: Int,  debug : Boolean = false) : this(vastTimeOutInMs, debug, ComposedAdEventListener(), ComposedAdErrorListener())
@@ -43,6 +45,7 @@ open class AdsBehaviour private constructor(
     }
 
     override fun registerMxMediaSdkConfig(mxMediaSdkConfig: MxMediaSdkConfig?) {
+        composedAdEventListener.registerNativeCompanionListener(this)
         mxMediaSdkConfig?.let { composedAdEventListener.registerMxMediaSdkConfig(it) }
     }
 
@@ -229,6 +232,9 @@ open class AdsBehaviour private constructor(
 
     override fun provideBehaviourTracker(): IBehaviourTracker {
         return IBehaviourTracker.NO_OP_TRACKER
+    }
+
+    override fun onVideoSizeChanged(width: Int, height: Int) {
     }
 
 
