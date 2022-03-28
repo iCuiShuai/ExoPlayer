@@ -78,7 +78,7 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
             surveyContainer?.visibility = View.VISIBLE
         }
         val surveyQuery = surveyAdsResponse?.getQuery()
-        val answer = surveyQuery?.answer
+        val surveyAnswer = surveyQuery?.answer
         val type = surveyQuery?.answer?.type
 
         val iconView: ImageView? = adView.findViewById(R.id.native_ad_icon)
@@ -106,31 +106,30 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
             Log.d(NativeCompanionAdManager.TAG, "setting paragraph: ")
             answerView?.visibility = View.VISIBLE
             answerView?.setOnClickListener {
-//                if (!isResponseSubmitted) {
-//                    surveyAdResource?.showSurveyInputDialog(adView.context,
-//                            surveyQuery?.question?.value ?: "",
-//                            if (TextUtils.isEmpty(answerView?.text)) "" else answerView?.text.toString(),
-//                            object: SurveyInputDialogCallback {
-//                                override fun onAnswerSubmit(answer: String) {
-//                                    (it as? TextView)?.text = answer
-//                                    enableSubmitButton(!TextUtils.isEmpty(answer))
-//                                    submitSurveyResponse()
-//                                }
-//                            }
-//                    )
-//                }
+                if (!isResponseSubmitted) {
+                    SurveyInputDialog(context, surveyQuery?.question?.value ?: "",
+                            if (TextUtils.isEmpty(answerView?.text)) "" else answerView?.text.toString(),
+                            object: SurveyInputDialogCallback {
+                                override fun onAnswerSubmit(answer: String) {
+                                    (it as? TextView)?.text = answer
+                                    enableSubmitButton(!TextUtils.isEmpty(answer))
+                                    submitSurveyResponse(surveyAnswer, surveyQuery)
+                                }
+                            }
+                    )
+                }
             }
             optionView?.visibility = View.GONE
         } else if (type == SurveyAdsResponse.MULTICHOICE && optionView != null){
             Log.d(NativeCompanionAdManager.TAG, "setting options: ")
             answerView?.visibility = View.GONE
-            setUpOptionView(optionView, answer)
+            setUpOptionView(optionView, surveyAnswer)
         }
 
         submitBtn?.isEnabled = false
         enableSubmitButton(false)
         submitBtn?.setOnClickListener {
-            submitSurveyResponse(answer, surveyQuery)
+            submitSurveyResponse(surveyAnswer, surveyQuery)
         }
 
         try {
@@ -262,7 +261,7 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
             }
         }
         val submitRequest = SurveyAdRequest.Builder(remoteDataSource, ioOpsScope).post()
-                .url(json.optString("SurveyManagagementServerURL"))
+                .url(json.optString("SurveyManagementServerURL"))
                 .addRequestBody(surveyAnswerResponse).retry(2)
                 .surveyId(json.optString("surveyId"))
                 .addParam("advertiseId", remoteDataSource.mxMediaSdkConfig.advertiserId)
@@ -316,5 +315,9 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
 
     fun dpToPx(dp: Int): Int {
         return (dp * Resources.getSystem().displayMetrics.density).toInt()
+    }
+
+    interface SurveyInputDialogCallback {
+        fun onAnswerSubmit(answer: String)
     }
 }

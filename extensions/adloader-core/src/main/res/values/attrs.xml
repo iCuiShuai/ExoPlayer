@@ -15,6 +15,10 @@
         <attr name="survey_option_color" format="reference" />
         <attr name="survey_option_btn" format="reference" />
         <attr name="survey_loading_icon" format="reference" />
+        <attr name="survey_input_dialog_bg" format="reference" />
+        <attr name="survey_input_dialog_text_bg" format="reference" />
+        <attr name="survey_input_dialog_ques_color" format="reference" />
+        <attr name="survey_input_dialog_cta_color" format="reference" />
         <attr name="survey_font_regular" format="string" />
         <attr name="survey_font_semi_bold" format="string" />
         <attr name="survey_font_extra_bold" format="string" />

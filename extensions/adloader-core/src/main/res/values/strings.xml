@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="character_limit">%1$s/%2$s characters</string>
+    <string name="survey_ad_special_character_warning">* Please remove , from the answer</string>
+</resources>
