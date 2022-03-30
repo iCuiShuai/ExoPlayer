@@ -22,6 +22,7 @@ import com.mxplay.adloader.nativeCompanion.NativeCompanionAdManager
 import com.mxplay.interactivemedia.api.CompanionAdSlot
 import com.mxplay.interactivemedia.internal.data.RemoteDataSource
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import org.json.JSONObject
@@ -43,7 +44,7 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
 
     var surveyAdsResponse: SurveyAdsResponse? = null
 
-    override fun render() {
+    override fun render() : View?{
         container.removeAllViews()
         try {
             val root = layoutInflater.inflate(R.layout.native_survey_ads, container, false) as ViewGroup
@@ -56,9 +57,11 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
 
             container.addView(root)
             listener.onVideoSizeChanged(10, 8)
+            return root
         } catch (e: Exception) {
             Log.e(NativeCompanionAdManager.TAG, "fat gya render: ${e.printStackTrace()} ")
         }
+        return null
     }
 
     override fun release() {

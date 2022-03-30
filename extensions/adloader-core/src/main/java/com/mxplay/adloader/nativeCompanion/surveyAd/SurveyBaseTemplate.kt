@@ -1,13 +1,14 @@
 package com.mxplay.adloader.nativeCompanion.surveyAd
 
+import android.view.View
 import com.mxplay.adloader.nativeCompanion.NativeCompanion
 
 class SurveyBaseTemplate(override val id: String = "SurveyBaseTemplate", override val renderer: NativeCompanion.NativeCompanionRenderer)
     : NativeCompanion.NativeCompanionTemplate, SurveyAdRequest.SurveyAdsListener {
 
-    override fun loadCompanionTemplate() {
+    override fun loadCompanionTemplate(): View? {
         renderer.release()
-        renderer.render()
+        return renderer.render()
     }
 
     override fun onSuccess(response: SurveyAdsResponse?) {

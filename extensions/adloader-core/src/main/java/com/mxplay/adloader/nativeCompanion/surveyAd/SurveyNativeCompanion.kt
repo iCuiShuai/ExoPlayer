@@ -7,12 +7,12 @@ import com.mxplay.interactivemedia.internal.data.RemoteDataSource
 import kotlinx.coroutines.CoroutineScope
 import org.json.JSONObject
 
-class SurveyNativeCompanion(override val json: JSONObject, private val companionAdSlot: CompanionAdSlot, private val ioOpsScope: CoroutineScope,
-                            private val remoteDataSource: RemoteDataSource, override val type: NativeCompanion.NativeCompanionType,
+class SurveyNativeCompanion(json: JSONObject, private val companionAdSlot: CompanionAdSlot, private val ioOpsScope: CoroutineScope,
+                            private val remoteDataSource: RemoteDataSource, type: NativeCompanion.NativeCompanionType,
                             listener: NativeCompanion.NativeCompanionListener)
-    : NativeCompanion {
+    : NativeCompanion(type, json) {
 
-    override val template: NativeCompanion.NativeCompanionTemplate =
+    val template: NativeCompanionTemplate =
             SurveyBaseTemplate(renderer = SurveyCompanionRenderer(json, companionAdSlot, ioOpsScope, remoteDataSource, listener))
 
     override fun loadCompanion() {

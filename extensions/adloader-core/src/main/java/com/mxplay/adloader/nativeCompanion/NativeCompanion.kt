@@ -2,28 +2,30 @@ package com.mxplay.adloader.nativeCompanion
 
 import android.content.Context
 import android.util.TypedValue
+import android.view.View
+import com.mxplay.interactivemedia.api.AdEvent
+import com.mxplay.interactivemedia.api.CompanionAd
 import org.json.JSONObject
 
-interface NativeCompanion {
-    val type: NativeCompanionType
-    val json: JSONObject
-    val template: NativeCompanionTemplate
+abstract class NativeCompanion( val type: NativeCompanionType,
+                                val json: JSONObject
+                                ) : AdEvent.AdEventListener{
 
-    fun loadCompanion()
+    abstract fun loadCompanion()
 
     enum class NativeCompanionType(val value: String) {
-        SURVEY_AD("survey")
+        SURVEY_AD("survey"),
+        EXPANDABLE("expandable")
     }
 
     interface NativeCompanionTemplate {
         val id: String
         val renderer: NativeCompanionRenderer
-
-        fun loadCompanionTemplate()
+        fun loadCompanionTemplate() : View?
     }
 
     interface NativeCompanionRenderer {
-        fun render()
+        fun render() : View?
         fun release()
 
         fun px2dp(px: Int, context: Context): Int {
@@ -37,4 +39,9 @@ interface NativeCompanion {
     interface NativeCompanionListener {
         fun onVideoSizeChanged(width: Int, height: Int)
     }
+
+    override fun onAdEvent(adEvent: AdEvent) {
+
+    }
+
 }

@@ -10,6 +10,7 @@ import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.Timeline
 import com.google.android.exoplayer2.source.ads.AdPlaybackState
+import com.mxplay.adloader.nativeCompanion.CompanionResourceProvider
 import com.mxplay.interactivemedia.api.AdEvent
 import com.mxplay.interactivemedia.api.MxMediaSdkConfig
 
@@ -27,6 +28,9 @@ open class AdsBehaviour private constructor(
 
     constructor(vastTimeOutInMs: Int,  debug : Boolean = false) : this(vastTimeOutInMs, debug, ComposedAdEventListener(), ComposedAdErrorListener())
 
+    init {
+        composedAdEventListener.setAdsBehaviour(this)
+    }
     interface AdPlaybackStateHost {
         val adPlaybackState: AdPlaybackState
         fun updateAdPlaybackState(adPlaybackState: AdPlaybackState, notifyExo: Boolean)
@@ -42,8 +46,8 @@ open class AdsBehaviour private constructor(
         composedAdErrorListener.adErrorListener = adErrorListener
     }
 
-    override fun registerMxMediaSdkConfig(mxMediaSdkConfig: MxMediaSdkConfig?) {
-        mxMediaSdkConfig?.let { composedAdEventListener.registerMxMediaSdkConfig(it) }
+    override fun doSetupNativeCompanion(mxMediaSdkConfig: MxMediaSdkConfig?, companionResourceProvider: CompanionResourceProvider) {
+        mxMediaSdkConfig?.let { composedAdEventListener.doSetupNativeCompanion(it, companionResourceProvider) }
     }
 
     private lateinit var adPlaybackStateHost: AdPlaybackStateHost

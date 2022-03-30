@@ -39,6 +39,9 @@ interface IBehaviourTracker: AdEvent.AdEventListener, AdErrorEvent.AdErrorListen
         override fun setAdPlaybackStateHost(adPlaybackStateHost: AdsBehaviour.AdPlaybackStateHost) {
         }
 
+        override fun trackCompanionEvent(eventName: String, props: Map<String, String>) {
+        }
+
     }
     fun doSetupAdsRendering(firstPlayingAdIndex : Int)
     fun onAllAdsRequested()
@@ -54,4 +57,5 @@ interface IBehaviourTracker: AdEvent.AdEventListener, AdErrorEvent.AdErrorListen
     fun onAdLoad(adIndexInGroup: Int, adUri: Uri, adPodIndex: Int)
 
     fun setAdPlaybackStateHost(adPlaybackStateHost: AdsBehaviour.AdPlaybackStateHost)
+    fun trackCompanionEvent(eventName: String, props: Map<String, String>)
 }

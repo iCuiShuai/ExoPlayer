@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@color/mxskin__carousel_ad_title_bg__light"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:mxSkin="background"
+    android:orientation="vertical">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="13dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="0dp"
+        android:paddingBottom="10dp">
+
+        <ImageView
+            android:id="@+id/logo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/branded_logo"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintHeight_max="36dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintWidth_max="36dp" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/barrier2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.5" />
+
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:layout_marginBottom="3dp"
+            android:fontFamily="@font/font_muli"
+            android:lines="1"
+            android:textColor="@color/mxskin__mx_text_color_title__light"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@+id/barrier2"
+            app:layout_constraintEnd_toStartOf="@+id/cta_button"
+            app:layout_constraintStart_toEndOf="@+id/logo"
+            tools:text="Zomato: Food Delivery &amp; Dining" />
+<!--
+        <ImageView
+            android:id="@+id/ad_tag_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:srcCompat="@drawable/ad_flag_3"
+            app:layout_constraintLeft_toLeftOf="@+id/native_ad_title_container"
+            app:layout_constraintTop_toTopOf="@+id/native_ad_sub_title_container"
+            app:layout_constraintBottom_toBottomOf="@id/native_ad_sub_title_container"/>-->
+
+
+        <TextView
+            android:id="@+id/subtitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="3dp"
+            android:layout_marginEnd="10dp"
+            android:fontFamily="@font/font_muli"
+            android:lines="1"
+            app:drawableStartCompat="@drawable/ic_ad_tag"
+            android:drawablePadding="6dp"
+            android:textColor="@color/mxskin__report_recommend_color__light"
+            android:textSize="10sp"
+            app:layout_constraintEnd_toStartOf="@+id/actionsBarrier"
+            app:layout_constraintStart_toEndOf="@+id/logo"
+            app:layout_constraintTop_toBottomOf="@+id/barrier2"
+            tools:text="4.1 FREE" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            app:barrierDirection="start"
+            android:orientation="vertical"
+            android:id="@+id/actionsBarrier"
+            app:constraint_referenced_ids="cta_button"
+            />
+
+        <Button
+            android:id="@+id/cta_button"
+            android:background="@drawable/native_ad_btn"
+            android:textColor="@color/mxskin__login_popup_window_phone_login_btn_text_color__light"
+            android:fontFamily="@font/font_muli_semibold"
+            android:minHeight="32dp"
+            android:textStyle="normal"
+            android:textAllCaps="true"
+            android:textSize="11sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/cta_learn_more"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/expand"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageButton
+            android:id="@+id/expand"
+            style="?attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="48dp"
+            android:src="@drawable/navigation_down_arrow"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+
+
+</LinearLayout>

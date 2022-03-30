@@ -1,22 +1,23 @@
 package com.mxplay.adloader
 
 import com.google.ads.interactivemedia.v3.api.Ad
+import com.mxplay.adloader.nativeCompanion.CompanionResourceProvider
 import com.mxplay.adloader.nativeCompanion.NativeCompanion
 import com.mxplay.adloader.nativeCompanion.NativeCompanionAdManager
 import com.mxplay.interactivemedia.api.AdEvent
 import com.mxplay.interactivemedia.api.MxMediaSdkConfig
 import com.mxplay.interactivemedia.api.toMxAd
 import com.mxplay.interactivemedia.api.toMxAdEvent
-import com.mxplay.interactivemedia.internal.core.AdEventImpl
 import java.util.*
 
 internal class ComposedAdEventListener : AdEvent.AdEventListener, com.google.ads.interactivemedia.v3.api.AdEvent.AdEventListener, NativeCompanion.NativeCompanionListener  {
 
     private val eventListeners = mutableListOf<AdEvent.AdEventListener>()
     private val imaAdToMxAdMap = lruCache<Ad, com.mxplay.interactivemedia.api.Ad>(3)
+    private var adsBehaviour: AdsBehaviour? = null
 
-    fun registerMxMediaSdkConfig(mxMediaSdkConfig: MxMediaSdkConfig) {
-        eventListeners.add(NativeCompanionAdManager(mxMediaSdkConfig, this))
+    fun doSetupNativeCompanion(mxMediaSdkConfig: MxMediaSdkConfig, companionResourceProvider: CompanionResourceProvider) {
+        eventListeners.add(NativeCompanionAdManager(adsBehaviour, mxMediaSdkConfig, this, companionResourceProvider))
     }
 
     fun registerEventListener(listener: AdEvent.AdEventListener?) {
@@ -53,7 +54,12 @@ internal class ComposedAdEventListener : AdEvent.AdEventListener, com.google.ads
     }
 
     override fun onVideoSizeChanged(width: Int, height: Int) {
-        onAdEvent(AdEventImpl(AdEvent.AdEventType.VIDEO_SIZE_CHANGED, null, mapOf("width" to width.toString(), "height" to height.toString())))
+//        onAdEvent(AdEventImpl(AdEvent.AdEventType.VIDEO_SIZE_CHANGED, null, mapOf("width" to width.toString(), "height" to height.toString())))
+    }
+
+
+    fun setAdsBehaviour(adsBehaviour: AdsBehaviour) {
+        this.adsBehaviour = adsBehaviour
     }
 }
 
