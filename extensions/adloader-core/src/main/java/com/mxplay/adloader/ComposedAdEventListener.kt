@@ -15,6 +15,11 @@ internal class ComposedAdEventListener : AdEvent.AdEventListener, com.google.ads
     private val eventListeners = mutableListOf<AdEvent.AdEventListener>()
     private val imaAdToMxAdMap = lruCache<Ad, com.mxplay.interactivemedia.api.Ad>(3)
     private var adsBehaviour: AdsBehaviour? = null
+    private var nativeCompanioListener: NativeCompanion.NativeCompanionListener? = null
+
+    fun registerNativeCompanionListener(listener: NativeCompanion.NativeCompanionListener?) {
+        nativeCompanioListener = listener
+    }
 
     fun doSetupNativeCompanion(mxMediaSdkConfig: MxMediaSdkConfig, companionResourceProvider: CompanionResourceProvider) {
         eventListeners.add(NativeCompanionAdManager(adsBehaviour, mxMediaSdkConfig, this, companionResourceProvider))
@@ -54,7 +59,7 @@ internal class ComposedAdEventListener : AdEvent.AdEventListener, com.google.ads
     }
 
     override fun onVideoSizeChanged(width: Int, height: Int) {
-//        onAdEvent(AdEventImpl(AdEvent.AdEventType.VIDEO_SIZE_CHANGED, null, mapOf("width" to width.toString(), "height" to height.toString())))
+        nativeCompanioListener?.onVideoSizeChanged(width, height)
     }
 
 
