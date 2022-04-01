@@ -33,5 +33,9 @@ interface IAdsBehaviour : AdEvent.AdEventListener, com.google.ads.interactivemed
     fun registerAdEventListener(adEventListener: AdEvent.AdEventListener?)
     fun registerAdErrorEventListener(adErrorListener: AdErrorEvent.AdErrorListener?)
     fun handleTimelineOrPositionChanged(player: Player?, timeline: Timeline?, period: Timeline.Period?)
-    fun doSetupNativeCompanion(mxMediaSdkConfig:  MxMediaSdkConfig?, companionResourceProvider: CompanionResourceProvider)
+    fun doSetupNativeCompanion(mxMediaSdkConfig:  MxMediaSdkConfig?, companionResourceProvider: CompanionResourceProvider, tracker: VideoAdsTracker)
+    fun onVideoSizeChanged(width: Int, height: Int)
+    fun release(){
+
+    }
 }

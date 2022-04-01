@@ -8,7 +8,11 @@ import com.google.android.exoplayer2.Timeline
 import com.google.android.exoplayer2.source.ads.AdPlaybackState
 
 interface IBehaviourTracker: AdEvent.AdEventListener, AdErrorEvent.AdErrorListener {
+    val videoAdsTracker: VideoAdsTracker
     object NO_OP_TRACKER : IBehaviourTracker {
+        override val videoAdsTracker: VideoAdsTracker
+            get() = VideoAdsTracker.getNoOpTracker()
+
         override fun doSetupAdsRendering(firstPlayingAdIndex: Int) {}
 
         override fun onAllAdsRequested() {}

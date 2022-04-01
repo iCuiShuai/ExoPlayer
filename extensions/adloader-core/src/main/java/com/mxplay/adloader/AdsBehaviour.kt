@@ -2,7 +2,6 @@ package com.mxplay.adloader
 
 import android.net.Uri
 import android.os.Handler
-import android.util.Log
 import android.util.Pair
 import androidx.annotation.CallSuper
 import com.google.ads.interactivemedia.v3.api.AdErrorEvent
@@ -10,10 +9,10 @@ import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.Timeline
 import com.google.android.exoplayer2.source.ads.AdPlaybackState
-import com.mxplay.adloader.nativeCompanion.NativeCompanion
 import com.mxplay.adloader.nativeCompanion.CompanionResourceProvider
 import com.mxplay.interactivemedia.api.AdEvent
 import com.mxplay.interactivemedia.api.MxMediaSdkConfig
+import com.mxplay.logger.ZenLogger
 
 open class AdsBehaviour private constructor(
     private val vastTimeOutInMs: Int,
@@ -24,15 +23,12 @@ open class AdsBehaviour private constructor(
     AdEvent.AdEventListener by composedAdEventListener,
     com.google.ads.interactivemedia.v3.api.AdEvent.AdEventListener by composedAdEventListener,
     AdErrorEvent.AdErrorListener by composedAdErrorListener,
-    com.mxplay.interactivemedia.api.AdErrorEvent.AdErrorListener by composedAdErrorListener,
-    NativeCompanion.NativeCompanionListener {
+    com.mxplay.interactivemedia.api.AdErrorEvent.AdErrorListener by composedAdErrorListener{
 
 
     constructor(vastTimeOutInMs: Int,  debug : Boolean = false) : this(vastTimeOutInMs, debug, ComposedAdEventListener(), ComposedAdErrorListener())
 
-    init {
-        composedAdEventListener.setAdsBehaviour(this)
-    }
+
     interface AdPlaybackStateHost {
         val adPlaybackState: AdPlaybackState
         fun updateAdPlaybackState(adPlaybackState: AdPlaybackState, notifyExo: Boolean)
@@ -48,9 +44,8 @@ open class AdsBehaviour private constructor(
         composedAdErrorListener.adErrorListener = adErrorListener
     }
 
-    override fun doSetupNativeCompanion(mxMediaSdkConfig: MxMediaSdkConfig?, companionResourceProvider: CompanionResourceProvider) {
-        composedAdEventListener.registerNativeCompanionListener(this)
-        mxMediaSdkConfig?.let { composedAdEventListener.doSetupNativeCompanion(it, companionResourceProvider) }
+    override fun doSetupNativeCompanion(mxMediaSdkConfig: MxMediaSdkConfig?, companionResourceProvider: CompanionResourceProvider, tracker: VideoAdsTracker) {
+        mxMediaSdkConfig?.let { composedAdEventListener.doSetupNativeCompanion(it, companionResourceProvider, tracker, this) }
     }
 
     private lateinit var adPlaybackStateHost: AdPlaybackStateHost
@@ -90,7 +85,7 @@ open class AdsBehaviour private constructor(
             }
             for (i in 0 until adGroup.count) {
                 if ((adGroup.states[i] == AdPlaybackState.AD_STATE_UNAVAILABLE || adGroup.states[i] == AdPlaybackState.AD_STATE_AVAILABLE) && i == adPosition) {
-                    if (debug) Log.d(TAG, "Removing audio ad $i in ad group $podIndex")
+                    if (debug) ZenLogger.dt(TAG, "Removing audio ad $i in ad group $podIndex")
                     adPlaybackState = adPlaybackState.withAdLoadError(podIndex, i)
                     break
                 }
@@ -241,6 +236,12 @@ open class AdsBehaviour private constructor(
     override fun onVideoSizeChanged(width: Int, height: Int) {
     }
 
+
+    @CallSuper
+    override fun release() {
+        super.release()
+        composedAdEventListener.release()
+    }
 
     companion object {
         private const val TAG = "AdsBehaviour"

@@ -6,6 +6,7 @@ import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import ccom.mxplay.adloader.R
 import com.mxplay.adloader.nativeCompanion.CompanionResourceProvider
@@ -24,19 +25,26 @@ class UniImageRenderer(context: Context, parent: ViewGroup, json: JSONObject, ev
 
     fun bindView(view: View) {
         val action = view.findViewById<TextView>(R.id.native_ad_action_button)
-        if (json.has("clickThroughUrl")) {
-            action.setOnClickListener {
-                kotlin.runCatching {
-                    view.context.startActivity(Intent().apply {
-                        setAction(Intent.ACTION_VIEW)
-                        data = Uri.parse(json.getString("clickThroughUrl"))
-                    })
-
+        bindCTA(action)
+        val ad = json.optJSONArray("ads")?.getJSONObject(0)
+        if (ad != null){
+            val url = ad.optString("image")
+            val imageView = view.findViewById<ImageView>(R.id.image)
+            companionResourceProvider.loadImage(url, imageView)
+            if (ad.has("clickThroughUrl")){
+                view.setOnClickListener {
+                    kotlin.runCatching {
+                        context.startActivity(Intent().apply {
+                            setAction(Intent.ACTION_VIEW)
+                            data = Uri.parse(json.getString("clickThroughUrl"))
+                        })
+                        trackClick(ad)
+                    }
                 }
             }
+
         }
-        action.text = json.optString("CTA") ?: view.context.getString(R.string.cta_learn_more)
-        companionResourceProvider.loadImage(json.optString("image"), view.findViewById(R.id.image))
+
     }
 
 

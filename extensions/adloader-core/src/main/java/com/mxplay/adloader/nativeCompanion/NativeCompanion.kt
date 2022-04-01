@@ -36,9 +36,7 @@ abstract class NativeCompanion( val type: NativeCompanionType,
         }
     }
 
-    interface NativeCompanionListener {
-        fun onVideoSizeChanged(width: Int, height: Int)
-    }
+
 
     override fun onAdEvent(adEvent: AdEvent) {
 

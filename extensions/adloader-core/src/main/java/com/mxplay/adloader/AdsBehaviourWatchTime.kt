@@ -52,6 +52,11 @@ class AdsBehaviourWatchTime(durationSec: Long, private val adsBehaviour: AdsBeha
         adsBehaviour.onAdsManagerLoaded(cuePoints)
     }
 
+    override fun release() {
+        super.release()
+        adsBehaviour.release()
+    }
+
     override fun doSetupAdsRendering(contentPositionMs: Long, contentDurationMs: Long, playAdBeforeStartPosition: Boolean): Boolean {
         val adPlaybackStateHost = adsBehaviour.obtainAdPlaybackStateHost() ?: return false
         val adGroupForPositionIndex = adPlaybackStateHost.adPlaybackState.getAdGroupIndexForPositionUs(

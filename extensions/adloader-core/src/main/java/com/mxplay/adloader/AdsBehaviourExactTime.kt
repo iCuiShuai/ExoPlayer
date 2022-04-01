@@ -70,4 +70,9 @@ open class AdsBehaviourExactTime(private val adsBehaviour: AdsBehaviour, private
         mxTrackingBehaviour.doSetupAdsRendering(adsBehaviour.getFirstPlayingAdIndex(contentPositionMs, contentDurationMs, playAdBeforeStartPosition))
         return false
     }
+
+    override fun release() {
+        super.release()
+        adsBehaviour.release()
+    }
 }

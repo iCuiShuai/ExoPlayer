@@ -2,7 +2,6 @@ package com.mxplay.adloader
 
 import com.google.ads.interactivemedia.v3.api.Ad
 import com.mxplay.adloader.nativeCompanion.CompanionResourceProvider
-import com.mxplay.adloader.nativeCompanion.NativeCompanion
 import com.mxplay.adloader.nativeCompanion.NativeCompanionAdManager
 import com.mxplay.interactivemedia.api.AdEvent
 import com.mxplay.interactivemedia.api.MxMediaSdkConfig
@@ -10,19 +9,16 @@ import com.mxplay.interactivemedia.api.toMxAd
 import com.mxplay.interactivemedia.api.toMxAdEvent
 import java.util.*
 
-internal class ComposedAdEventListener : AdEvent.AdEventListener, com.google.ads.interactivemedia.v3.api.AdEvent.AdEventListener, NativeCompanion.NativeCompanionListener  {
+internal class ComposedAdEventListener : AdEvent.AdEventListener, com.google.ads.interactivemedia.v3.api.AdEvent.AdEventListener  {
 
     private val eventListeners = mutableListOf<AdEvent.AdEventListener>()
     private val imaAdToMxAdMap = lruCache<Ad, com.mxplay.interactivemedia.api.Ad>(3)
-    private var adsBehaviour: AdsBehaviour? = null
-    private var nativeCompanioListener: NativeCompanion.NativeCompanionListener? = null
+    private var nativeCompanionAdManager: NativeCompanionAdManager? = null
 
-    fun registerNativeCompanionListener(listener: NativeCompanion.NativeCompanionListener?) {
-        nativeCompanioListener = listener
-    }
 
-    fun doSetupNativeCompanion(mxMediaSdkConfig: MxMediaSdkConfig, companionResourceProvider: CompanionResourceProvider) {
-        eventListeners.add(NativeCompanionAdManager(adsBehaviour, mxMediaSdkConfig, this, companionResourceProvider))
+    fun doSetupNativeCompanion(mxMediaSdkConfig: MxMediaSdkConfig, companionResourceProvider: CompanionResourceProvider, tracker: VideoAdsTracker, adsBehaviour: AdsBehaviour) {
+        nativeCompanionAdManager = NativeCompanionAdManager(tracker, adsBehaviour, mxMediaSdkConfig, companionResourceProvider)
+        eventListeners.add(nativeCompanionAdManager!!)
     }
 
     fun registerEventListener(listener: AdEvent.AdEventListener?) {
@@ -58,13 +54,9 @@ internal class ComposedAdEventListener : AdEvent.AdEventListener, com.google.ads
         }
     }
 
-    override fun onVideoSizeChanged(width: Int, height: Int) {
-        nativeCompanioListener?.onVideoSizeChanged(width, height)
-    }
-
-
-    fun setAdsBehaviour(adsBehaviour: AdsBehaviour) {
-        this.adsBehaviour = adsBehaviour
+    fun release() {
+        nativeCompanionAdManager?.release()
+        imaAdToMxAdMap.clear()
     }
 }
 

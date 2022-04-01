@@ -20,8 +20,7 @@ class SurveyAdRequest private constructor(builder: Builder) {
     private val mxAdListener: SurveyAdsListener? = builder.listener
     private val requestParams: HashMap<String, String>? = builder.params
     private val remoteDataSource = builder.remoteDataSource
-    private val ioOpsScope: CoroutineScope = builder.ioOpsScope
-    private val mainDispatcher: CoroutineDispatcher = remoteDataSource.mxMediaSdkConfig.mainDispatcher
+    private val companionSdkScope: CoroutineScope = builder.companionSdkScope
     private var isAdLoading = false
 
     companion object {
@@ -107,19 +106,26 @@ class SurveyAdRequest private constructor(builder: Builder) {
     }
 
     private fun getSurveyResponse(url: String) {
-        ioOpsScope.launch {
-            withTimeout(5000) {
-                val response = remoteDataSource.fetchDataFromUri(url, requestParams ?: mapOf())
+        companionSdkScope.launch {
+            try {
+                val response  = withTimeout(5000) {
+                    remoteDataSource.fetchDataFromUriAsync(url, requestParams ?: mapOf())
+                }
                 onApiResponseReceived(response)
+            } catch (e: Exception) {
+
             }
         }
     }
 
     private fun postSurveyResponse(url: String, json: String) {
-        ioOpsScope.launch {
-            withTimeout(5000) {
-                val response = remoteDataSource.postDataToUri(url, json)
+        companionSdkScope.launch {
+            try {
+                val response  = withTimeout(5000) {
+                    remoteDataSource.postDataToUriAsync(url, json)
+                }
                 onApiResponseReceived(response)
+            } catch (e: Exception) {
             }
         }
     }
@@ -134,16 +140,16 @@ class SurveyAdRequest private constructor(builder: Builder) {
             } catch (e: Exception) {
             }
             if ((apiAdResponse == null || apiAdResponse.isEmpty())) {
-                withContext(mainDispatcher) {
+                withContext(Dispatchers.Main) {
                     onFailed(400, "Not Valid Response", null)
                 }
             } else {
-                withContext(mainDispatcher) {
+                withContext(Dispatchers.Main) {
                     onAdResponseReceived(apiAdResponse)
                 }
             }
         } else {
-            withContext(mainDispatcher) {
+            withContext(Dispatchers.Main) {
                 onAdResponseReceived(apiAdResponse)
             }
         }
@@ -165,7 +171,7 @@ class SurveyAdRequest private constructor(builder: Builder) {
         }
     }
 
-    class Builder(val remoteDataSource: RemoteDataSource, val ioOpsScope: CoroutineScope) {
+    class Builder(val remoteDataSource: RemoteDataSource, val companionSdkScope: CoroutineScope) {
         var method: String = GET
         var url: String = ""
         var params: HashMap<String, String>? = null

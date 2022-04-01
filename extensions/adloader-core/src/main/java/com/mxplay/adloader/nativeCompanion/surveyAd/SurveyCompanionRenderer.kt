@@ -17,19 +17,19 @@ import android.widget.*
 import androidx.core.content.ContextCompat
 import ccom.mxplay.adloader.R
 import com.google.android.material.snackbar.Snackbar
+import com.mxplay.adloader.AdsBehaviour
+import com.mxplay.adloader.nativeCompanion.EventsTracker
 import com.mxplay.adloader.nativeCompanion.NativeCompanion
 import com.mxplay.adloader.nativeCompanion.NativeCompanionAdManager
 import com.mxplay.interactivemedia.api.CompanionAdSlot
 import com.mxplay.interactivemedia.internal.data.RemoteDataSource
-import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import org.json.JSONObject
 
-class SurveyCompanionRenderer(private val json: JSONObject, private val companionAdSlot: CompanionAdSlot, private val ioOpsScope: CoroutineScope,
-                              private val remoteDataSource: RemoteDataSource, private val listener: NativeCompanion.NativeCompanionListener): NativeCompanion.NativeCompanionRenderer {
+class SurveyCompanionRenderer(private val json: JSONObject, private val companionAdSlot: CompanionAdSlot, private val eventsTracker: EventsTracker, private val adsBehaviour: AdsBehaviour?, private val companionSdkScope: CoroutineScope,
+                              private val remoteDataSource: RemoteDataSource): NativeCompanion.NativeCompanionRenderer {
 
     private val container = companionAdSlot.container
     private val context = companionAdSlot.container.context
@@ -57,7 +57,7 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
             Log.d(NativeCompanionAdManager.TAG, "end binding: ")
 
             container.addView(root)
-            listener.onVideoSizeChanged(10, 8)
+            adsBehaviour?.onVideoSizeChanged(10, 8)
             return root
         } catch (e: Exception) {
             Log.e(NativeCompanionAdManager.TAG, "fat gya render: ${e.printStackTrace()} ")
@@ -113,7 +113,7 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
                 if (!isResponseSubmitted) {
                     SurveyInputDialog(context, surveyQuery?.question?.value ?: "",
                             if (TextUtils.isEmpty(answerView?.text)) "" else answerView?.text.toString(),
-                            object: SurveyInputDialogCallback {
+                            object : SurveyInputDialogCallback {
                                 override fun onAnswerSubmit(answer: String) {
                                     (it as? TextView)?.text = answer
                                     enableSubmitButton(!TextUtils.isEmpty(answer))
@@ -146,11 +146,10 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
     }
 
     private fun loadIcon(imageView: ImageView) {
-        val mainScope = CoroutineScope(SupervisorJob() + remoteDataSource.mxMediaSdkConfig.mainDispatcher)
-        mainScope.launch {
+        companionSdkScope.launch {
             try {
-                val response = withTimeout(8000L) {
-                    remoteDataSource.fetchCompanionResource(json.optString("logo"))
+                val response = withTimeout(4000L) {
+                    remoteDataSource.fetchCompanionResourceAsync(json.optString("logo"))
                 }
                 if (response.isSuccessful){
                     val companionContainer = companionAdSlot.container
@@ -265,7 +264,7 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
                 return
             }
         }
-        val submitRequest = SurveyAdRequest.Builder(remoteDataSource, ioOpsScope).post()
+        val submitRequest = SurveyAdRequest.Builder(remoteDataSource, companionSdkScope).post()
                 .url(json.optString("SurveyManagementServerURL"))
                 .addRequestBody(surveyAnswerResponse).retry(2)
                 .surveyId(json.optString("surveyId"))
