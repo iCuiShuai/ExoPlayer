@@ -1,13 +1,8 @@
 package com.mxplay.adloader.nativeCompanion.surveyAd
 
-import android.content.Intent
+import android.content.res.Configuration
 import android.content.res.Resources
 import android.content.res.TypedArray
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Rect
-import android.graphics.drawable.BitmapDrawable
-import android.net.Uri
 import android.text.TextUtils
 import android.util.Log
 import android.view.LayoutInflater
@@ -16,20 +11,22 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.core.content.ContextCompat
 import ccom.mxplay.adloader.R
-import com.google.android.material.snackbar.Snackbar
 import com.mxplay.adloader.AdsBehaviour
+import com.mxplay.adloader.nativeCompanion.CompanionResourceProvider
 import com.mxplay.adloader.nativeCompanion.EventsTracker
 import com.mxplay.adloader.nativeCompanion.NativeCompanion
 import com.mxplay.adloader.nativeCompanion.NativeCompanionAdManager
+import com.mxplay.adloader.utils.SnackbarUtils
 import com.mxplay.interactivemedia.api.CompanionAdSlot
 import com.mxplay.interactivemedia.internal.data.RemoteDataSource
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
 import org.json.JSONObject
 
-class SurveyCompanionRenderer(private val json: JSONObject, private val companionAdSlot: CompanionAdSlot, private val eventsTracker: EventsTracker, private val adsBehaviour: AdsBehaviour?, private val companionSdkScope: CoroutineScope,
-                              private val remoteDataSource: RemoteDataSource): NativeCompanion.NativeCompanionRenderer {
+class SurveyCompanionRenderer(private val json: JSONObject, private val companionAdSlot: CompanionAdSlot,
+                              private val eventsTracker: EventsTracker, private val adsBehaviour: AdsBehaviour?,
+                              private val companionSdkScope: CoroutineScope, private val remoteDataSource: RemoteDataSource,
+                              private val resourceProvider: CompanionResourceProvider):
+        NativeCompanion.NativeCompanionRenderer {
 
     private val container = companionAdSlot.container
     private val context = companionAdSlot.container.context
@@ -42,6 +39,7 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
 
     private var submitBtn: TextView? = null
     private var answerView: TextView? = null
+    private var inputDialog: SurveyInputDialog? = null
 
     var surveyAdsResponse: SurveyAdsResponse? = null
 
@@ -67,6 +65,7 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
 
     override fun release() {
         container.removeAllViews()
+        inputDialog?.release()
     }
 
     private fun bindView(adView: View) {
@@ -111,7 +110,7 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
             answerView?.visibility = View.VISIBLE
             answerView?.setOnClickListener {
                 if (!isResponseSubmitted) {
-                    SurveyInputDialog(context, surveyQuery?.question?.value ?: "",
+                    inputDialog = SurveyInputDialog(context, surveyQuery?.question?.value ?: "",
                             if (TextUtils.isEmpty(answerView?.text)) "" else answerView?.text.toString(),
                             object : SurveyInputDialogCallback {
                                 override fun onAnswerSubmit(answer: String) {
@@ -138,39 +137,13 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
 
         try {
             if (iconView != null && !TextUtils.isEmpty(json.optString("logo"))) {
-                loadIcon(iconView)
+                resourceProvider.loadImage(json.optString("logo"), iconView)
             }
         } catch (e: Exception) {
             e.printStackTrace()
         }
-    }
 
-    private fun loadIcon(imageView: ImageView) {
-        companionSdkScope.launch {
-            try {
-                val response = withTimeout(4000L) {
-                    remoteDataSource.fetchCompanionResourceAsync(json.optString("logo"))
-                }
-                if (response.isSuccessful){
-                    val companionContainer = companionAdSlot.container
-                    val lp = imageView.layoutParams
-                    val width = lp.width
-                    val height = lp.height
-                    val scaledBitmap = Bitmap.createScaledBitmap(BitmapFactory.decodeStream(response.body()?.byteStream()), width, height, false)
-                    val bitmapDrawable = BitmapDrawable(companionContainer.context.resources, scaledBitmap)
-                    imageView.setImageDrawable(bitmapDrawable)
-                    imageView.scaleType = ImageView.ScaleType.CENTER_INSIDE
-                    imageView.setOnClickListener {
-                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                            data = Uri.parse(json.optString("clickThroughUrl"))
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                        }
-                        context.startActivity(intent)
-                    }
-                }
-            } catch (e: Exception) {
-            }
-        }
+        trackImpression()
     }
 
     private fun setUpOptionView(optionView: TableLayout, answer: SurveyAnswer?) {
@@ -277,6 +250,7 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
                         enableSubmitButton(submitEnable)
                         submitBtn?.text = "SUBMITTED"
                         showSnackBar("Thanks for your response")
+                        trackSurveySubmit("ok")
                     }
 
                     override fun onFailed(errCode: Int) {
@@ -288,6 +262,7 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
                         enableSubmitButton(submitEnable)
                         submitBtn?.text = "SUBMITTED"
                         Toast.makeText(context, "You have already responded", Toast.LENGTH_SHORT).show()
+                        trackSurveySubmit("alreadyResponded")
                     }
                 }).build()
         submitRequest.request()
@@ -295,30 +270,33 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
 
     private fun showSnackBar(msg: String) {
         if (submitBtn != null) {
-            val snackbar = Snackbar.make(submitBtn!!, msg, Snackbar.LENGTH_SHORT)
-            setMarginForSnackBar(snackbar)
-            snackbar.show()
+            val leftRightMargin = if(context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) dpToPx(8) else dpToPx(188)
+            val topBottomMargin = dpToPx(8)
+            SnackbarUtils.Short(submitBtn!!, msg).margins(leftRightMargin, topBottomMargin, leftRightMargin, topBottomMargin).radius(dpToPx(4).toFloat()).show()
             Log.d(NativeCompanionAdManager.TAG, "showSnackBar: ")
         }
 
     }
 
-    private fun setMarginForSnackBar(snackBar: Any): Boolean {
-        try {
-            val snackbarClass = Class.forName("com.google.android.material.snackbar.Snackbar")
-            val originalMarginsField = snackbarClass.superclass.getDeclaredField("originalMargins")
-            originalMarginsField.isAccessible = true
-            originalMarginsField.set(snackBar, Rect(dpToPx(8), 0, dpToPx(8), dpToPx(64)))
-            return true
-        } catch (e: IllegalAccessException) {
-        } catch (e: NoSuchFieldException) {
-        } catch (e: ClassNotFoundException) {
-        }
-        return false
-    }
-
     fun dpToPx(dp: Int): Int {
         return (dp * Resources.getSystem().displayMetrics.density).toInt()
+    }
+
+    private fun trackSurveySubmit(status: String) {
+        eventsTracker.trackSurveyCompanionEvent("SurveyAdSubmitted", data = mapOf("surveyId" to json.optString("surveyId"), "statusCode" to status))
+    }
+
+    private fun trackImpression() {
+        val clickTrackerUrls = json.optJSONArray("impressionTracker")
+        val urls = mutableListOf<String>()
+        clickTrackerUrls?.let {
+            for (i in 0 until it.length()) {
+                if (!TextUtils.isEmpty(it.getString(i))) {
+                    urls.add(it.getString(i))
+                }
+            }
+        }
+        eventsTracker.trackSurveyCompanionEvent("SurveyAdShown", urls, mapOf("surveyId" to json.optString("surveyId")))
     }
 
     interface SurveyInputDialogCallback {

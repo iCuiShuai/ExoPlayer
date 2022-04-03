@@ -86,7 +86,7 @@ class NativeCompanionAdManager(val tracker: VideoAdsTracker, val adsBehaviour: A
 
         return when(json.optString("type")) {
             NativeCompanion.NativeCompanionType.SURVEY_AD.value -> {
-                return SurveyNativeCompanion(json, companionAdSlot,eventsTracker, adsBehaviour, companionSdkScope, remoteDataSource, NativeCompanion.NativeCompanionType.SURVEY_AD)
+                return SurveyNativeCompanion(json, companionAdSlot,eventsTracker, adsBehaviour, companionSdkScope, remoteDataSource, NativeCompanion.NativeCompanionType.SURVEY_AD, resourceProvider)
             }
             NativeCompanion.NativeCompanionType.EXPANDABLE.value -> {
                 return ExpandableNativeCompanion(json, companionAdSlot, eventsTracker, resourceProvider, NativeCompanion.NativeCompanionType.EXPANDABLE)

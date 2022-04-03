@@ -87,4 +87,8 @@ class SurveyInputDialog(private val context: Context, question: String, answer: 
                 currLength.toString(),
                 charLimit.toString())
     }
+
+    fun release() {
+        dialog.dismiss()
+    }
 }

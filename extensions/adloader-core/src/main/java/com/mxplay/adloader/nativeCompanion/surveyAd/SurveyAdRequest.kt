@@ -24,7 +24,6 @@ class SurveyAdRequest private constructor(builder: Builder) {
     private var isAdLoading = false
 
     companion object {
-        private const val SURVEY_ADS_REQUESTS_PATH = "survey"
         private const val GET = "GET"
         private const val POST = "POST"
 
@@ -75,7 +74,7 @@ class SurveyAdRequest private constructor(builder: Builder) {
         isAdLoading = false
     }
 
-    private suspend fun onApiResponseReceived(response: Response) {
+    private fun onApiResponseReceived(response: Response) {
         // decrypt response
         val deResponse = response
         var content: String? = null
@@ -113,7 +112,7 @@ class SurveyAdRequest private constructor(builder: Builder) {
                 }
                 onApiResponseReceived(response)
             } catch (e: Exception) {
-
+                onFailed(0, "Survey Get Request Failed", null)
             }
         }
     }
@@ -126,11 +125,12 @@ class SurveyAdRequest private constructor(builder: Builder) {
                 }
                 onApiResponseReceived(response)
             } catch (e: Exception) {
+                onFailed(0, "Survey response Post request failed", null)
             }
         }
     }
 
-    private suspend fun onSucceed(result: String?) {
+    private fun onSucceed(result: String?) {
         var apiAdResponse: SurveyAdsResponse? = null
         if (method == GET) {
             try {
@@ -140,18 +140,12 @@ class SurveyAdRequest private constructor(builder: Builder) {
             } catch (e: Exception) {
             }
             if ((apiAdResponse == null || apiAdResponse.isEmpty())) {
-                withContext(Dispatchers.Main) {
-                    onFailed(400, "Not Valid Response", null)
-                }
+                onFailed(400, "Not Valid Response", null)
             } else {
-                withContext(Dispatchers.Main) {
-                    onAdResponseReceived(apiAdResponse)
-                }
-            }
-        } else {
-            withContext(Dispatchers.Main) {
                 onAdResponseReceived(apiAdResponse)
             }
+        } else {
+            onAdResponseReceived(apiAdResponse)
         }
     }
 

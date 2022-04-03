@@ -74,4 +74,20 @@ class EventsTracker(private val videoAdsTracker: VideoAdsTracker, private val ur
         }
     }
 
+    fun trackSurveyCompanionEvent(name: String, trackers: MutableList<String> = mutableListOf(), data: Map<String, String> = mapOf()) {
+        companionSdkScope.launch {
+             videoAdsTracker.trackCompanionEvent(name, data)
+            trackers.forEach { trackerUrl ->
+                try {
+                    val result = remoteDataSource.trackEventAsync(trackerUrl, { url -> urlStitchingService.replaceMacros(null, url, emptyMap()) }, { mutableMapOf() })
+                    if (result){
+                        ZenLogger.dt(TAG, "Survey Event ${name} tracker success")
+                    } else ZenLogger.dt(TAG, "Survey Event ${name} tracker failed")
+                } catch (e: Exception) {
+                    ZenLogger.et(TAG, e,"Survey Event ${name} tracker failed")
+                }
+            }
+        }
+    }
+
 }
