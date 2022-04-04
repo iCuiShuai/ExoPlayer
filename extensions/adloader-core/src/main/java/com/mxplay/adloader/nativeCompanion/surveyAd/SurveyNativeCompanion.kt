@@ -21,15 +21,22 @@ class SurveyNativeCompanion(json: JSONObject, companionAdSlot: CompanionAdSlot, 
     val template: NativeCompanionTemplate =
             SurveyBaseTemplate(renderer = SurveyCompanionRenderer(json, companionAdSlot, eventsTracker, adsBehaviour, companionSdkScope, remoteDataSource, resourceProvider))
 
+    companion object {
+        private const val TAG = "SurveyNativeCompanion"
+        const val SURVEY_ID = "surveyId"
+        const val SURVEY_MANAGEMENT_URL = "SurveyManagementServerURL"
+        const val ADVERTISER_ID = "advertiseId"
+    }
+
     override fun loadCompanion() {
-        val surveyId = json.optString("surveyId")
+        val surveyId = json.optString(SURVEY_ID)
         val advertiserId = remoteDataSource.mxMediaSdkConfig.advertiserId
-        val surveyManagementUrl = json.optString("SurveyManagementServerURL")
+        val surveyManagementUrl = json.optString(SURVEY_MANAGEMENT_URL)
         if (!TextUtils.isEmpty(surveyId) && !TextUtils.isEmpty(advertiserId) && !TextUtils.isEmpty(surveyManagementUrl)) {
             val surveyAdRequest = SurveyAdRequest.Builder(remoteDataSource, companionSdkScope).get()
                     .url(surveyManagementUrl)
                     .surveyId(surveyId)
-                    .addParam("advertiseId", advertiserId)
+                    .addParam(ADVERTISER_ID, advertiserId)
                     .listener(template as? SurveyBaseTemplate).build()
             surveyAdRequest.request()
         }
@@ -42,13 +49,13 @@ class SurveyNativeCompanion(json: JSONObject, companionAdSlot: CompanionAdSlot, 
 
 
         if (type == AdEvent.AdEventType.CONTENT_RESUME_REQUESTED || type == AdEvent.AdEventType.COMPLETED || type == AdEvent.AdEventType.ALL_ADS_COMPLETED || type == AdEvent.AdEventType.SKIPPED) {
-            // #debug debug
             release()
             return
         }
     }
 
     fun release() {
+        ZenLogger.dt(TAG, " release ")
         template.renderer.release()
     }
 }

@@ -4,7 +4,6 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import android.content.res.TypedArray
 import android.text.TextUtils
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,10 +14,13 @@ import com.mxplay.adloader.AdsBehaviour
 import com.mxplay.adloader.nativeCompanion.CompanionResourceProvider
 import com.mxplay.adloader.nativeCompanion.EventsTracker
 import com.mxplay.adloader.nativeCompanion.NativeCompanion
-import com.mxplay.adloader.nativeCompanion.NativeCompanionAdManager
+import com.mxplay.adloader.nativeCompanion.surveyAd.SurveyNativeCompanion.Companion.ADVERTISER_ID
+import com.mxplay.adloader.nativeCompanion.surveyAd.SurveyNativeCompanion.Companion.SURVEY_ID
+import com.mxplay.adloader.nativeCompanion.surveyAd.SurveyNativeCompanion.Companion.SURVEY_MANAGEMENT_URL
 import com.mxplay.adloader.utils.SnackbarUtils
 import com.mxplay.interactivemedia.api.CompanionAdSlot
 import com.mxplay.interactivemedia.internal.data.RemoteDataSource
+import com.mxplay.logger.ZenLogger
 import kotlinx.coroutines.CoroutineScope
 import org.json.JSONObject
 
@@ -43,6 +45,12 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
 
     var surveyAdsResponse: SurveyAdsResponse? = null
 
+    companion object {
+        const val TAG = "SurveyCompanionRenderer"
+        private const val EVENT_SURVEY_SUBMITTED = "SurveyAdSubmitted"
+        private const val EVENT_SURVEY_SHOWN = "SurveyAdShown"
+    }
+
     override fun render() : View?{
         container.removeAllViews()
         try {
@@ -53,7 +61,6 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
             bindView(root)
 
             container.addView(root)
-            adsBehaviour?.onVideoSizeChanged(10, 8)
             return root
         } catch (e: Exception) {
         }
@@ -61,6 +68,7 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
     }
 
     override fun release() {
+        ZenLogger.dt(TAG, " release ")
         container.removeAllViews()
         inputDialog?.release()
     }
@@ -137,6 +145,7 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
         }
 
         trackImpression()
+        if("Player_top" == json.optString("slot")) adsBehaviour?.onVideoSizeChanged(10, 8)
     }
 
     private fun setUpOptionView(optionView: TableLayout, answer: SurveyAnswer?) {
@@ -228,13 +237,14 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
             }
         }
         val submitRequest = SurveyAdRequest.Builder(remoteDataSource, companionSdkScope).post()
-                .url(json.optString("SurveyManagementServerURL"))
+                .url(json.optString(SURVEY_MANAGEMENT_URL))
                 .addRequestBody(surveyAnswerResponse).retry(2)
-                .surveyId(json.optString("surveyId"))
-                .addParam("advertiseId", remoteDataSource.mxMediaSdkConfig.advertiserId)
+                .surveyId(json.optString(SURVEY_ID))
+                .addParam(ADVERTISER_ID, remoteDataSource.mxMediaSdkConfig.advertiserId)
                 .addParam("questionAndAnswerId", surveyQuery?.id)
                 .listener(object : SurveyAdRequest.SurveyAdsListener {
                     override fun onSuccess(response: SurveyAdsResponse?) {
+                        ZenLogger.dt(TAG, " answer submitted ")
                         submitEnable = false
                         isResponseSubmitted = true
                         enableSubmitButton(submitEnable)
@@ -244,10 +254,12 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
                     }
 
                     override fun onFailed(errCode: Int) {
+                        ZenLogger.dt(TAG, " answer submit failed ")
                         Toast.makeText(context, "Submit failed", Toast.LENGTH_SHORT).show()
                     }
 
                     override fun surveyAlreadyResponded() {
+                        ZenLogger.dt(TAG, " answer already submitted ")
                         submitEnable = false
                         enableSubmitButton(submitEnable)
                         submitBtn?.text = "SUBMITTED"
@@ -272,7 +284,7 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
     }
 
     private fun trackSurveySubmit(status: String) {
-        eventsTracker.trackSurveyCompanionEvent("SurveyAdSubmitted", data = mutableMapOf("surveyId" to json.optString("surveyId"), "statusCode" to status))
+        eventsTracker.trackSurveyCompanionEvent(EVENT_SURVEY_SUBMITTED, data = mutableMapOf(SURVEY_ID to json.optString(SURVEY_ID), "statusCode" to status))
     }
 
     private fun trackImpression() {
@@ -285,7 +297,7 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
                 }
             }
         }
-        eventsTracker.trackSurveyCompanionEvent("SurveyAdShown", urls, mutableMapOf("surveyId" to json.optString("surveyId")))
+        eventsTracker.trackSurveyCompanionEvent(EVENT_SURVEY_SHOWN, urls, mutableMapOf(SURVEY_ID to json.optString(SURVEY_ID)))
     }
 
     interface SurveyInputDialogCallback {

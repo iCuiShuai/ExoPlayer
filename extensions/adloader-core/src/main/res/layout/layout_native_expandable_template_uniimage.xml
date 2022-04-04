@@ -20,10 +20,9 @@
 
     <TextView
         android:id="@+id/native_ad_action_button"
-        style="@style/NativeAdCallToActionFont"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/native_ad_media_list_cta_bg_2"
+        android:background="?survey_submit_enable_bg"
         android:gravity="center_vertical|center_horizontal"
         android:layout_marginTop="10dp"
         android:layout_marginStart="16dp"
@@ -31,9 +30,9 @@
         android:layout_marginBottom="10dp"
         android:minHeight="36dp"
         android:textAllCaps="true"
-        android:textColor="@color/color_white"
+        android:textColor="?expandable_uni_cta_color"
         android:textSize="14sp"
-        android:fontFamily="@font/font_muli_bold"
+        android:fontFamily="?exo_font_extra_bold"
         android:textStyle="normal"
         tools:text="Install Now"
         app:layout_constraintTop_toBottomOf="@id/native_ad_icon_container"

@@ -16,7 +16,7 @@
         android:paddingLeft="10dp"
         android:textSize="13sp"
         android:textColor="?survey_option_color"
-        android:fontFamily="?survey_font_regular"
+        android:fontFamily="?attr/exo_font_regular"
         android:layout_marginTop="3dp"
         android:layout_marginBottom="3dp"
         android:button="?survey_option_btn"

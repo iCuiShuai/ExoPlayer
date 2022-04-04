@@ -19,8 +19,13 @@
         <attr name="survey_input_dialog_text_bg" format="reference" />
         <attr name="survey_input_dialog_ques_color" format="reference" />
         <attr name="survey_input_dialog_cta_color" format="reference" />
-        <attr name="survey_font_regular" format="string" />
-        <attr name="survey_font_semi_bold" format="string" />
-        <attr name="survey_font_extra_bold" format="string" />
+        <attr name="expandable_uni_cta_color" format="reference" />
+        <attr name="expandable_ad_bg" format="reference" />
+        <attr name="expandable_ad_subtitle_color" format="reference" />
+        <attr name="expandable_ad_tag" format="reference" />
+        <attr name="expandable_ad_cta_bg" format="reference" />
+        <attr name="exo_font_regular" format="string" />
+        <attr name="exo_font_semi_bold" format="string" />
+        <attr name="exo_font_extra_bold" format="string" />
     </declare-styleable>
 </resources>

@@ -83,6 +83,7 @@ class ExpandableTemplate(val json: JSONObject, override val id: String, override
     }
 
     override fun loadCompanionTemplate(): View? {
+        renderer.release()
         return renderer.render()
     }
 
