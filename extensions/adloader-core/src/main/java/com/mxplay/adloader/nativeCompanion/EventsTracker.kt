@@ -74,7 +74,7 @@ class EventsTracker(private val videoAdsTracker: VideoAdsTracker, private val ur
         }
     }
 
-    fun trackSurveyCompanionEvent(name: String, trackers: MutableList<String> = mutableListOf(), data: Map<String, String> = mapOf()) {
+    fun trackSurveyCompanionEvent(name: String, trackers: MutableList<String> = mutableListOf(), data: MutableMap<String, String> = mutableMapOf()) {
         companionSdkScope.launch {
              videoAdsTracker.trackCompanionEvent(name, data)
             trackers.forEach { trackerUrl ->

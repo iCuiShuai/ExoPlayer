@@ -50,15 +50,12 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
             root.clipChildren = false
             root.clipToPadding = false
 
-            Log.d(NativeCompanionAdManager.TAG, "start binding: ")
             bindView(root)
-            Log.d(NativeCompanionAdManager.TAG, "end binding: ")
 
             container.addView(root)
             adsBehaviour?.onVideoSizeChanged(10, 8)
             return root
         } catch (e: Exception) {
-            Log.e(NativeCompanionAdManager.TAG, "fat gya render: ${e.printStackTrace()} ")
         }
         return null
     }
@@ -93,7 +90,6 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
 
         try {
             if (titleView != null && !TextUtils.isEmpty(json.optString("title"))) {
-                Log.d(NativeCompanionAdManager.TAG, "setting title: ")
                 titleView.text = json.optString("title")
             }
         } catch (e: Exception) {
@@ -101,12 +97,10 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
         }
 
         if (questionView != null && surveyQuery != null) {
-            Log.d(NativeCompanionAdManager.TAG, "setting question: ")
             questionView.text = surveyQuery.question.value
         }
 
         if (type == SurveyAdsResponse.PARAGRAPH && answerView != null) {
-            Log.d(NativeCompanionAdManager.TAG, "setting paragraph: ")
             answerView?.visibility = View.VISIBLE
             answerView?.setOnClickListener {
                 if (!isResponseSubmitted) {
@@ -124,7 +118,6 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
             }
             optionView?.visibility = View.GONE
         } else if (type == SurveyAdsResponse.MULTICHOICE && optionView != null){
-            Log.d(NativeCompanionAdManager.TAG, "setting options: ")
             answerView?.visibility = View.GONE
             setUpOptionView(optionView, surveyAnswer)
         }
@@ -173,7 +166,6 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
         rows.forEach {
             optionView.addView(it)
         }
-        Log.d(NativeCompanionAdManager.TAG, "setting all options: ")
     }
 
     private fun getView(position: Int, answer: SurveyAnswer?): View? {
@@ -191,7 +183,6 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
                 }
             }
         }
-        Log.d(NativeCompanionAdManager.TAG, "setting grid option: ${position}")
         return root
     }
 
@@ -216,7 +207,6 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
             }
             if(background > 0 && ContextCompat.getDrawable(context, background) != null) submitBtn?.background = ContextCompat.getDrawable(context, background)
 
-            Log.d(NativeCompanionAdManager.TAG, "setting enable btn back2: ${isEnable}")
         } catch (e: Exception){}
     }
 
@@ -273,7 +263,6 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
             val leftRightMargin = if(context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) dpToPx(8) else dpToPx(188)
             val topBottomMargin = dpToPx(8)
             SnackbarUtils.Short(submitBtn!!, msg).margins(leftRightMargin, topBottomMargin, leftRightMargin, topBottomMargin).radius(dpToPx(4).toFloat()).show()
-            Log.d(NativeCompanionAdManager.TAG, "showSnackBar: ")
         }
 
     }
@@ -283,7 +272,7 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
     }
 
     private fun trackSurveySubmit(status: String) {
-        eventsTracker.trackSurveyCompanionEvent("SurveyAdSubmitted", data = mapOf("surveyId" to json.optString("surveyId"), "statusCode" to status))
+        eventsTracker.trackSurveyCompanionEvent("SurveyAdSubmitted", data = mutableMapOf("surveyId" to json.optString("surveyId"), "statusCode" to status))
     }
 
     private fun trackImpression() {
@@ -296,7 +285,7 @@ class SurveyCompanionRenderer(private val json: JSONObject, private val companio
                 }
             }
         }
-        eventsTracker.trackSurveyCompanionEvent("SurveyAdShown", urls, mapOf("surveyId" to json.optString("surveyId")))
+        eventsTracker.trackSurveyCompanionEvent("SurveyAdShown", urls, mutableMapOf("surveyId" to json.optString("surveyId")))
     }
 
     interface SurveyInputDialogCallback {
