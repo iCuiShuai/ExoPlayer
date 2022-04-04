@@ -659,7 +659,7 @@ public class SnackbarUtils {
             originalMarginsField.setAccessible(true);
             originalMarginsField.set(snackBar, new Rect(left, top, bottom, right));
             return true;
-        } catch (IllegalAccessException | NoSuchFieldException | ClassNotFoundException e) {
+        } catch (Exception e) {
         }
         return false;
     }
