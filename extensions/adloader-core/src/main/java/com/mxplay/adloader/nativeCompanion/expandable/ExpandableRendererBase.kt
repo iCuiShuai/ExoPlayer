@@ -91,13 +91,13 @@ abstract class ExpandableRendererBase(val context: Context, val container: ViewG
     protected  fun trackClick(json: JSONObject) {
         val clickTrackerUrls = json.optJSONArray("clickTracker")
         clickTrackerUrls?.let {
+            val urls = mutableListOf<String>()
             for (i in 0 until it.length()) {
-                val urls = mutableListOf<String>()
                 if (!TextUtils.isEmpty(it.getString(i))) {
                     urls.add(it.getString(i))
                 }
-                eventsTracker.trackClick(urls, json)
             }
+            eventsTracker.trackClick(urls, json)
         }
     }
 
@@ -178,13 +178,13 @@ abstract class ExpandableRendererBase(val context: Context, val container: ViewG
     final override fun render(): View {
         val impressionUrl = json.optJSONArray("impressionTracker")
         impressionUrl?.let {
+            val urls = mutableListOf<String>()
             for (i in 0 until it.length()) {
-                val urls = mutableListOf<String>()
                 if (!TextUtils.isEmpty(it.getString(i))) {
                     urls.add(it.getString(i))
                 }
-                eventsTracker.trackAdImpression(urls, json)
             }
+            eventsTracker.trackAdImpression(urls, json)
         }
         return createNativeCompanionView()
     }
