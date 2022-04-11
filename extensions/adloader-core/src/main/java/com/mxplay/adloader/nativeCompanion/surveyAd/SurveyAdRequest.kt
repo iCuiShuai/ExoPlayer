@@ -81,9 +81,12 @@ class SurveyAdRequest private constructor(builder: Builder) {
         // decrypt response
         val deResponse = response
         var content: String? = null
+        ZenLogger.et(TAG, "onApiResponseReceived ${response} ${deResponse}")
         try {
             val responseBody: ResponseBody? = deResponse.body()
             content = responseBody?.string()
+
+            ZenLogger.et(TAG, "onApiResponseReceived ${responseBody} ${content}")
 
             // reponse failed
             if (!response.isSuccessful) {
@@ -105,7 +108,7 @@ class SurveyAdRequest private constructor(builder: Builder) {
             onSucceed(content)
         } catch (e: Exception) {
             e.printStackTrace()
-            ZenLogger.et(TAG, "onApiResponseReceived ${e.message}")
+            ZenLogger.et(TAG, "onApiResponseReceived ${e} ${e.message}")
         }
     }
 
