@@ -3,6 +3,7 @@ package com.mxplay.adloader.nativeCompanion.surveyAd
 import android.text.TextUtils
 import com.google.gson.Gson
 import com.mxplay.interactivemedia.internal.data.RemoteDataSource
+import com.mxplay.logger.ZenLogger
 import kotlinx.coroutines.*
 import okhttp3.HttpUrl
 import okhttp3.Response
@@ -24,6 +25,7 @@ class SurveyAdRequest private constructor(builder: Builder) {
     private var isAdLoading = false
 
     companion object {
+        private const val TAG = "SurveyAdsRequest"
         private const val GET = "GET"
         private const val POST = "POST"
 
@@ -69,6 +71,7 @@ class SurveyAdRequest private constructor(builder: Builder) {
     }
 
     fun onAdResponseReceived(response: SurveyAdsResponse?) {
+        ZenLogger.et(TAG, "onAdResponseReceived ${response}")
         this.adResponse = response
         mxAdListener?.onSuccess(response)
         isAdLoading = false
@@ -101,6 +104,8 @@ class SurveyAdRequest private constructor(builder: Builder) {
 
             onSucceed(content)
         } catch (e: Exception) {
+            e.printStackTrace()
+            ZenLogger.et(TAG, "onApiResponseReceived ${e.message}")
         }
     }
 
@@ -112,6 +117,8 @@ class SurveyAdRequest private constructor(builder: Builder) {
                 }
                 onApiResponseReceived(response)
             } catch (e: Exception) {
+                e.printStackTrace()
+                ZenLogger.et(TAG, "Survey Get Request Failed ${e.message}")
                 onFailed(0, "Survey Get Request Failed", null)
             }
         }
@@ -138,6 +145,8 @@ class SurveyAdRequest private constructor(builder: Builder) {
                     apiAdResponse = Gson().fromJson(result, SurveyAdsResponse::class.java)
                 }
             } catch (e: Exception) {
+                e.printStackTrace()
+                ZenLogger.et(TAG, "onSucceed json parsing error ${e.message}")
             }
             if ((apiAdResponse == null || apiAdResponse.isEmpty())) {
                 onFailed(400, "Not Valid Response", null)
@@ -150,6 +159,7 @@ class SurveyAdRequest private constructor(builder: Builder) {
     }
 
     fun onFailed(errCode: Int, errMsg: String?, errBody: String?) {
+        ZenLogger.et(TAG, "onFailed ${errCode} ${errMsg} ${errBody}")
         val errJson = if (!TextUtils.isEmpty(errBody)) JSONObject(errBody) else null
         if (method == POST && errCode == 400 && errJson?.optString("statusCode", "") == "alreadyresponded") {
             mxAdListener?.surveyAlreadyResponded()
