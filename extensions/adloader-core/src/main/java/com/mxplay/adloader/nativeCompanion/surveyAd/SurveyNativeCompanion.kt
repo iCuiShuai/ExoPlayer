@@ -19,7 +19,9 @@ class SurveyNativeCompanion(json: JSONObject, companionAdSlot: CompanionAdSlot, 
     : NativeCompanion(type, json) {
 
     val template: NativeCompanionTemplate =
-            SurveyBaseTemplate(renderer = SurveyCompanionRenderer(json, companionAdSlot, eventsTracker, adsBehaviour, companionSdkScope, remoteDataSource, resourceProvider))
+            SurveyBaseTemplate(renderer = SurveyCompanionRenderer(json, companionAdSlot, eventsTracker, adsBehaviour,
+                    companionSdkScope, remoteDataSource, resourceProvider),
+                    adsBehaviour = adsBehaviour)
 
     companion object {
         private const val TAG = "SurveyNativeCompanion"
