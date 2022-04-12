@@ -71,7 +71,6 @@ class SurveyAdRequest private constructor(builder: Builder) {
     }
 
     fun onAdResponseReceived(response: SurveyAdsResponse?) {
-        ZenLogger.et(TAG, "onAdResponseReceived ${response}")
         this.adResponse = response
         mxAdListener?.onSuccess(response)
         isAdLoading = false
@@ -81,12 +80,9 @@ class SurveyAdRequest private constructor(builder: Builder) {
         // decrypt response
         val deResponse = response
         var content: String? = null
-        ZenLogger.et(TAG, "onApiResponseReceived ${response} ${deResponse}")
         try {
             val responseBody: ResponseBody? = deResponse.body()
             content = responseBody?.string()
-
-            ZenLogger.et(TAG, "onApiResponseReceived ${responseBody} ${content}")
 
             // reponse failed
             if (!response.isSuccessful) {
@@ -100,7 +96,6 @@ class SurveyAdRequest private constructor(builder: Builder) {
             onSucceed(content)
         } catch (e: Exception) {
             e.printStackTrace()
-            ZenLogger.et(TAG, "onApiResponseReceived ${e} ${e.message}")
         }
     }
 
@@ -112,8 +107,6 @@ class SurveyAdRequest private constructor(builder: Builder) {
                 }
                 onApiResponseReceived(response)
             } catch (e: Exception) {
-                e.printStackTrace()
-                ZenLogger.et(TAG, "Survey Get Request Failed ${e.message}")
                 onFailed(0, "Survey Get Request Failed", null)
             }
         }
@@ -140,7 +133,6 @@ class SurveyAdRequest private constructor(builder: Builder) {
                     apiAdResponse = Gson().fromJson(result, SurveyAdsResponse::class.java)
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
                 ZenLogger.et(TAG, "onSucceed json parsing error ${e.message}")
             }
             if ((apiAdResponse == null || apiAdResponse.isEmpty())) {
@@ -154,7 +146,6 @@ class SurveyAdRequest private constructor(builder: Builder) {
     }
 
     private suspend fun onFailed(errCode: Int, errMsg: String?, errBody: String?)  = withContext(Dispatchers.Main) {
-        ZenLogger.et(TAG, "onFailed ${errCode} ${errMsg} ${errBody}")
         val errJson = if (!TextUtils.isEmpty(errBody)) JSONObject(errBody) else null
         if (method == POST && errCode == 400 && errJson?.optString("statusCode", "") == "alreadyresponded") {
             mxAdListener?.surveyAlreadyResponded()
