@@ -1,11 +1,13 @@
 package com.mxplay.adloader.nativeCompanion
 
 import android.text.TextUtils
+import com.google.android.exoplayer2.C
 import com.mxplay.adloader.AdsBehaviour
 import com.mxplay.adloader.VideoAdsTracker
 import com.mxplay.adloader.nativeCompanion.expandable.ExpandableNativeCompanion
 import com.mxplay.adloader.nativeCompanion.surveyAd.SurveyNativeCompanion
 import com.mxplay.interactivemedia.api.AdEvent
+import com.mxplay.interactivemedia.api.AdPodInfo
 import com.mxplay.interactivemedia.api.CompanionAdSlot
 import com.mxplay.interactivemedia.api.MxMediaSdkConfig
 import com.mxplay.interactivemedia.internal.data.RemoteDataSource
@@ -39,9 +41,10 @@ class NativeCompanionAdManager(val tracker: VideoAdsTracker, val adsBehaviour: A
 
     override fun onAdEvent(adEvent: AdEvent) {
         val ad = adEvent.ad
-        if(adEvent.type == AdEvent.AdEventType.STARTED && ad != null) {
-            checkAndLoadNativeCompanion(ad.getTraffickingParameters())
+        if(adEvent.type == AdEvent.AdEventType.LOADED && ad != null) {
+            checkAndLoadNativeCompanion(ad.getTraffickingParameters(), adEvent.ad!!.getAdPodInfo())
         }else if (adEvent.type == AdEvent.AdEventType.COMPLETED || adEvent.type == AdEvent.AdEventType.ALL_ADS_COMPLETED || adEvent.type == AdEvent.AdEventType.CONTENT_RESUME_REQUESTED){
+            adsBehaviour?.setNativeCompanionAdInfo(C.INDEX_UNSET, C.INDEX_UNSET)
             nativeCompanion?.onAdEvent(adEvent)
             nativeCompanion = null
         }
@@ -50,12 +53,13 @@ class NativeCompanionAdManager(val tracker: VideoAdsTracker, val adsBehaviour: A
     }
 
 
-    private fun checkAndLoadNativeCompanion(adParameters: String?) {
+    private fun checkAndLoadNativeCompanion(adParameters: String?, adPodInfo: AdPodInfo) {
         val adParameterMap = extractParamsFromString(adParameters)
         if(adParameterMap != null) {
             parseNativeCompanionType(adParameterMap)?.let {
                 nativeCompanion = it
                 it.loadCompanion()
+                adsBehaviour?.setNativeCompanionAdInfo(adPodInfo.podIndex, adPodInfo.adPosition - 1)
             }
         }
     }

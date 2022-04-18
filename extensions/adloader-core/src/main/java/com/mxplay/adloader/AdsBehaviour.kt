@@ -51,6 +51,7 @@ open class AdsBehaviour private constructor(
     private lateinit var adPlaybackStateHost: AdPlaybackStateHost
     private var contentDurationMs = C.TIME_UNSET
     private var isPipModeActive = false
+    private var nativeCompanionAdInfo = Pair(C.INDEX_UNSET, C.INDEX_UNSET)
 
     override fun isPipModeActive() = isPipModeActive
 
@@ -234,6 +235,37 @@ open class AdsBehaviour private constructor(
     }
 
     override fun onVideoSizeChanged(width: Int, height: Int) {
+    }
+
+    override fun setNativeCompanionAdInfo(adPodIndex: Int, adPosition: Int) {
+        nativeCompanionAdInfo = Pair(adPodIndex, adPosition)
+    }
+
+    override fun onNativeCompanionLoaded(isLoaded: Boolean) {
+        if(!isLoaded) {
+            discardNativeCompanionAd(nativeCompanionAdInfo.first, nativeCompanionAdInfo.second)
+        }
+    }
+
+    private fun discardNativeCompanionAd(adPodIndex: Int, adPosition: Int) {
+        try {
+            var adPlaybackState = adPlaybackStateHost.adPlaybackState
+            var adGroup = adPlaybackState.adGroups[adPodIndex]
+            if (adGroup.count == C.LENGTH_UNSET) {
+                adPlaybackState = adPlaybackState.withAdCount(adPodIndex, Math.max(1, adGroup.states.size))
+                adGroup = adPlaybackState.adGroups[adPodIndex]
+            }
+            for (i in 0 until adGroup.count) {
+                if ((adGroup.states[i] != AdPlaybackState.AD_STATE_SKIPPED || adGroup.states[i] != AdPlaybackState.AD_STATE_ERROR) && i == adPosition) {
+                    if (debug) ZenLogger.dt(TAG, "Removing native companion ad $i in ad group $adPodIndex")
+                    adPlaybackState = adPlaybackState.withAdLoadError(adPodIndex, i)
+                    break
+                }
+            }
+            adPlaybackStateHost.updateAdPlaybackState(adPlaybackState, true)
+        } catch (e: Exception) {
+            if (debug) e.printStackTrace()
+        }
     }
 
 
