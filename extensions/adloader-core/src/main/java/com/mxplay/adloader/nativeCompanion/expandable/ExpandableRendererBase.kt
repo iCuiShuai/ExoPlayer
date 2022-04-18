@@ -193,7 +193,6 @@ abstract class ExpandableRendererBase(val context: Context, val container: ViewG
 
     final override fun release() {
         ZenLogger.dt(TAG, " release ")
-        container.removeAllViews()
         nativeCompanionView = null
     }
 
