@@ -41,4 +41,9 @@ class AdsBehaviourOffline(private val adsBehaviour: AdsBehaviour, private val mx
         mxTrackingBehaviour.onAdsManagerLoaded(cuePoints)
         adsBehaviour.onAdsManagerLoaded(cuePoints)
     }
+
+    override fun release() {
+        super.release()
+        adsBehaviour.release()
+    }
 }

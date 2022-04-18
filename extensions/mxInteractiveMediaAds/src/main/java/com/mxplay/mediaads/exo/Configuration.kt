@@ -20,7 +20,6 @@ class Configuration(builder: Builder) {
     }
 
     val context: Context = builder.context
-    val ioExecutor: ExecutorService = builder.ioExecutor
     val adUnitId: String
     val adPreloadTimeoutMs: Long
 
@@ -28,7 +27,6 @@ class Configuration(builder: Builder) {
     val applicationVideoAdPlayerCallback: com.mxplay.interactivemedia.api.player.VideoAdPlayer.VideoAdPlayerCallback?
     val debugModeEnabled: Boolean
     val adsBehaviour: IAdsBehaviour
-    val ioDispatcher: CoroutineDispatcher
     val mxMediaSdkConfig: MxMediaSdkConfig
 
     init {
@@ -37,10 +35,9 @@ class Configuration(builder: Builder) {
         playAdBeforeStartPosition = builder.playAdBeforeStartPosition
         applicationVideoAdPlayerCallback = builder.applicationVideoAdPlayerCallback
         debugModeEnabled = builder.debugModeEnabled
-        ioDispatcher = ioExecutor.asCoroutineDispatcher()
         adsBehaviour = builder.adsBehaviour ?: AdsBehaviour(builder.vastLoadTimeoutMs
                 ?: MxMediaSdkConfig.VAST_LOAD_TIMEOUT_MS, debugModeEnabled)
-        mxMediaSdkConfig = MxMediaSdkConfig.Builder(context, this.ioDispatcher, builder.userInfo, builder.trackersConfig).apply {
+        mxMediaSdkConfig = MxMediaSdkConfig.Builder(context, builder.userInfo, builder.trackersConfig).apply {
             builder.adMediaMimeTypes?.let { this.adMediaMimeTypes = it }
             builder.vastLoadTimeoutMs?.let { this.vastLoadTimeoutMs = it }
             builder.mediaLoadTimeoutMs?.let { this.mediaLoadTimeoutMs = it }

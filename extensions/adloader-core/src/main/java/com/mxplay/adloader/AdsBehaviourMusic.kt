@@ -42,4 +42,9 @@ class AdsBehaviourMusic(private val adsBehaviour: AdsBehaviour, private val mxTr
         mxTrackingBehaviour.onAdsManagerLoaded(cuePoints)
         adsBehaviour.onAdsManagerLoaded(cuePoints)
     }
+
+    override fun release() {
+        super.release()
+        adsBehaviour.release()
+    }
 }

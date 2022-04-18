@@ -5,8 +5,10 @@ import android.os.Handler
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.Timeline
 import com.google.android.exoplayer2.source.ads.AdPlaybackState
+import com.mxplay.adloader.nativeCompanion.CompanionResourceProvider
 import com.mxplay.interactivemedia.api.AdErrorEvent
 import com.mxplay.interactivemedia.api.AdEvent
+import com.mxplay.interactivemedia.api.MxMediaSdkConfig
 
 
 interface IAdsBehaviour : AdEvent.AdEventListener, com.google.ads.interactivemedia.v3.api.AdEvent.AdEventListener, AdErrorEvent.AdErrorListener, com.google.ads.interactivemedia.v3.api.AdErrorEvent.AdErrorListener  {
@@ -31,4 +33,11 @@ interface IAdsBehaviour : AdEvent.AdEventListener, com.google.ads.interactivemed
     fun registerAdEventListener(adEventListener: AdEvent.AdEventListener?)
     fun registerAdErrorEventListener(adErrorListener: AdErrorEvent.AdErrorListener?)
     fun handleTimelineOrPositionChanged(player: Player?, timeline: Timeline?, period: Timeline.Period?)
+    fun doSetupNativeCompanion(mxMediaSdkConfig:  MxMediaSdkConfig?, companionResourceProvider: CompanionResourceProvider, tracker: VideoAdsTracker)
+    fun setNativeCompanionAdInfo(adPodIndex: Int, adPosition: Int)
+    fun onNativeCompanionLoaded(isLoaded: Boolean)
+    fun onVideoSizeChanged(width: Int, height: Int)
+    fun release(){
+
+    }
 }

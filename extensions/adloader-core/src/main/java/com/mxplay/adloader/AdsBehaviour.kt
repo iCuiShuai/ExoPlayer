@@ -2,7 +2,6 @@ package com.mxplay.adloader
 
 import android.net.Uri
 import android.os.Handler
-import android.util.Log
 import android.util.Pair
 import androidx.annotation.CallSuper
 import com.google.ads.interactivemedia.v3.api.AdErrorEvent
@@ -10,7 +9,10 @@ import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.Timeline
 import com.google.android.exoplayer2.source.ads.AdPlaybackState
+import com.mxplay.adloader.nativeCompanion.CompanionResourceProvider
 import com.mxplay.interactivemedia.api.AdEvent
+import com.mxplay.interactivemedia.api.MxMediaSdkConfig
+import com.mxplay.logger.ZenLogger
 
 open class AdsBehaviour private constructor(
     private val vastTimeOutInMs: Int,
@@ -26,6 +28,7 @@ open class AdsBehaviour private constructor(
 
     constructor(vastTimeOutInMs: Int,  debug : Boolean = false) : this(vastTimeOutInMs, debug, ComposedAdEventListener(), ComposedAdErrorListener())
 
+
     interface AdPlaybackStateHost {
         val adPlaybackState: AdPlaybackState
         fun updateAdPlaybackState(adPlaybackState: AdPlaybackState, notifyExo: Boolean)
@@ -34,16 +37,21 @@ open class AdsBehaviour private constructor(
     }
 
     override fun registerAdEventListener(adEventListener: AdEvent.AdEventListener?){
-        composedAdEventListener.eventListener = adEventListener
+        composedAdEventListener.registerEventListener(adEventListener)
     }
 
     override fun registerAdErrorEventListener(adErrorListener: com.mxplay.interactivemedia.api.AdErrorEvent.AdErrorListener?){
         composedAdErrorListener.adErrorListener = adErrorListener
     }
 
+    override fun doSetupNativeCompanion(mxMediaSdkConfig: MxMediaSdkConfig?, companionResourceProvider: CompanionResourceProvider, tracker: VideoAdsTracker) {
+        mxMediaSdkConfig?.let { composedAdEventListener.doSetupNativeCompanion(it, companionResourceProvider, tracker, this) }
+    }
+
     private lateinit var adPlaybackStateHost: AdPlaybackStateHost
     private var contentDurationMs = C.TIME_UNSET
     private var isPipModeActive = false
+    private var nativeCompanionAdInfo = Pair(C.INDEX_UNSET, C.INDEX_UNSET)
 
     override fun isPipModeActive() = isPipModeActive
 
@@ -78,7 +86,7 @@ open class AdsBehaviour private constructor(
             }
             for (i in 0 until adGroup.count) {
                 if ((adGroup.states[i] == AdPlaybackState.AD_STATE_UNAVAILABLE || adGroup.states[i] == AdPlaybackState.AD_STATE_AVAILABLE) && i == adPosition) {
-                    if (debug) Log.d(TAG, "Removing audio ad $i in ad group $podIndex")
+                    if (debug) ZenLogger.dt(TAG, "Removing audio ad $i in ad group $podIndex")
                     adPlaybackState = adPlaybackState.withAdLoadError(podIndex, i)
                     break
                 }
@@ -226,6 +234,46 @@ open class AdsBehaviour private constructor(
         return IBehaviourTracker.NO_OP_TRACKER
     }
 
+    override fun onVideoSizeChanged(width: Int, height: Int) {
+    }
+
+    override fun setNativeCompanionAdInfo(adPodIndex: Int, adPosition: Int) {
+        nativeCompanionAdInfo = Pair(adPodIndex, adPosition)
+    }
+
+    override fun onNativeCompanionLoaded(isLoaded: Boolean) {
+        if(!isLoaded) {
+            discardNativeCompanionAd(nativeCompanionAdInfo.first, nativeCompanionAdInfo.second)
+        }
+    }
+
+    private fun discardNativeCompanionAd(adPodIndex: Int, adPosition: Int) {
+        try {
+            var adPlaybackState = adPlaybackStateHost.adPlaybackState
+            var adGroup = adPlaybackState.adGroups[adPodIndex]
+            if (adGroup.count == C.LENGTH_UNSET) {
+                adPlaybackState = adPlaybackState.withAdCount(adPodIndex, Math.max(1, adGroup.states.size))
+                adGroup = adPlaybackState.adGroups[adPodIndex]
+            }
+            for (i in 0 until adGroup.count) {
+                if ((adGroup.states[i] != AdPlaybackState.AD_STATE_SKIPPED || adGroup.states[i] != AdPlaybackState.AD_STATE_ERROR) && i == adPosition) {
+                    if (debug) ZenLogger.dt(TAG, "Removing native companion ad $i in ad group $adPodIndex")
+                    adPlaybackState = adPlaybackState.withAdLoadError(adPodIndex, i)
+                    break
+                }
+            }
+            adPlaybackStateHost.updateAdPlaybackState(adPlaybackState, true)
+        } catch (e: Exception) {
+            if (debug) e.printStackTrace()
+        }
+    }
+
+
+    @CallSuper
+    override fun release() {
+        super.release()
+        composedAdEventListener.release()
+    }
 
     companion object {
         private const val TAG = "AdsBehaviour"

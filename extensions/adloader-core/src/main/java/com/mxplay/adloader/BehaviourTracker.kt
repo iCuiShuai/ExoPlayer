@@ -16,8 +16,8 @@ import java.util.concurrent.TimeUnit
 import kotlin.collections.set
 
 class BehaviourTracker(
-    val videoAdsTracker: VideoAdsTracker,
-    val adTrackingEventsList : Set<String> = trackingEvents
+        override val videoAdsTracker: VideoAdsTracker,
+        val adTrackingEventsList : Set<String> = trackingEvents
 ) : IBehaviourTracker {
 
     private var adPlaybackStateHost: AdsBehaviour.AdPlaybackStateHost? = null
@@ -41,6 +41,10 @@ class BehaviourTracker(
 
     override fun setAdPlaybackStateHost(adPlaybackStateHost: AdsBehaviour.AdPlaybackStateHost) {
         this.adPlaybackStateHost = adPlaybackStateHost
+    }
+
+    override fun trackCompanionEvent(eventName: String, props: Map<String, String>) {
+        videoAdsTracker.trackCompanionEvent(eventName, props)
     }
 
     override fun doSetupAdsRendering(firstPlayingAdIndex: Int) {
