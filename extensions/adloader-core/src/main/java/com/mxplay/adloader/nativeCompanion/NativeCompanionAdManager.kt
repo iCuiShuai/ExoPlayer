@@ -46,6 +46,7 @@ class NativeCompanionAdManager(val tracker: VideoAdsTracker, val adsBehaviour: A
         }else if (adEvent.type == AdEvent.AdEventType.COMPLETED || adEvent.type == AdEvent.AdEventType.ALL_ADS_COMPLETED || adEvent.type == AdEvent.AdEventType.CONTENT_RESUME_REQUESTED){
             adsBehaviour?.setNativeCompanionAdInfo(C.INDEX_UNSET, C.INDEX_UNSET)
             nativeCompanion?.onAdEvent(adEvent)
+            nativeCompanion?.release()
             nativeCompanion = null
         }
         nativeCompanion?.onAdEvent(adEvent)
@@ -118,5 +119,7 @@ class NativeCompanionAdManager(val tracker: VideoAdsTracker, val adsBehaviour: A
 
     fun release(){
         companionSdkScope.cancel()
+        nativeCompanion?.release()
+        nativeCompanion = null
     }
 }
