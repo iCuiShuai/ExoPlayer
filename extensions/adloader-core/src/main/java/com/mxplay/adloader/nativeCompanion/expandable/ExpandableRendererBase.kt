@@ -13,19 +13,21 @@ import ccom.mxplay.adloader.R
 import com.mxplay.adloader.nativeCompanion.CompanionResourceProvider
 import com.mxplay.adloader.nativeCompanion.EventsTracker
 import com.mxplay.adloader.nativeCompanion.NativeCompanion
+import com.mxplay.adloader.nativeCompanion.VisibilityTracker
 import com.mxplay.logger.ZenLogger
 import org.json.JSONObject
 
-abstract class ExpandableRendererBase(val context: Context, val container: ViewGroup, val json: JSONObject, val eventsTracker: EventsTracker, val companionResourceProvider: CompanionResourceProvider) : NativeCompanion.NativeCompanionRenderer {
+abstract class ExpandableRendererBase(val context: Context, val container: ViewGroup, val json: JSONObject, val eventsTracker: EventsTracker, val companionResourceProvider: CompanionResourceProvider) : NativeCompanion.NativeCompanionRenderer,
+    VisibilityTracker.VisibilityTrackerListener {
 
     companion object {
         const val TAG = "ExpandableRendererBase"
     }
 
-    private var companionHideAnimators: AnimatorSet? = null
-    private var companionShowAnimators: AnimatorSet? = null
     private var expandHandler: ImageButton? = null
     private var nativeCompanionView: View? = null
+    private var visibilityTracker : VisibilityTracker? = null
+    private var isImpressed : Boolean = false
 
     private fun createNativeCompanionView(): View {
         val view = LayoutInflater.from(context).inflate(R.layout.layout_native_expandable_companion, container, false) as LinearLayout
@@ -176,6 +178,13 @@ abstract class ExpandableRendererBase(val context: Context, val container: ViewG
     }
 
     final override fun render(): View {
+        val companionView = createNativeCompanionView()
+        if (visibilityTracker == null) visibilityTracker = VisibilityTracker(companionView, 60)
+        visibilityTracker!!.setVisibilityTrackerListener(this)
+        return companionView
+    }
+
+    private fun trackImpression(){
         val impressionUrl = json.optJSONArray("impressionTracker")
         impressionUrl?.let {
             val urls = mutableListOf<String>()
@@ -186,7 +195,6 @@ abstract class ExpandableRendererBase(val context: Context, val container: ViewG
             }
             eventsTracker.trackAdImpression(urls, json)
         }
-        return createNativeCompanionView()
     }
 
     abstract fun renderChildView(parent : ViewGroup) : View
@@ -194,8 +202,16 @@ abstract class ExpandableRendererBase(val context: Context, val container: ViewG
     final override fun release() {
         ZenLogger.dt(TAG, " release ")
         nativeCompanionView = null
+        visibilityTracker?.release()
     }
 
+    override fun onVisibilityChanged(isVisible: Boolean) {
+        if (isVisible && !isImpressed){
+            isImpressed = true
+            trackImpression()
+            visibilityTracker?.release()
+        }
+    }
 
 
 }

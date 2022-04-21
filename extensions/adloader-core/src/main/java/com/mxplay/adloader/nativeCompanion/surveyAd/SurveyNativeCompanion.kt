@@ -56,7 +56,8 @@ class SurveyNativeCompanion(json: JSONObject, companionAdSlot: CompanionAdSlot, 
         }
     }
 
-    fun release() {
+    override fun release() {
+        super.release()
         ZenLogger.dt(TAG, " release ")
         template.renderer.release()
     }

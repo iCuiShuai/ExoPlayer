@@ -3,6 +3,7 @@ package com.mxplay.adloader.nativeCompanion
 import android.content.Context
 import android.util.TypedValue
 import android.view.View
+import androidx.annotation.CallSuper
 import com.mxplay.interactivemedia.api.AdEvent
 import com.mxplay.interactivemedia.api.CompanionAd
 import org.json.JSONObject
@@ -39,6 +40,11 @@ abstract class NativeCompanion( val type: NativeCompanionType,
 
 
     override fun onAdEvent(adEvent: AdEvent) {
+
+    }
+
+    @CallSuper
+    open fun release() {
 
     }
 

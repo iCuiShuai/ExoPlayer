@@ -55,7 +55,8 @@ class ExpandableNativeCompanion(json: JSONObject, private val companionAdSlot: C
     }
 
 
-    fun release() {
+    override fun release() {
+        super.release()
         template.renderer.release()
     }
 
