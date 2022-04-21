@@ -5,7 +5,6 @@ import android.util.TypedValue
 import android.view.View
 import androidx.annotation.CallSuper
 import com.mxplay.interactivemedia.api.AdEvent
-import com.mxplay.interactivemedia.api.CompanionAd
 import org.json.JSONObject
 
 abstract class NativeCompanion( val type: NativeCompanionType,
@@ -13,6 +12,7 @@ abstract class NativeCompanion( val type: NativeCompanionType,
                                 ) : AdEvent.AdEventListener{
 
     abstract fun loadCompanion()
+    abstract fun showCompanion()
 
     enum class NativeCompanionType(val value: String) {
         SURVEY_AD("survey"),
@@ -22,7 +22,8 @@ abstract class NativeCompanion( val type: NativeCompanionType,
     interface NativeCompanionTemplate {
         val id: String
         val renderer: NativeCompanionRenderer
-        fun loadCompanionTemplate() : View?
+        fun loadCompanionTemplate()
+        fun showCompanionTemplate() : View?
     }
 
     interface NativeCompanionRenderer {

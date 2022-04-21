@@ -8,7 +8,6 @@ import com.mxplay.adloader.nativeCompanion.EventsTracker
 import com.mxplay.adloader.nativeCompanion.NativeCompanion
 import com.mxplay.interactivemedia.api.AdEvent
 import com.mxplay.interactivemedia.api.CompanionAdSlot
-import com.mxplay.interactivemedia.internal.data.RemoteDataSource
 import com.mxplay.logger.ZenLogger
 import org.json.JSONObject
 
@@ -68,6 +67,10 @@ class ExpandableNativeCompanion(json: JSONObject, private val companionAdSlot: C
         template.loadCompanionTemplate()
     }
 
+    override fun showCompanion() {
+        template.showCompanionTemplate()
+    }
+
 
 }
 
@@ -83,7 +86,10 @@ class ExpandableTemplate(val json: JSONObject, override val id: String, override
         }
     }
 
-    override fun loadCompanionTemplate(): View? {
+    override fun loadCompanionTemplate() {
+    }
+
+    override fun showCompanionTemplate(): View? {
         renderer.release()
         return renderer.render()
     }

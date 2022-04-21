@@ -11,6 +11,7 @@ import com.google.android.exoplayer2.Timeline
 import com.google.android.exoplayer2.source.ads.AdPlaybackState
 import com.mxplay.adloader.nativeCompanion.CompanionResourceProvider
 import com.mxplay.interactivemedia.api.AdEvent
+import com.mxplay.interactivemedia.api.AdPodInfo
 import com.mxplay.interactivemedia.api.MxMediaSdkConfig
 import com.mxplay.logger.ZenLogger
 
@@ -51,7 +52,7 @@ open class AdsBehaviour private constructor(
     private lateinit var adPlaybackStateHost: AdPlaybackStateHost
     private var contentDurationMs = C.TIME_UNSET
     private var isPipModeActive = false
-    private var nativeCompanionAdInfo = Pair(C.INDEX_UNSET, C.INDEX_UNSET)
+    private var nativeCompanionAdInfo: AdPodInfo? = null
 
     override fun isPipModeActive() = isPipModeActive
 
@@ -237,28 +238,29 @@ open class AdsBehaviour private constructor(
     override fun onVideoSizeChanged(width: Int, height: Int) {
     }
 
-    override fun setNativeCompanionAdInfo(adPodIndex: Int, adPosition: Int) {
-        nativeCompanionAdInfo = Pair(adPodIndex, adPosition)
+    override fun setNativeCompanionAdInfo(adPodInfo: AdPodInfo?) {
+        nativeCompanionAdInfo = adPodInfo
     }
 
     override fun onNativeCompanionLoaded(isLoaded: Boolean) {
-        if(!isLoaded) {
-            discardNativeCompanionAd(nativeCompanionAdInfo.first, nativeCompanionAdInfo.second)
+        if(!isLoaded && nativeCompanionAdInfo != null) {
+            val adGroupIndex = getAdGroupIndexForAdPod(nativeCompanionAdInfo!!.podIndex, nativeCompanionAdInfo!!.timeOffset.toDouble(), null, null, null)
+            discardNativeCompanionAd(adGroupIndex, nativeCompanionAdInfo!!.adPosition - 1)
         }
     }
 
-    private fun discardNativeCompanionAd(adPodIndex: Int, adPosition: Int) {
+    private fun discardNativeCompanionAd(adGroupIndex: Int, adPosition: Int) {
         try {
             var adPlaybackState = adPlaybackStateHost.adPlaybackState
-            var adGroup = adPlaybackState.adGroups[adPodIndex]
+            var adGroup = adPlaybackState.adGroups[adGroupIndex]
             if (adGroup.count == C.LENGTH_UNSET) {
-                adPlaybackState = adPlaybackState.withAdCount(adPodIndex, Math.max(1, adGroup.states.size))
-                adGroup = adPlaybackState.adGroups[adPodIndex]
+                adPlaybackState = adPlaybackState.withAdCount(adGroupIndex, Math.max(1, adGroup.states.size))
+                adGroup = adPlaybackState.adGroups[adGroupIndex]
             }
             for (i in 0 until adGroup.count) {
                 if ((adGroup.states[i] != AdPlaybackState.AD_STATE_SKIPPED || adGroup.states[i] != AdPlaybackState.AD_STATE_ERROR) && i == adPosition) {
-                    if (debug) ZenLogger.dt(TAG, "Removing native companion ad $i in ad group $adPodIndex")
-                    adPlaybackState = adPlaybackState.withAdLoadError(adPodIndex, i)
+                    if (debug) ZenLogger.dt(TAG, "Removing native companion ad $i in ad group $adGroupIndex")
+                    adPlaybackState = adPlaybackState.withAdLoadError(adGroupIndex, i)
                     break
                 }
             }

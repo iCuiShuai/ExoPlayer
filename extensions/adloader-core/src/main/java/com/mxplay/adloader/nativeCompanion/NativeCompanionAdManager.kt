@@ -1,7 +1,6 @@
 package com.mxplay.adloader.nativeCompanion
 
 import android.text.TextUtils
-import com.google.android.exoplayer2.C
 import com.mxplay.adloader.AdsBehaviour
 import com.mxplay.adloader.VideoAdsTracker
 import com.mxplay.adloader.nativeCompanion.expandable.ExpandableNativeCompanion
@@ -43,8 +42,10 @@ class NativeCompanionAdManager(val tracker: VideoAdsTracker, val adsBehaviour: A
         val ad = adEvent.ad
         if(adEvent.type == AdEvent.AdEventType.LOADED && ad != null) {
             checkAndLoadNativeCompanion(ad.getTraffickingParameters(), adEvent.ad!!.getAdPodInfo())
-        }else if (adEvent.type == AdEvent.AdEventType.COMPLETED || adEvent.type == AdEvent.AdEventType.ALL_ADS_COMPLETED || adEvent.type == AdEvent.AdEventType.CONTENT_RESUME_REQUESTED){
-            adsBehaviour?.setNativeCompanionAdInfo(C.INDEX_UNSET, C.INDEX_UNSET)
+        } else if (adEvent.type == AdEvent.AdEventType.STARTED && ad != null) {
+            nativeCompanion?.showCompanion()
+        } else if (adEvent.type == AdEvent.AdEventType.COMPLETED || adEvent.type == AdEvent.AdEventType.ALL_ADS_COMPLETED || adEvent.type == AdEvent.AdEventType.CONTENT_RESUME_REQUESTED){
+            adsBehaviour?.setNativeCompanionAdInfo(null)
             nativeCompanion?.onAdEvent(adEvent)
             nativeCompanion?.release()
             nativeCompanion = null
@@ -60,7 +61,7 @@ class NativeCompanionAdManager(val tracker: VideoAdsTracker, val adsBehaviour: A
             parseNativeCompanionType(adParameterMap)?.let {
                 nativeCompanion = it
                 it.loadCompanion()
-                adsBehaviour?.setNativeCompanionAdInfo(adPodInfo.podIndex, adPodInfo.adPosition - 1)
+                adsBehaviour?.setNativeCompanionAdInfo(adPodInfo)
             }
         }
     }
