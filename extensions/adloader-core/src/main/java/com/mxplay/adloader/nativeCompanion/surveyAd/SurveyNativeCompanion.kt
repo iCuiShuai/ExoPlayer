@@ -11,10 +11,17 @@ import com.mxplay.logger.ZenLogger
 import kotlinx.coroutines.CoroutineScope
 import org.json.JSONObject
 
-class SurveyNativeCompanion(json: JSONObject, companionAdSlot: CompanionAdSlot, private val eventsTracker: EventsTracker, adsBehaviour: AdsBehaviour?,
-                            private val companionSdkScope: CoroutineScope, private val remoteDataSource: RemoteDataSource, type: NativeCompanionType,
-                            resourceProvider: CompanionResourceProvider)
-    : NativeCompanion(type, json) {
+class SurveyNativeCompanion(
+    private val json: JSONObject,
+    companionAdSlot: CompanionAdSlot,
+    private val eventsTracker: EventsTracker,
+    adsBehaviour: AdsBehaviour?,
+    private val companionSdkScope: CoroutineScope,
+    private val remoteDataSource: RemoteDataSource,
+    type: NativeCompanionType,
+    resourceProvider: CompanionResourceProvider
+)
+    : NativeCompanion() {
 
     val template: NativeCompanionTemplate =
             SurveyBaseTemplate(json, adsBehaviour, companionSdkScope, remoteDataSource, resourceProvider, companionAdSlot, eventsTracker)
@@ -26,11 +33,11 @@ class SurveyNativeCompanion(json: JSONObject, companionAdSlot: CompanionAdSlot, 
         const val ADVERTISER_ID = "advertiseId"
     }
 
-    override fun loadCompanion() {
+    override fun preload() {
         template.loadCompanionTemplate()
     }
 
-    override fun showCompanion() {
+    override fun loadCompanion() {
         template.showCompanionTemplate()
     }
 

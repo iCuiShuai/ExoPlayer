@@ -1,6 +1,7 @@
 package com.mxplay.adloader.nativeCompanion
 
 import com.mxplay.adloader.VideoAdsTracker
+import com.mxplay.adloader.nativeCompanion.expandable.data.CompanionTrackingInfo
 import com.mxplay.interactivemedia.internal.data.RemoteDataSource
 import com.mxplay.interactivemedia.internal.util.UrlStitchingService
 import com.mxplay.logger.ZenLogger
@@ -34,6 +35,35 @@ class EventsTracker(private val videoAdsTracker: VideoAdsTracker, private val ur
         }
     }
 
+    fun trackClick(clickTracker: List<String>, data: CompanionTrackingInfo) {
+        companionSdkScope.launch {
+            val trackingInfo = data.toMap()
+            videoAdsTracker.trackCompanionEvent("CompanionClickTracking", trackingInfo)
+            clickTracker.forEach { clickTrackingUrl ->
+                try {
+                    val result = remoteDataSource.trackEventAsync(clickTrackingUrl, { url -> replaceMacros(urlStitchingService.replaceMacros(null, url, emptyMap()), data) }, { mutableMapOf() })
+                    if (result){
+                        ZenLogger.dt(TAG, "Event tracked success")
+                    } else ZenLogger.dt(TAG, "Event tracked failed")
+                } catch (e: Exception) {
+                    ZenLogger.et(TAG, e,"Event tracked failed")
+                }
+            }
+
+        }
+    }
+
+    private fun replaceMacros(url : String, data: CompanionTrackingInfo) : String{
+       var mutableData = url.replaceFirst("[CREATIVEID]", data.creativeId)
+        mutableData = mutableData.replaceFirst("[ADID]", data.adId)
+        mutableData = mutableData.replaceFirst("[TEMPLATEID]", data.templateId)
+        mutableData = mutableData.replaceFirst("[CAMPAIGNID]", data.campaignId ?: "")
+        mutableData = mutableData.replaceFirst("[CAMPAIGNNAME]", data.campaignName ?: "")
+        return mutableData
+    }
+
+
+
     private fun convertToTrackingInfo(data: JSONObject): Map<String, String> {
         val map = mutableMapOf<String, String>()
         val json = data.filter("adId", "campaignId", "campaignName", "creativeId", "extension_type", "templateId")
@@ -63,6 +93,23 @@ class EventsTracker(private val videoAdsTracker: VideoAdsTracker, private val ur
             impressionTracker.forEach { impressionUrl ->
                 try {
                     val result = remoteDataSource.trackEventAsync(impressionUrl, { url -> urlStitchingService.replaceMacros(null, url, emptyMap()) }, { mutableMapOf() })
+                    if (result){
+                        ZenLogger.dt(TAG, "Event impressionTracker success")
+                    } else ZenLogger.dt(TAG, "Event impressionTracker failed")
+                } catch (e: Exception) {
+                    ZenLogger.et(TAG, e,"Event impressionTracker failed")
+                }
+            }
+
+        }
+    }
+
+    fun trackAdImpression(impressionTracker: List<String>, data: CompanionTrackingInfo){
+        companionSdkScope.launch {
+            videoAdsTracker.trackCompanionEvent("creativeView", data.toMap())
+            impressionTracker.forEach { impressionUrl ->
+                try {
+                    val result = remoteDataSource.trackEventAsync(impressionUrl, { url -> replaceMacros(urlStitchingService.replaceMacros(null, url, emptyMap()), data) }, { mutableMapOf() })
                     if (result){
                         ZenLogger.dt(TAG, "Event impressionTracker success")
                     } else ZenLogger.dt(TAG, "Event impressionTracker failed")

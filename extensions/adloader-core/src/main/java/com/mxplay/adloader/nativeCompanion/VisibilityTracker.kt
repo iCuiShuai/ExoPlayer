@@ -13,7 +13,7 @@ class VisibilityTracker(val view : View, val minPercentageViewed: Int) {
     private val mVisibilityChecker: VisibilityChecker
     private val mVisibilityHandler: Handler
     private val mVisibilityRunnable: Runnable
-    private val visibility : Boolean? = null
+    private var visibility : Boolean? = null
 
     interface VisibilityTrackerListener {
         fun onVisibilityChanged(isVisible: Boolean)
@@ -57,6 +57,7 @@ class VisibilityTracker(val view : View, val minPercentageViewed: Int) {
             if (mVisibilityTrackerListener != null){
                 val visible = mVisibilityChecker.isVisible(view, minPercentageViewed)
                 if (visible != visibility) {
+                    visibility = visible
                     mVisibilityTrackerListener!!.onVisibilityChanged(visible)
                 }
             }
@@ -88,4 +89,6 @@ class VisibilityTracker(val view : View, val minPercentageViewed: Int) {
         viewTreeObserver.removeOnPreDrawListener(mOnPreDrawListener)
         mVisibilityHandler.removeCallbacksAndMessages(null)
     }
+
+    fun isVisible() = visibility
 }
