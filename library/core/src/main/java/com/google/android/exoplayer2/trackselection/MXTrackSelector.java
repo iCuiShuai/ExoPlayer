@@ -39,6 +39,7 @@ import com.google.android.exoplayer2.source.MediaSource.MediaPeriodId;
 import com.google.android.exoplayer2.source.TrackGroup;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.util.Assertions;
+import com.google.android.exoplayer2.util.TrackSelectorUtil;
 import com.google.android.exoplayer2.util.Util;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.ImmutableList;
@@ -2019,14 +2020,17 @@ public class MXTrackSelector extends MappingTrackSelector {
         if (mappedTrackInfo.getRendererType(i) == C.TRACK_TYPE_VIDEO && rendererTrackGroups.length > 0) {
           ExoTrackSelection.@NullableType Definition definition = definitions[i];
           if (definition != null && override != null) {
-            definitions[i] = new ExoTrackSelection.Definition(
-                    definition.group,
-                    definition.tracks,
-                    override.reason,
-                    override.data,
-                    /*preferredTrack*/ override.tracks[0],
-                    /*minVideoResolution*/ params.minVideoResolutionInAutoMode,
-                    /*maxVideoResolution*/ params.maxVideoResolutionInAutoMode);
+            int preferredIndex = TrackSelectorUtil.indexOf(definition.tracks, override.tracks[0]);
+            if (preferredIndex != C.INDEX_UNSET) {
+              definitions[i] = new ExoTrackSelection.Definition(
+                      definition.group,
+                      definition.tracks,
+                      override.reason,
+                      override.data,
+                      /*preferredTrack*/ override.tracks[0],
+                      /*minVideoResolution*/ params.minVideoResolutionInAutoMode,
+                      /*maxVideoResolution*/ params.maxVideoResolutionInAutoMode);
+            }
           }
         } else {
           definitions[i] =
