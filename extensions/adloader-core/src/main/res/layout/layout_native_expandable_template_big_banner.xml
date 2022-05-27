@@ -44,6 +44,9 @@
             android:textSize="14sp"
             android:fontFamily="?exo_font_extra_bold"
             tools:text="Install Now"
+            android:clickable="false"
+            android:focusable="false"
+            android:duplicateParentState="true"
             />
 
 

@@ -37,7 +37,7 @@ class SurveyNativeCompanion(
         template.loadCompanionTemplate()
     }
 
-    override fun loadCompanion() {
+    override fun display() {
         template.showCompanionTemplate()
     }
 

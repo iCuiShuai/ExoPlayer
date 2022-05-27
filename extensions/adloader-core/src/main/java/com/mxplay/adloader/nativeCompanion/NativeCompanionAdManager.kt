@@ -1,9 +1,9 @@
 package com.mxplay.adloader.nativeCompanion
 
 import android.text.TextUtils
-import com.google.android.exoplayer2.C
 import com.mxplay.adloader.AdsBehaviour
 import com.mxplay.adloader.VideoAdsTracker
+import com.mxplay.adloader.nativeCompanion.expandable.EndCardCompanion
 import com.mxplay.adloader.nativeCompanion.expandable.PlayerBottomCompanion
 import com.mxplay.adloader.nativeCompanion.surveyAd.SurveyNativeCompanion
 import com.mxplay.interactivemedia.api.*
@@ -34,7 +34,7 @@ class NativeCompanionAdManager(val tracker: VideoAdsTracker, val adsBehaviour: A
 
     companion object {
         const val TAG = "NativeCompanionManager"
-        const val NATIVE_AD_CONFIG = "nativeAdConfig"
+        const val NATIVE_AD_CONFIG = "nativeAdConfigV2"
     }
 
     override fun onAdEvent(adEvent: AdEvent) {
@@ -42,7 +42,7 @@ class NativeCompanionAdManager(val tracker: VideoAdsTracker, val adsBehaviour: A
         if(adEvent.type == AdEvent.AdEventType.LOADED && ad != null) {
             checkAndLoadNativeCompanion(ad, ad.getTraffickingParameters(), adEvent.ad!!.getAdPodInfo())
         }else if (adEvent.type == AdEvent.AdEventType.STARTED && ad != null){
-            nativeCompanions.get(ad)?.forEach { it.loadCompanion()}
+            nativeCompanions.get(ad)?.forEach { it.display()}
         }
         else if (adEvent.type == AdEvent.AdEventType.COMPLETED){
             adsBehaviour?.setNativeCompanionAdInfo(null)
@@ -131,11 +131,15 @@ class NativeCompanionAdManager(val tracker: VideoAdsTracker, val adsBehaviour: A
                 )
             }
             NativeCompanion.NativeCompanionType.EXPANDABLE.value -> {
-                return PlayerBottomCompanion.create(ad, json, companionAdSlot, eventsTracker, resourceProvider)
+                return PlayerBottomCompanion.create(json, companionAdSlot, eventsTracker, resourceProvider)
+            }
+            NativeCompanion.NativeCompanionType.ENDCARD.value -> {
+                return EndCardCompanion.create(json, companionAdSlot, eventsTracker, resourceProvider, adsBehaviour)
             }
             NativeCompanion.NativeCompanionType.NONE.value -> {
-                return PlayerBottomCompanion.create(ad, json, companionAdSlot, eventsTracker, resourceProvider)
+                return PlayerBottomCompanion.create(json, companionAdSlot, eventsTracker, resourceProvider)
             }
+
             else -> null
         }
     }

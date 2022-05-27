@@ -15,13 +15,11 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import ccom.mxplay.adloader.R
-import com.mxplay.adloader.nativeCompanion.CompanionResourceProvider
-import com.mxplay.adloader.nativeCompanion.EventsTracker
-import com.mxplay.adloader.nativeCompanion.ID_CAROUSEL_IMAGE_TEMPLATE
-import com.mxplay.adloader.nativeCompanion.VisibilityTracker
+import com.mxplay.adloader.nativeCompanion.*
 import com.mxplay.adloader.nativeCompanion.expandable.data.Ad
 import com.mxplay.adloader.nativeCompanion.expandable.data.CompanionTrackingInfo
 import com.mxplay.adloader.nativeCompanion.expandable.data.TableViewTemplateData
+import com.mxplay.adloader.nativeCompanion.view.TableItemWrapperLayout
 import com.mxplay.interactivemedia.api.AdEvent
 import com.mxplay.interactivemedia.api.CompanionAdSlot
 import com.mxplay.logger.ZenLogger
@@ -72,6 +70,7 @@ class TableViewCompanion(
         templateBannerView!!.findViewById<TextView>(R.id.subtitle).text = payload.description
         val action = templateBannerView!!.findViewById<ImageButton>(R.id.dismiss)
         action.setOnClickListener {
+            eventsTracker.trackAdHide(this, false, payload.getTrackingData())
             startCollapseAnimation(templateBannerView!!, object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator?) {
                     super.onAnimationEnd(animation)
@@ -89,21 +88,25 @@ class TableViewCompanion(
             list.layoutManager = GridLayoutManager(context, spanCount)
         }
 
-        list.adapter = AdsAdapter(context, payload, payload.ads, resourceProvider, eventsTracker, payload.templateId)
+        list.adapter = AdsAdapter(context, this, payload, payload.ads, resourceProvider, eventsTracker, payload.templateId!!)
         bindCTA(templateBannerView!!.findViewById(R.id.native_ad_action_button))
         return templateBannerView
     }
 
-    override fun loadCompanion() {
-        super.loadCompanion()
+    override fun display() {
+        super.display()
         ZenLogger.dt(TAG, " TableViewCompanion loadCompanion")
+        expandOverlayContainer?.removeAllViews()
         expandOverlayContainer?.visibility = View.VISIBLE
         expandOverlayContainer?.addView(templateBannerView, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
         getExpandHandlerView()?.let {
-            it.setOnClickListener {
-                it.setTag(R.id.tag_visibility, true)
+            it.setOnClickListener { view ->
+                view.setTag(R.id.tag_visibility, true)
                 templateBannerView?.visibility = View.VISIBLE
                 if (hostViewVisibilityTracker?.isVisible() == true && templateBannerView?.parent != null){
+                    val autoExpanded = view.getTag(R.id.is_auto_expanded) == true
+                    view.setTag(R.id.is_auto_expanded , false)
+                    eventsTracker.trackAdShown(this, autoExpanded, payload.getTrackingData())
                     startExpandAnimation(templateBannerView!!, object : AnimatorListenerAdapter() {
                         override fun onAnimationEnd(animation: Animator?) {
                             super.onAnimationEnd(animation)
@@ -117,7 +120,7 @@ class TableViewCompanion(
 
             }
             if (templateBannerView?.parent != null){
-                hostViewVisibilityTracker = VisibilityTracker(templateBannerView?.parent as View, 80)
+                hostViewVisibilityTracker = VisibilityTracker(templateBannerView?.parent as View, 80, 100)
                 hostViewVisibilityTracker!!.setVisibilityTrackerListener(hostViewVisibilityTrackerListener)
             }
             if(hostViewVisibilityTracker?.isVisible() == true){
@@ -146,6 +149,7 @@ class TableViewCompanion(
 
     class AdsAdapter(
         val context: Context,
+        val nativeCompanion: NativeCompanion,
         val payload: TableViewTemplateData,
         val ads: List<Ad>,
         val resourceProvider: CompanionResourceProvider,
@@ -157,11 +161,20 @@ class TableViewCompanion(
             const val ITEM_TYPE_DETAILED = 101
         }
         private val inflater = LayoutInflater.from(context)
-        open inner class BasicAdViewHolder(val view : View) : RecyclerView.ViewHolder(view){
+
+        open inner class BasicAdViewHolder(val view : View) : RecyclerView.ViewHolder(view), TableItemWrapperLayout.OnWindowAttachListener {
             private val image = view.findViewById<ImageView>(R.id.image)
+
+            init {
+                if(view is TableItemWrapperLayout){
+                    view.addAttachedListener(this)
+                }
+
+            }
+
             @CallSuper
             open fun bind(ad : Ad){
-
+                view.setTag(R.id.ad_tag_view, ad)
                 if (templateId == ID_CAROUSEL_IMAGE_TEMPLATE){
                     image.layoutParams =  (image.layoutParams as LinearLayout.LayoutParams).apply {
                         weight = 1.0f
@@ -184,7 +197,21 @@ class TableViewCompanion(
                             action = Intent.ACTION_VIEW
                             data = Uri.parse(ad.clickThroughUrl)
                         })
-                        eventsTracker.trackClick(ad.clickTracker, CompanionTrackingInfo.CompanionItemTrackingInfo(ad.id, payload.getTrackingData()))
+                        eventsTracker.trackClick( nativeCompanion,
+                            ad.clickTracker,
+                            CompanionTrackingInfo.CompanionItemTrackingInfo(ads.indexOf(ad).toString(), ad.id, payload.getTrackingData())
+                        )
+                    }
+                }
+
+            }
+
+            override fun onAttachedToWindow() {
+                val ad  = (view.getTag(R.id.ad_tag_view) ?: return ) as Ad
+                if (!ad.isImpressed){
+                    ad.isImpressed = true
+                    ad.impressionTrackers?.let {
+                        eventsTracker.trackAdItemImpressionStream(nativeCompanion, EventsTracker.ImpressionData(it, CompanionTrackingInfo.CompanionItemTrackingInfo(ads.indexOf(ad).toString(), ad.id, payload.getTrackingData())))
                     }
                 }
             }
@@ -239,7 +266,7 @@ class TableViewCompanion(
         }
 
         override fun getItemViewType(position: Int): Int {
-            return if (ads[position].itemType == Ad.TYPE_BASIC) ITEM_TYPE_BASIC else ITEM_TYPE_DETAILED
+            return if (ads[position].itemType == Ad.TYPE_IMAGE) ITEM_TYPE_BASIC else ITEM_TYPE_DETAILED
         }
 
     }

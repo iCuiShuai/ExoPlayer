@@ -17,8 +17,8 @@ import com.mxplay.adloader.nativeCompanion.*
 import com.mxplay.adloader.nativeCompanion.expandable.data.BigBannerTemplateData
 import com.mxplay.adloader.nativeCompanion.expandable.data.TableViewTemplateData
 import com.mxplay.adloader.nativeCompanion.expandable.data.TemplateData
-import com.mxplay.interactivemedia.api.Ad
 import com.mxplay.interactivemedia.api.CompanionAdSlot
+import com.mxplay.logger.ZenLogger
 import org.json.JSONObject
 
 abstract class PlayerBottomCompanion(
@@ -34,7 +34,7 @@ abstract class PlayerBottomCompanion(
     private var visibilityTracker : VisibilityTracker? = null
     private var isImpressed : Boolean = false
     private var companionView : ViewGroup? = null
-    private val handler = Handler(Looper.getMainLooper())
+    private var templateView: View? = null
     private var  expandHandler : ImageButton? = null
 
     companion object {
@@ -43,7 +43,7 @@ abstract class PlayerBottomCompanion(
         const val DURATION_LONG = 500L
 
 
-        fun create(ad : Ad, json: JSONObject, companionAdSlot: CompanionAdSlot, eventsTracker: EventsTracker, resourceProvider: CompanionResourceProvider) : PlayerBottomCompanion{
+        fun create(json: JSONObject, companionAdSlot: CompanionAdSlot, eventsTracker: EventsTracker, resourceProvider: CompanionResourceProvider) : PlayerBottomCompanion{
             val data = parse(json)
             if (data is BigBannerTemplateData){
                 return BigBannerCompanion(data, companionAdSlot, eventsTracker, resourceProvider)
@@ -66,23 +66,31 @@ abstract class PlayerBottomCompanion(
         val action = companionView!!.findViewById<TextView>(R.id.cta_button)
         bindCTA(action)
         expandHandler = companionView!!.findViewById(R.id.expand)
-        val templateView: View? = renderOverlay()
+        templateView = renderOverlay()
         if (templateView != null){
             expandHandler!!.visibility = View.VISIBLE
             expandHandler!!.setOnClickListener {
-                templateView.visibility = View.VISIBLE
+                templateView?.visibility = View.VISIBLE
             }
         }else{
             expandHandler!!.visibility = View.GONE
         }
+        companionState =CompanionState.PRELOADED
+        companionView?.setOnClickListener { onAdClick() }
+        templateView?.setOnClickListener { onAdClick() }
     }
 
+    override fun isAdExpanded() = templateView?.visibility == View.VISIBLE
 
+    override fun display() {
+        container.removeAllViews()
+        val isCompanionDisabled = container.getTag(R.id.is_companion_disabled)
+        if(isCompanionDisabled == true) return
 
-    override fun loadCompanion() {
         container.addView(companionView, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT))
         if (visibilityTracker == null) visibilityTracker = VisibilityTracker(companionView!!, 60)
         visibilityTracker!!.setVisibilityTrackerListener(this)
+        companionState =CompanionState.DISPLAYED
         return
     }
 
@@ -91,22 +99,27 @@ abstract class PlayerBottomCompanion(
         if (payload.clickThroughUrl != null) {
             action.text = payload.CTA ?: context.getString(R.string.cta_learn_more)
             action.setOnClickListener {
-                kotlin.runCatching {
-                    context.startActivity(Intent().apply {
-                        setAction(Intent.ACTION_VIEW)
-                        data = Uri.parse(payload.clickThroughUrl)
-                    })
-                    trackClick(payload.clickTracker)
-                }
+                onAdClick()
             }
         } else {
             action.visibility = View.GONE
         }
     }
 
+    private fun onAdClick() {
+        kotlin.runCatching {
+            context.startActivity(Intent().apply {
+                setAction(Intent.ACTION_VIEW)
+                data = Uri.parse(payload.clickThroughUrl)
+            })
+            trackClick(payload.clickTracker)
+        }
+    }
+
     override fun onVisibilityChanged(isVisible: Boolean) {
         if (isVisible && !isImpressed){
             isImpressed = true
+            ZenLogger.dt(EventsTracker.TAG, "onVisibilityChanged ad top view")
             trackImpression()
             visibilityTracker?.release()
         }
@@ -115,19 +128,18 @@ abstract class PlayerBottomCompanion(
 
     private fun trackImpression(){
         payload.impressionTracker?.let {
-            eventsTracker.trackAdImpression(it, payload.getTrackingData())
+            eventsTracker.trackAdImpression(this, it, payload.getTrackingData())
         }
     }
 
     private  fun trackClick(trackers: List<String>?) {
         trackers?.let {
-            eventsTracker.trackClick(it, payload.getTrackingData())
+            eventsTracker.trackClick(this, it, payload.getTrackingData())
         }
     }
 
     override fun release() {
         super.release()
-        handler.removeCallbacksAndMessages(null)
     }
 
     fun getExpandHandlerView() = expandHandler

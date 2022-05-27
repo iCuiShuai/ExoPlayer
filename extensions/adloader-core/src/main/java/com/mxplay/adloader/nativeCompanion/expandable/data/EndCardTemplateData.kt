@@ -1,12 +1,11 @@
 package com.mxplay.adloader.nativeCompanion.expandable.data
 
-import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
 
-@Keep
-class BigBannerTemplateData(
+class EndCardTemplateData(
     CTA: String?,
     adId: String,
+    @SerializedName("endCardDuration") val endCardDuration: Int?,
     @SerializedName("ads") val ads: List<Ad>,
     campaignId: String,
     campaignName: String,
@@ -23,11 +22,4 @@ class BigBannerTemplateData(
     templateId: String,
     title: String,
     type: String,
-) : TemplateData(imageCdnUrl, logo, title, description, CTA, clickThroughUrl, clickTracker, impressionTracker, adId, campaignId, campaignName, creativeId, templateId, type){
-
-
-
-
-
-
-}
+) : TemplateData(imageCdnUrl, logo, title, description, CTA, clickThroughUrl, clickTracker, impressionTracker, adId, campaignId, campaignName, creativeId, templateId, type)

@@ -2,6 +2,8 @@ package com.mxplay.adloader.nativeCompanion
 
 import android.animation.*
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
@@ -12,18 +14,27 @@ import com.mxplay.interactivemedia.api.Ad
 import com.mxplay.interactivemedia.api.AdEvent
 import com.mxplay.logger.ZenLogger
 import org.json.JSONObject
+import java.util.*
 
 abstract class NativeCompanion() : AdEvent.AdEventListener{
 
     companion object{
         const val TAG = "NativeCompanion"
     }
+
+    var companionState = CompanionState.NONE
+    val adExtensionSessionId = UUID.randomUUID().toString()
+    val handler = Handler(Looper.getMainLooper())
+
     abstract fun preload()
-    abstract fun loadCompanion()
+    abstract fun display()
+    open fun isAdExpanded() = false
+
 
     enum class NativeCompanionType(val value: String) {
         SURVEY_AD("survey"),
         EXPANDABLE("expandable"),
+        ENDCARD("endCard"),
         NONE("none")
     }
 
@@ -54,11 +65,10 @@ abstract class NativeCompanion() : AdEvent.AdEventListener{
 
     @CallSuper
     open fun release() {
-
+        handler.removeCallbacksAndMessages(null)
     }
 
-    fun startExpandAnimation(animateView: View, animateAdapter: AnimatorListenerAdapter? = null, parentHeight : Int = -1): AnimatorSet {
-        animateView.measure(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+    fun startExpandAnimation(animateView: View, animateAdapter: AnimatorListenerAdapter? = null, parentHeight: Int = -1): AnimatorSet {
         val targetHeight: Int = if (parentHeight > 0) parentHeight else animateView.measuredHeight
         ZenLogger.dt(TAG, "running expand animation targetHeight : ${targetHeight}")
         animateView.layoutParams.height = 1
@@ -74,6 +84,11 @@ abstract class NativeCompanion() : AdEvent.AdEventListener{
             override fun onAnimationStart(animation: Animator) {
                 super.onAnimationStart(animation)
                 animateAdapter?.onAnimationStart(animation)
+                val params = animateView.layoutParams
+                if (params != null) {
+                    params.height = ViewGroup.LayoutParams.MATCH_PARENT
+                    animateView.layoutParams = params
+                }
             }
 
             override fun onAnimationCancel(animation: Animator?) {

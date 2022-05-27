@@ -1,2 +1,3 @@
 # Proguard rules specific to the OMA extension.
 
+-keep class ccom.mxplay.adloader.nativeCompanion.expandable.data.** { *; }

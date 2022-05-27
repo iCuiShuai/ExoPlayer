@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="transparent_overlay_color">#66000000</color>
+    <color name="end_card_font_color">#35344c</color>
 </resources>

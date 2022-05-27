@@ -6,7 +6,7 @@ import android.os.Looper
 import android.view.View
 import android.view.ViewTreeObserver
 
-class VisibilityTracker(val view : View, val minPercentageViewed: Int) {
+class VisibilityTracker(val view : View, val minPercentageViewed: Int, val visibilityCheckThreshold : Long = DEFAULT_VISIBILITY_CHECK_DELAY_MILLIS) {
     private var mOnPreDrawListener: ViewTreeObserver.OnPreDrawListener? = null
     private var mVisibilityTrackerListener: VisibilityTrackerListener? = null
     private var mIsVisibilityCheckScheduled = false
@@ -32,7 +32,7 @@ class VisibilityTracker(val view : View, val minPercentageViewed: Int) {
             return
         }
         mIsVisibilityCheckScheduled = true
-        mVisibilityHandler.postDelayed(mVisibilityRunnable, VISIBILITY_CHECK_DELAY_MILLIS)
+        mVisibilityHandler.postDelayed(mVisibilityRunnable, visibilityCheckThreshold)
     }
 
     internal class VisibilityChecker {
@@ -67,7 +67,7 @@ class VisibilityTracker(val view : View, val minPercentageViewed: Int) {
     }
 
     companion object {
-        private const val VISIBILITY_CHECK_DELAY_MILLIS: Long = 100
+        private const val DEFAULT_VISIBILITY_CHECK_DELAY_MILLIS: Long = 1000
     }
 
     init {

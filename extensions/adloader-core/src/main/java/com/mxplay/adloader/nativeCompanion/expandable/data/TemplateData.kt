@@ -18,7 +18,8 @@ open class TemplateData(
     @SerializedName("campaignId") val campaignId: String?,
     @SerializedName("campaignName") val campaignName: String?,
     @SerializedName("creativeId") val creativeId: String,
-    @SerializedName("templateId") val templateId: String
+    @SerializedName("templateId") val templateId: String,
+    @SerializedName("type") val type: String?,
 ) {
     companion object{
         fun stitchUrl(baseUrl : String, url : String?) : String?{
@@ -35,6 +36,6 @@ open class TemplateData(
         return stitchUrl(imageCdnUrl, logo)
     }
 
-    fun getTrackingData() = CompanionTrackingInfo(adId, campaignId, campaignName, creativeId, templateId)
+    fun getTrackingData() = CompanionTrackingInfo(adId, campaignId, campaignName, creativeId, templateId, type)
 
 }

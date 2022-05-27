@@ -50,18 +50,7 @@ class BigBannerCompanion(
     override fun renderOverlay(): ViewGroup? {
         if (expandOverlayContainer == null || payload.ads.isEmpty()) return null
         ZenLogger.dt(TAG, " BigBannerCompanion renderOverlay")
-        templateBannerView = LayoutInflater.from(context).inflate(R.layout.layout_native_expandable_template_big_banner, null, false) as ViewGroup
-        resourceProvider.loadImage(payload.logoUrl(), templateBannerView!!.findViewById<ImageView>(R.id.logo))
-        templateBannerView!!.findViewById<TextView>(R.id.title).text = payload.title
-        templateBannerView!!.findViewById<TextView>(R.id.subtitle).text = payload.description
-        val action = templateBannerView!!.findViewById<ImageButton>(R.id.dismiss)
-        action.setOnClickListener {
-            startCollapseAnimation(templateBannerView!!, object : AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: Animator?) {
-                    super.onAnimationEnd(animation)
-                }
-            })
-        }
+        initExpandableTopView()
         val ad = payload.ads.first()
         val banner = templateBannerView!!.findViewById<ImageView>(R.id.image)
         banner.setOnClickListener {
@@ -70,24 +59,50 @@ class BigBannerCompanion(
                     setAction(Intent.ACTION_VIEW)
                     data = Uri.parse(ad.clickThroughUrl)
                 })
-                eventsTracker.trackClick(ad.clickTracker, CompanionTrackingInfo.CompanionItemTrackingInfo(ad.id, payload.getTrackingData()))
+                eventsTracker.trackClick(this, ad.clickTracker, CompanionTrackingInfo.CompanionItemTrackingInfo("0", ad.id, payload.getTrackingData()))
             }
         }
+        if (!ad.isImpressed){
+            ad.isImpressed = true
+            ad.impressionTrackers?.let {
+                eventsTracker.trackAdItemImpressionStream(this, EventsTracker.ImpressionData(it, CompanionTrackingInfo.CompanionItemTrackingInfo("0", ad.id, payload.getTrackingData())))
+            }
+        }
+
         resourceProvider.loadImage(ad.bannerUrl(payload.imageCdnUrl), banner)
         bindCTA(templateBannerView!!.findViewById(R.id.native_ad_action_button))
         return templateBannerView
     }
 
-    override fun loadCompanion() {
-        super.loadCompanion()
+    private fun initExpandableTopView() {
+        templateBannerView = LayoutInflater.from(context).inflate(R.layout.layout_native_expandable_template_big_banner, null, false) as ViewGroup
+        resourceProvider.loadImage(payload.logoUrl(), templateBannerView!!.findViewById<ImageView>(R.id.logo))
+        templateBannerView!!.findViewById<TextView>(R.id.title).text = payload.title
+        templateBannerView!!.findViewById<TextView>(R.id.subtitle).text = payload.description
+        val action = templateBannerView!!.findViewById<ImageButton>(R.id.dismiss)
+        action.setOnClickListener {
+            eventsTracker.trackAdHide(this, false,  payload.getTrackingData())
+            startCollapseAnimation(templateBannerView!!, object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator?) {
+                    super.onAnimationEnd(animation)
+                }
+            })
+        }
+    }
+
+    override fun display() {
+        super.display()
         ZenLogger.dt(TAG, " BigBannerCompanion loadCompanion")
+        expandOverlayContainer?.removeAllViews()
         expandOverlayContainer?.visibility = View.VISIBLE
         expandOverlayContainer?.addView(templateBannerView, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
         getExpandHandlerView()?.let {
-            it.setOnClickListener {
-                it.setTag(R.id.tag_visibility, true)
-                templateBannerView?.visibility = View.VISIBLE
+            it.setOnClickListener { view ->
+                view.setTag(R.id.tag_visibility, true)
                 if (hostViewVisibilityTracker?.isVisible() == true){
+                    val autoExpanded = view.getTag(R.id.is_auto_expanded) == true
+                    view.setTag(R.id.is_auto_expanded , false)
+                    eventsTracker.trackAdShown(this, autoExpanded, payload.getTrackingData())
                     startExpandAnimation(templateBannerView!!, object : AnimatorListenerAdapter() {
                         override fun onAnimationEnd(animation: Animator?) {
                             super.onAnimationEnd(animation)
@@ -101,11 +116,12 @@ class BigBannerCompanion(
 
             }
             if (templateBannerView?.parent != null){
-                hostViewVisibilityTracker = VisibilityTracker(templateBannerView?.parent as View, 80)
+                hostViewVisibilityTracker = VisibilityTracker(templateBannerView?.parent as View, 80, 100)
                 hostViewVisibilityTracker!!.setVisibilityTrackerListener(hostViewVisibilityTrackerListener)
             }
             if(hostViewVisibilityTracker?.isVisible() == true){
                 if (it.getTag(R.id.tag_visibility)  == null){
+                    it.setTag(R.id.is_auto_expanded, true)
                     it.performClick()
                 }
 

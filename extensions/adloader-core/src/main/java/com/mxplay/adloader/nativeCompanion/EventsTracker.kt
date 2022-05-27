@@ -5,40 +5,74 @@ import com.mxplay.adloader.nativeCompanion.expandable.data.CompanionTrackingInfo
 import com.mxplay.interactivemedia.internal.data.RemoteDataSource
 import com.mxplay.interactivemedia.internal.util.UrlStitchingService
 import com.mxplay.logger.ZenLogger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import org.json.JSONObject
 
+@OptIn(FlowPreview::class)
 class EventsTracker(private val videoAdsTracker: VideoAdsTracker, private val urlStitchingService: UrlStitchingService, private val remoteDataSource: RemoteDataSource, private val companionSdkScope: CoroutineScope) {
 
 
     companion object{
         const val TAG = "EventsTracker"
+        const val EVENT_COMPANION_ITEM_CLICK_TRACKING  = "CompanionItemClickTracking"
+        const val EVENT_COMPANION_CLICK_TRACKING  =  "CompanionClickTracking"
+        const val EVENT_COMPANION_CLOSED_TRACKING = "CompanionClosedTracking"
+        const val EVENT_COMPANION_OPENED_TRACKING = "CompanionOpenedTracking"
+        const val EVENT_CREATIVE_VIEW = "creativeView"
+        const val EVENT_COMPANION_ITEM_CREATIVE_VIEW = "CompanionItemCreativeView"
+
+        const val P_AD_EXTENSION_SESSION_ID = "adExtensionSessionId"
+        const val P_IS_AUTO_HIDE = "isAutoHide"
+        const val P_IS_AUTO_SHOWN = "isAutoShown"
     }
 
+    private var impressionJob : Job?  = null
+    private var impressionsBatch = mutableMapOf<String, MutableList<ImpressionData>>()
 
-    fun trackClick(clickTracker: MutableList<String>, data: JSONObject) {
+
+
+    fun trackAdHide(companion : NativeCompanion, autoHide : Boolean, data: CompanionTrackingInfo){
         companionSdkScope.launch {
-            val trackingInfo = convertToTrackingInfo(data)
-            videoAdsTracker.trackCompanionEvent("CompanionClickTracking", trackingInfo)
-            clickTracker.forEach { clickTrackingUrl ->
-                try {
-                    val result = remoteDataSource.trackEventAsync(clickTrackingUrl, { url -> urlStitchingService.replaceMacros(null, url, emptyMap()) }, { mutableMapOf() })
-                    if (result){
-                        ZenLogger.dt(TAG, "Event tracked success")
-                    } else ZenLogger.dt(TAG, "Event tracked failed")
-                } catch (e: Exception) {
-                    ZenLogger.et(TAG, e,"Event tracked failed")
+            withContext(Dispatchers.IO){
+                val trackingInfo = data.toMap().apply {
+                    put(P_AD_EXTENSION_SESSION_ID, companion.adExtensionSessionId)
+                    put(P_IS_AUTO_HIDE, autoHide.toString())
+
                 }
+                videoAdsTracker.trackCompanionEvent(
+                    EVENT_COMPANION_CLOSED_TRACKING,
+                    trackingInfo
+                )
             }
 
         }
     }
 
-    fun trackClick(clickTracker: List<String>, data: CompanionTrackingInfo) {
+    fun trackAdShown(companion : NativeCompanion, autoShown : Boolean, data: CompanionTrackingInfo){
         companionSdkScope.launch {
-            val trackingInfo = data.toMap()
-            videoAdsTracker.trackCompanionEvent("CompanionClickTracking", trackingInfo)
+            withContext(Dispatchers.IO){
+                val trackingInfo = data.toMap().apply {
+                    put(P_AD_EXTENSION_SESSION_ID, companion.adExtensionSessionId)
+                    put(P_IS_AUTO_SHOWN, autoShown.toString())
+                }
+                videoAdsTracker.trackCompanionEvent(
+                    EVENT_COMPANION_OPENED_TRACKING,
+                    trackingInfo
+                )
+            }
+
+        }
+    }
+
+    fun trackClick(companion : NativeCompanion, clickTracker: List<String>, data: CompanionTrackingInfo) {
+        companionSdkScope.launch {
+            withContext(Dispatchers.IO){
+                val trackingInfo = data.toMap().apply {
+                    put(P_AD_EXTENSION_SESSION_ID, companion.adExtensionSessionId)
+                }
+                videoAdsTracker.trackCompanionEvent(if (data is CompanionTrackingInfo.CompanionItemTrackingInfo) EVENT_COMPANION_ITEM_CLICK_TRACKING else EVENT_COMPANION_CLICK_TRACKING, trackingInfo)
+            }
             clickTracker.forEach { clickTrackingUrl ->
                 try {
                     val result = remoteDataSource.trackEventAsync(clickTrackingUrl, { url -> replaceMacros(urlStitchingService.replaceMacros(null, url, emptyMap()), data) }, { mutableMapOf() })
@@ -46,7 +80,7 @@ class EventsTracker(private val videoAdsTracker: VideoAdsTracker, private val ur
                         ZenLogger.dt(TAG, "Event tracked success")
                     } else ZenLogger.dt(TAG, "Event tracked failed")
                 } catch (e: Exception) {
-                    ZenLogger.et(TAG, e,"Event tracked failed")
+                    ZenLogger.et(TAG, "Event tracked failed ${e.message}")
                 }
             }
 
@@ -56,7 +90,7 @@ class EventsTracker(private val videoAdsTracker: VideoAdsTracker, private val ur
     private fun replaceMacros(url : String, data: CompanionTrackingInfo) : String{
        var mutableData = url.replaceFirst("[CREATIVEID]", data.creativeId)
         mutableData = mutableData.replaceFirst("[ADID]", data.adId)
-        mutableData = mutableData.replaceFirst("[TEMPLATEID]", data.templateId)
+        mutableData = mutableData.replaceFirst("[TEMPLATEID]", data.templateId ?: "")
         mutableData = mutableData.replaceFirst("[CAMPAIGNID]", data.campaignId ?: "")
         mutableData = mutableData.replaceFirst("[CAMPAIGNNAME]", data.campaignName ?: "")
         return mutableData
@@ -64,49 +98,20 @@ class EventsTracker(private val videoAdsTracker: VideoAdsTracker, private val ur
 
 
 
-    private fun convertToTrackingInfo(data: JSONObject): Map<String, String> {
-        val map = mutableMapOf<String, String>()
-        val json = data.filter("adId", "campaignId", "campaignName", "creativeId", "extension_type", "templateId")
-        json.keys().forEach { k ->
-            map[k] = json.get(k).toString()
-        }
-        return map
-    }
-
-    /** Filter json values
-     * keys of objects to keep
-     * @return New json object with filtered items
-     */
-    fun  JSONObject.filter(vararg keys : String): JSONObject {
-        val output = JSONObject()
-        keys.forEach { key ->
-            if (this.optString(key).isNotEmpty()) output.put(key, this.get(key))
-        }
-        return output
-    }
 
 
-    fun trackAdImpression(impressionTracker: MutableList<String>, data: JSONObject){
+
+
+
+
+    fun trackAdImpression(companion : NativeCompanion, impressionTracker: List<String>, data: CompanionTrackingInfo){
         companionSdkScope.launch {
-            val trackingInfo = convertToTrackingInfo(data)
-            videoAdsTracker.trackCompanionEvent("creativeView", trackingInfo)
-            impressionTracker.forEach { impressionUrl ->
-                try {
-                    val result = remoteDataSource.trackEventAsync(impressionUrl, { url -> urlStitchingService.replaceMacros(null, url, emptyMap()) }, { mutableMapOf() })
-                    if (result){
-                        ZenLogger.dt(TAG, "Event impressionTracker success")
-                    } else ZenLogger.dt(TAG, "Event impressionTracker failed")
-                } catch (e: Exception) {
-                    ZenLogger.et(TAG, e,"Event impressionTracker failed")
+            withContext(Dispatchers.IO){
+                val trackingInfo = data.toMap().apply {
+                    put(P_AD_EXTENSION_SESSION_ID, companion.adExtensionSessionId)
                 }
+                videoAdsTracker.trackCompanionEvent(EVENT_CREATIVE_VIEW, trackingInfo)
             }
-
-        }
-    }
-
-    fun trackAdImpression(impressionTracker: List<String>, data: CompanionTrackingInfo){
-        companionSdkScope.launch {
-            videoAdsTracker.trackCompanionEvent("creativeView", data.toMap())
             impressionTracker.forEach { impressionUrl ->
                 try {
                     val result = remoteDataSource.trackEventAsync(impressionUrl, { url -> replaceMacros(urlStitchingService.replaceMacros(null, url, emptyMap()), data) }, { mutableMapOf() })
@@ -114,9 +119,49 @@ class EventsTracker(private val videoAdsTracker: VideoAdsTracker, private val ur
                         ZenLogger.dt(TAG, "Event impressionTracker success")
                     } else ZenLogger.dt(TAG, "Event impressionTracker failed")
                 } catch (e: Exception) {
-                    ZenLogger.et(TAG, e,"Event impressionTracker failed")
+                    ZenLogger.et(TAG,"Event impressionTracker failed ${e.message}")
                 }
             }
+
+        }
+    }
+
+    fun trackAdItemImpressionStream(companion : NativeCompanion, impressionData: ImpressionData){
+        val impressionDataList = impressionsBatch.getOrPut(impressionData.data.creativeId) { mutableListOf<ImpressionData>() }
+        impressionDataList.add(impressionData)
+        impressionJob?.cancel()
+        impressionJob = companionSdkScope.launch {
+           kotlin.runCatching {
+               delay(500)
+               impressionsBatch.forEach { entry ->
+                   if (entry.value.isNotEmpty()){
+                       val combinedData = entry.value.filter { !it.isBiTracked }.map {it.isBiTracked = true; it.data }.filterIsInstance(CompanionTrackingInfo.CompanionItemTrackingInfo::class.java)
+                           .reduce{ acc, impressionData ->
+                               acc.copy(position = "${acc.position},${impressionData.position}", itemId = "${acc.itemId},${impressionData.itemId}")
+                           }
+                       val trackingInfo = combinedData.toMap().apply {
+                           put(P_AD_EXTENSION_SESSION_ID, companion.adExtensionSessionId)
+                       }
+                       ZenLogger.dt(TAG, "tracking itemsViewed ${combinedData.position}")
+                       videoAdsTracker.trackCompanionEvent(EVENT_COMPANION_ITEM_CREATIVE_VIEW, trackingInfo)
+
+                       entry.value.filter { !it.isRemoteTracked }.forEach { item ->
+                           item.isRemoteTracked = true
+                           item.impressionTracker.forEach {
+                               try {
+                                   val result = remoteDataSource.trackEventAsync(it, { url -> replaceMacros(urlStitchingService.replaceMacros(null, url, emptyMap()), item.data) }, { mutableMapOf() })
+                                   if (result){
+                                       ZenLogger.dt(TAG, "Event impressionTracker success")
+                                   } else ZenLogger.dt(TAG, "Event impressionTracker failed")
+                               } catch (e: Exception) {
+                                   ZenLogger.et(TAG,"Event impressionTracker failed ${e.message}")
+                               }
+                           }
+                       }
+                   }
+
+               }
+           }
 
         }
     }
@@ -131,10 +176,11 @@ class EventsTracker(private val videoAdsTracker: VideoAdsTracker, private val ur
                         ZenLogger.dt(TAG, "Survey Event ${name} tracker success")
                     } else ZenLogger.dt(TAG, "Survey Event ${name} tracker failed")
                 } catch (e: Exception) {
-                    ZenLogger.et(TAG, e,"Survey Event ${name} tracker failed")
+                    ZenLogger.et(TAG, "Survey Event ${name} tracker failed ${e.message}")
                 }
             }
         }
     }
 
+    data class ImpressionData(val impressionTracker: List<String>, val data: CompanionTrackingInfo, var isBiTracked : Boolean = false, var isRemoteTracked : Boolean = false)
 }

@@ -63,6 +63,8 @@ open class AdsBehaviour private constructor(
 
     private lateinit var handler: Handler
 
+    private var player :Player? = null
+
 
     fun getContentDurationMs() = contentDurationMs
 
@@ -168,7 +170,9 @@ open class AdsBehaviour private constructor(
     override fun handleTimelineOrPositionChanged(player: Player?, timeline: Timeline?, period: Timeline.Period?) {}
 
 
-    override fun setPlayer(player: Player?) {}
+    override fun setPlayer(player: Player?) {
+        this.player = player
+    }
     override fun getContentPositionMs(player: Player, timeline: Timeline, period: Timeline.Period?, contentDurationMs: Long): Long {
         return getContentPeriodPositionMs(player, timeline, period)
     }
@@ -292,4 +296,9 @@ open class AdsBehaviour private constructor(
             }
         }
     }
+
+    fun getPlayer() : Player?{
+        return player
+    }
+
 }
