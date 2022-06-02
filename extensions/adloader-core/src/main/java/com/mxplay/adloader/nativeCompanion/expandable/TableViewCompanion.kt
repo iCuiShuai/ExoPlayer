@@ -84,7 +84,7 @@ class TableViewCompanion(
         if (payload.templateId == ID_CAROUSEL_IMAGE_TEMPLATE){
             list.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
         }else{
-            val spanCount = if (payload.row == null) 2 else payload.ads.size / payload.row
+            val spanCount = if (payload.row == null || payload.row == 0) 2 else Math.max(2, payload.ads.size / payload.row)
             list.layoutManager = GridLayoutManager(context, spanCount)
         }
 
@@ -169,12 +169,10 @@ class TableViewCompanion(
                 if(view is TableItemWrapperLayout){
                     view.addAttachedListener(this)
                 }
-
+                setUpLayoutParams()
             }
 
-            @CallSuper
-            open fun bind(ad : Ad){
-                view.setTag(R.id.ad_tag_view, ad)
+            private fun setUpLayoutParams(){
                 if (templateId == ID_CAROUSEL_IMAGE_TEMPLATE){
                     image.layoutParams =  (image.layoutParams as LinearLayout.LayoutParams).apply {
                         weight = 1.0f
@@ -187,9 +185,14 @@ class TableViewCompanion(
                     }
                 }else{
                     image.layoutParams = image.layoutParams.apply {
-                        height = context.resources.getDimensionPixelSize(R.dimen.grid_image_height)
+                        height = context.resources.getDimensionPixelSize(R.dimen.grid_image_size)
                     }
                 }
+            }
+
+            @CallSuper
+            open fun bind(ad : Ad){
+                view.setTag(R.id.ad_tag_view, ad)
                 resourceProvider.loadImage(ad.bannerUrl(payload.imageCdnUrl), image)
                 view.setOnClickListener {
                     kotlin.runCatching {

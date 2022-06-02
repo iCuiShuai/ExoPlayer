@@ -5,12 +5,13 @@ import android.content.Context;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-public class TableItemWrapperLayout extends FrameLayout {
+public class TableItemWrapperLayout extends LinearLayout {
 
     public interface OnWindowAttachListener{
         default void onAttachedToWindow(){}
