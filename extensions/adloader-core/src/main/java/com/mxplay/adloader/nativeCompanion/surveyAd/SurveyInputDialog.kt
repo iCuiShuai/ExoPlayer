@@ -11,7 +11,7 @@ import android.widget.TextView
 import android.widget.Toast
 import ccom.mxplay.adloader.R
 
-class SurveyInputDialog(private val context: Context, question: String, answer: String, private val callback: SurveyCompanionRenderer.SurveyInputDialogCallback) {
+class SurveyInputDialog(private val context: Context, question: String, answer: String, private val callback: SurveyCompanion.SurveyInputDialogCallback) {
 
     private val dialog: Dialog = Dialog(context)
     private val questionTv: TextView

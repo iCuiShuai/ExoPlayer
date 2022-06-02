@@ -19,7 +19,7 @@
         android:focusableInTouchMode="false"
         android:textColor="?survey_input_dialog_ques_color"
         android:textSize="16sp"
-        android:fontFamily="?attr/exo_font_semi_bold"
+        android:fontFamily="?attr/mx_font_semi_bold"
         tools:text="One Plus 6T" />
 
     <androidx.appcompat.widget.AppCompatEditText
@@ -35,7 +35,7 @@
         android:inputType="text|textMultiLine|textCapSentences"
         android:textSize="12sp"
         android:textColor="?survey_input_dialog_ques_color"
-        android:fontFamily="?attr/exo_font_semi_bold"
+        android:fontFamily="?attr/mx_font_semi_bold"
         android:hint="Please write you answer here"/>
 
     <RelativeLayout
@@ -52,7 +52,7 @@
             android:visibility="visible"
             android:textColor="?survey_input_dialog_ques_color"
             android:textSize="9sp"
-            android:fontFamily="?attr/exo_font_semi_bold"
+            android:fontFamily="?attr/mx_font_semi_bold"
             android:layout_gravity="right"
             android:layout_alignParentStart="true"
             android:layout_alignParentLeft="true" />
@@ -67,7 +67,7 @@
             android:visibility="gone"
             android:textColor="#e7492E"
             android:textSize="9sp"
-            android:fontFamily="?attr/exo_font_semi_bold"
+            android:fontFamily="?attr/mx_font_semi_bold"
             android:layout_alignParentEnd="true"
             android:layout_alignParentRight="true"
             android:layout_gravity="right" />
@@ -89,7 +89,7 @@
             android:padding="8dp"
             android:textColor="?survey_input_dialog_cta_color"
             android:textSize="12sp"
-            android:fontFamily="?attr/exo_font_semi_bold" />
+            android:fontFamily="?attr/mx_font_semi_bold" />
 
         <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/survey_cancel_btn"
@@ -104,7 +104,7 @@
             android:padding="8dp"
             android:textColor="?survey_input_dialog_cta_color"
             android:textSize="12sp"
-            android:fontFamily="?attr/exo_font_semi_bold" />
+            android:fontFamily="?attr/mx_font_semi_bold" />
     </RelativeLayout>
 
 

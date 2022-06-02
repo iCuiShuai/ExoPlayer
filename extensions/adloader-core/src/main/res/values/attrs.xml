@@ -14,6 +14,7 @@
         <attr name="survey_ad_tag_bg" format="reference" />
         <attr name="survey_option_color" format="reference" />
         <attr name="survey_option_btn" format="reference" />
+        <attr name="survey_option_checkbox" format="reference" />
         <attr name="survey_loading_icon" format="reference" />
         <attr name="survey_input_dialog_bg" format="reference" />
         <attr name="survey_input_dialog_text_bg" format="reference" />
@@ -24,8 +25,8 @@
         <attr name="expandable_ad_subtitle_color" format="reference" />
         <attr name="expandable_ad_tag" format="reference" />
         <attr name="expandable_ad_cta_bg" format="reference" />
-        <attr name="exo_font_regular" format="string" />
-        <attr name="exo_font_semi_bold" format="string" />
-        <attr name="exo_font_extra_bold" format="string" />
+        <attr name="mx_font_regular" format="string" />
+        <attr name="mx_font_semi_bold" format="string" />
+        <attr name="mx_font_extra_bold" format="string" />
     </declare-styleable>
 </resources>

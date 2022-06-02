@@ -2,6 +2,8 @@ package com.mxplay.adloader.nativeCompanion.surveyAd
 
 import android.text.TextUtils
 import com.google.gson.Gson
+import com.mxplay.adloader.nativeCompanion.surveyAd.model.SurveyAdsResponse
+import com.mxplay.adloader.nativeCompanion.surveyAd.model.SurveyAnswerType
 import com.mxplay.interactivemedia.internal.data.RemoteDataSource
 import com.mxplay.logger.ZenLogger
 import kotlinx.coroutines.*
@@ -18,11 +20,12 @@ class SurveyAdRequest private constructor(builder: Builder) {
     private var retryCount = 0
     private val method: String = builder.method
     private val body: String? = builder.body
-    private val mxAdListener: SurveyAdsListener? = builder.listener
-    private val requestParams: HashMap<String, String>? = builder.params
+    private var mxAdListener: SurveyAdsListener? = builder.listener
+    private val requestParams: MutableMap<String, String> = builder.params ?: mutableMapOf()
     private val remoteDataSource = builder.remoteDataSource
     private val companionSdkScope: CoroutineScope = builder.companionSdkScope
     private var isAdLoading = false
+    private var requestJob: Job? = null
 
     companion object {
         private const val TAG = "SurveyAdsRequest"
@@ -33,7 +36,19 @@ class SurveyAdRequest private constructor(builder: Builder) {
         private const val SURVEY_PATH_POST = "surveyresponse"
     }
 
+    private fun addSupportedSurveyTypes() {
+        var supportedTypes = ""
+        SurveyAnswerType.values().map { it.value }.forEach { type ->
+            if(supportedTypes.isNotEmpty()) {
+                supportedTypes += ","
+            }
+            supportedTypes += type
+        }
+        requestParams["supportedAnswerTypes"] = supportedTypes
+    }
+
     fun request() {
+        addSupportedSurveyTypes()
         val url = getUrl()
         if (!TextUtils.isEmpty(url)) {
             isAdLoading = true
@@ -100,7 +115,7 @@ class SurveyAdRequest private constructor(builder: Builder) {
     }
 
     private fun getSurveyResponse(url: String) {
-        companionSdkScope.launch {
+        requestJob = companionSdkScope.launch {
             try {
                 val response  = withTimeout(5000) {
                     remoteDataSource.fetchDataFromUriAsync(url, requestParams ?: mapOf())
@@ -113,7 +128,7 @@ class SurveyAdRequest private constructor(builder: Builder) {
     }
 
     private fun postSurveyResponse(url: String, json: String) {
-        companionSdkScope.launch {
+        requestJob = companionSdkScope.launch {
             try {
                 val response  = withTimeout(5000) {
                     remoteDataSource.postDataToUriAsync(url, json)
@@ -158,6 +173,11 @@ class SurveyAdRequest private constructor(builder: Builder) {
             mxAdListener?.onFailed(errCode)
             isAdLoading = false
         }
+    }
+
+    fun release() {
+        mxAdListener = null
+        requestJob?.cancel()
     }
 
     class Builder(val remoteDataSource: RemoteDataSource, val companionSdkScope: CoroutineScope) {

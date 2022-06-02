@@ -32,7 +32,7 @@
             android:text="Survey is loading"
             android:textColor="?survey_ad_tag_color"
             android:textSize="13sp"
-            android:fontFamily="?attr/exo_font_semi_bold"
+            android:fontFamily="?attr/mx_font_semi_bold"
             app:layout_constraintTop_toBottomOf="@id/loading_icon"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
@@ -91,7 +91,7 @@
                 android:singleLine="true"
                 android:textColor="?survey_title_color"
                 android:textSize="16sp"
-                android:fontFamily="?attr/exo_font_extra_bold"
+                android:fontFamily="?attr/mx_font_extra_bold"
                 tools:text="One Plus 6T" />
         </FrameLayout>
 
@@ -113,7 +113,7 @@
                 android:focusableInTouchMode="false"
                 android:textColor="?survey_question_color"
                 android:textSize="14sp"
-                android:fontFamily="?attr/exo_font_semi_bold"
+                android:fontFamily="?attr/mx_font_semi_bold"
                 tools:text="One Plus 6T" />
         </FrameLayout>
 
@@ -147,7 +147,7 @@
             android:inputType="text|textMultiLine|textCapSentences"
             android:textSize="12sp"
             android:textColor="?survey_answer_color"
-            android:fontFamily="?attr/exo_font_semi_bold"
+            android:fontFamily="?attr/mx_font_semi_bold"
             android:hint="Please write you answer here"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -174,7 +174,7 @@
             android:textColor="?survey_submit_disable_color"
             android:gravity="center"
             android:textSize="13sp"
-            android:fontFamily="?attr/exo_font_extra_bold"
+            android:fontFamily="?attr/mx_font_extra_bold"
             android:background="?survey_submit_disable_bg"/>
 
         <androidx.appcompat.widget.AppCompatTextView
@@ -192,7 +192,7 @@
             android:text="Ad"
             android:textColor="?survey_ad_tag_color"
             android:textSize="8sp"
-            android:fontFamily="?attr/exo_font_semi_bold"
+            android:fontFamily="?attr/mx_font_semi_bold"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
 

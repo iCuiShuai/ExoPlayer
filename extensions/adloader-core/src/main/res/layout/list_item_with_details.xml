@@ -19,7 +19,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:fontFamily="?exo_font_semi_bold"
+            android:fontFamily="?mx_font_semi_bold"
             android:textSize="14sp" />
 
         <TextView
@@ -27,7 +27,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:fontFamily="?exo_font_regular"
+            android:fontFamily="?mx_font_regular"
             android:textSize="12sp" />
 
         <Button
@@ -38,7 +38,7 @@
             android:clickable="false"
             android:duplicateParentState="true"
             android:focusable="false"
-            android:fontFamily="?exo_font_extra_bold"
+            android:fontFamily="?mx_font_extra_bold"
             android:minHeight="30dp"
             android:paddingStart="0dp"
             android:paddingLeft="0dp"

@@ -5,7 +5,7 @@ import com.mxplay.adloader.AdsBehaviour
 import com.mxplay.adloader.VideoAdsTracker
 import com.mxplay.adloader.nativeCompanion.expandable.EndCardCompanion
 import com.mxplay.adloader.nativeCompanion.expandable.PlayerBottomCompanion
-import com.mxplay.adloader.nativeCompanion.surveyAd.SurveyNativeCompanion
+import com.mxplay.adloader.nativeCompanion.surveyAd.SurveyCompanion
 import com.mxplay.interactivemedia.api.*
 import com.mxplay.interactivemedia.internal.data.RemoteDataSource
 import com.mxplay.interactivemedia.internal.util.UrlStitchingService
@@ -119,16 +119,7 @@ class NativeCompanionAdManager(val tracker: VideoAdsTracker, val adsBehaviour: A
 
         return when(json.optString("type")) {
             NativeCompanion.NativeCompanionType.SURVEY_AD.value -> {
-                return SurveyNativeCompanion(
-                    json,
-                    companionAdSlot,
-                    eventsTracker,
-                    adsBehaviour,
-                    companionSdkScope,
-                    remoteDataSource,
-                    NativeCompanion.NativeCompanionType.SURVEY_AD,
-                    resourceProvider
-                )
+                return SurveyCompanion.create(json, companionAdSlot, remoteDataSource, companionSdkScope, resourceProvider, eventsTracker, adsBehaviour)
             }
             NativeCompanion.NativeCompanionType.EXPANDABLE.value -> {
                 return PlayerBottomCompanion.create(json, companionAdSlot, eventsTracker, resourceProvider)
