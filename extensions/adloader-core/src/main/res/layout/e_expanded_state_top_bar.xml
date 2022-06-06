@@ -4,29 +4,30 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingStart="13dp"
-    android:paddingLeft="16dp"
-    android:paddingTop="16dp"
+    android:paddingStart="@dimen/ad_content_padding"
+    android:paddingLeft="@dimen/ad_content_padding"
     android:paddingEnd="0dp"
     android:paddingRight="0dp"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingBottom="10dp">
+    >
 
     <FrameLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/logoContainer"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="12dp"
+        android:layout_gravity="center_vertical"
         >
 
-        <ImageView
+        <com.makeramen.roundedimageview.RoundedImageView
             android:id="@+id/logo"
             android:layout_width="62dp"
             android:layout_height="62dp"
             android:scaleType="centerCrop"
+            android:layout_gravity="center_vertical"
+            app:riv_corner_radius="12dp"
             android:visibility="visible"
             android:layout_marginRight="12dp"
              />
@@ -40,20 +41,21 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
+        android:layout_marginTop="2dp"
         android:orientation="vertical"
         android:layout_marginRight="10dp"
-        app:layout_constraintTop_toTopOf="@+id/logoContainer"
-        app:layout_constraintBottom_toBottomOf="@+id/logoContainer"
-        app:layout_constraintEnd_toStartOf="@+id/dismiss"
-        app:layout_constraintStart_toEndOf="@+id/logoContainer"
+        android:gravity="center_vertical"
+        android:layout_gravity="center_vertical"
         >
 
         <TextView
             android:id="@+id/title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="?mx_font_regular"
+            android:fontFamily="sans-serif-medium"
             android:lines="1"
+            android:layout_marginTop="2dp"
+            android:textStyle="normal"
             android:textColor="?survey_title_color"
             android:textSize="14sp"
             tools:text="Zomato: Food Delivery &amp; Dining" />
@@ -64,7 +66,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:drawablePadding="6dp"
-            android:fontFamily="?mx_font_regular"
+            android:fontFamily="sans-serif"
             android:lines="1"
             android:textColor="?expandable_ad_subtitle_color"
             android:textSize="12sp"
@@ -76,7 +78,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:fontFamily="?mx_font_regular"
+            android:fontFamily="sans-serif"
             android:lines="1"
             android:textColor="?expandable_ad_subtitle_color"
             android:textSize="12sp"
@@ -94,6 +96,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:minWidth="48dp"
+        android:layout_marginTop="2dp"
         android:layout_gravity="top"
         android:src="@drawable/ic_close__light"
         app:layout_constraintEnd_toEndOf="parent"

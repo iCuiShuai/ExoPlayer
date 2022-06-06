@@ -71,11 +71,13 @@ abstract class NativeCompanion() : AdEvent.AdEventListener{
     fun startExpandAnimation(animateView: View, animateAdapter: AnimatorListenerAdapter? = null, parentHeight: Int = -1): AnimatorSet {
         val targetHeight: Int = if (parentHeight > 0) parentHeight else animateView.measuredHeight
         ZenLogger.dt(TAG, "running expand animation targetHeight : ${targetHeight}")
-        animateView.layoutParams.height = 1
+        animateView.layoutParams = animateView.layoutParams.apply {
+            height = 1
+        }
         animateView.visibility = View.VISIBLE
 
         val showAnimators = AnimatorSet()
-        val alphaAnimator = ObjectAnimator.ofFloat(animateView, "alpha", 0.0f, 1.0f)
+        val alphaAnimator = ObjectAnimator.ofFloat(animateView, "alpha", 0.2f, 1.0f)
         val heightAnimator = ValueAnimator.ofInt(0, targetHeight)
         showAnimators.playTogether(heightAnimator, alphaAnimator)
         showAnimators.duration = PlayerBottomCompanion.DURATION_SHORT

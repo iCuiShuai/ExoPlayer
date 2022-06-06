@@ -20,6 +20,7 @@ import com.mxplay.adloader.nativeCompanion.expandable.data.Ad
 import com.mxplay.adloader.nativeCompanion.expandable.data.CompanionTrackingInfo
 import com.mxplay.adloader.nativeCompanion.expandable.data.TableViewTemplateData
 import com.mxplay.adloader.nativeCompanion.view.TableItemWrapperLayout
+import com.mxplay.adloader.utils.DeviceUtils
 import com.mxplay.interactivemedia.api.AdEvent
 import com.mxplay.interactivemedia.api.CompanionAdSlot
 import com.mxplay.logger.ZenLogger
@@ -80,15 +81,24 @@ class TableViewCompanion(
         }
         val list = templateBannerView!!.findViewById<RecyclerView>(R.id.list)
         val dividerWidth = context.resources.getDimensionPixelSize(R.dimen.recycler_divider_width)
-        list.addItemDecoration(SimpleItemDecoration(dividerWidth, dividerWidth, dividerWidth, dividerWidth, 2*dividerWidth, dividerWidth, 2*dividerWidth, dividerWidth))
+        val space = context.resources.getDimensionPixelSize(R.dimen.ad_content_padding)
+
+        list.addItemDecoration(SimpleItemDecoration(dividerWidth, dividerWidth, dividerWidth, dividerWidth, space, dividerWidth, space, dividerWidth))
         if (payload.templateId == ID_CAROUSEL_IMAGE_TEMPLATE){
             list.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
         }else{
-            val spanCount = if (payload.row == null || payload.row == 0) 2 else Math.max(2, payload.ads.size / payload.row)
+            val spanCount = 2
             list.layoutManager = GridLayoutManager(context, spanCount)
         }
 
-        list.adapter = AdsAdapter(context, this, payload, payload.ads, resourceProvider, eventsTracker, payload.templateId!!)
+        val adapter = AdsAdapter(context, this, payload, payload.ads, resourceProvider, eventsTracker, payload.templateId)
+        if (payload.templateId == ID_CAROUSEL_IMAGE_TEMPLATE){
+            list.layoutParams = (list.layoutParams as LinearLayout.LayoutParams).apply {
+                height = context.resources.getDimensionPixelSize( if (adapter.getItemViewType(0) == AdsAdapter.ITEM_TYPE_BASIC) R.dimen.recycler_view_height_image else R.dimen.recycler_view_height_detailed)
+                weight = 0f
+            }
+        }
+        list.adapter = adapter
         bindCTA(templateBannerView!!.findViewById(R.id.native_ad_action_button))
         return templateBannerView
     }
@@ -162,6 +172,12 @@ class TableViewCompanion(
         }
         private val inflater = LayoutInflater.from(context)
 
+        fun getRecyclerViewSpacing(): Int {
+            val space = 2* context.resources.getDimensionPixelSize(R.dimen.ad_content_padding)
+            val dividerWidth = 2 * context.resources.getDimensionPixelSize(R.dimen.recycler_divider_width)
+            return space + dividerWidth
+        }
+
         open inner class BasicAdViewHolder(val view : View) : RecyclerView.ViewHolder(view), TableItemWrapperLayout.OnWindowAttachListener {
             private val image = view.findViewById<ImageView>(R.id.image)
 
@@ -173,20 +189,34 @@ class TableViewCompanion(
             }
 
             private fun setUpLayoutParams(){
+
                 if (templateId == ID_CAROUSEL_IMAGE_TEMPLATE){
+                    image.scaleType = ImageView.ScaleType.CENTER_CROP
                     image.layoutParams =  (image.layoutParams as LinearLayout.LayoutParams).apply {
                         weight = 1.0f
                         width = context.resources.getDimensionPixelSize(R.dimen.carousal_image_width)
                         height = 0
                     }
+                    image.minimumHeight = context.resources.getDimensionPixelSize(R.dimen.recycler_view_height_image)
                     view.layoutParams = view.layoutParams.apply {
                         width = ViewGroup.LayoutParams.WRAP_CONTENT
                         height = ViewGroup.LayoutParams.MATCH_PARENT
                     }
                 }else{
+                    val itemAspectRatio = payload.getItemAspectRatio()
                     image.layoutParams = image.layoutParams.apply {
-                        height = context.resources.getDimensionPixelSize(R.dimen.grid_image_size)
+                        val itemExpectedWidth = (DeviceUtils.getDeviceWidth() - getRecyclerViewSpacing()) / 2
+                        val ratio =  itemAspectRatio?.let { it.height.toFloat() / it.width} ?: 1.0f
+                        val itemHeight = (ratio * itemExpectedWidth).toInt()
+                        height = itemHeight
+                        width = ViewGroup.LayoutParams.MATCH_PARENT
                     }
+                    if (itemAspectRatio == null){
+                        image.scaleType = ImageView.ScaleType.FIT_CENTER
+                    }else{
+                        image.scaleType = ImageView.ScaleType.CENTER_CROP
+                    }
+
                 }
             }
 
@@ -269,7 +299,7 @@ class TableViewCompanion(
         }
 
         override fun getItemViewType(position: Int): Int {
-            return if (ads[position].itemType == Ad.TYPE_IMAGE) ITEM_TYPE_BASIC else ITEM_TYPE_DETAILED
+            return if (ads.getOrNull(position)?.itemType == Ad.TYPE_IMAGE) ITEM_TYPE_BASIC else ITEM_TYPE_DETAILED
         }
 
     }

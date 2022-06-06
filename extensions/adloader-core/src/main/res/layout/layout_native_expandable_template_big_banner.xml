@@ -1,60 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:visibility="gone"
-    android:background="@color/transparent_overlay_color">
+    android:background="?expandable_ad_bg"
+    android:orientation="vertical">
 
-    <LinearLayout
+    <include layout="@layout/e_expanded_state_top_bar" android:layout_width="match_parent" android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:id="@+id/topBar"
+        />
+
+
+    <com.makeramen.roundedimageview.RoundedImageView
+        android:id="@+id/image"
+        app:layout_constraintTop_toBottomOf="@+id/topBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center_horizontal"
-        android:background="?expandable_ad_bg"
-        android:orientation="vertical">
-
-        <include layout="@layout/e_expanded_state_top_bar" android:layout_width="match_parent" android:layout_height="wrap_content" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            >
-            <ImageView
-                android:id="@+id/image"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:scaleType="fitCenter"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
-                />
-        </LinearLayout>
+        android:layout_height="wrap_content"
+        app:layout_constraintHeight_max="@dimen/big_banner_max_height"
+        android:scaleType="fitCenter"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        app:riv_corner_radius="4dp"
+        />
 
 
-        <Button
-            android:id="@+id/native_ad_action_button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?survey_submit_enable_bg"
-            android:gravity="center_vertical|center_horizontal"
-            android:layout_marginTop="10dp"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="16dp"
-            android:minHeight="42dp"
-            android:textAllCaps="true"
-            android:elevation="4dp"
-            android:textColor="?expandable_uni_cta_color"
-            android:textSize="14sp"
-            android:fontFamily="?mx_font_extra_bold"
-            tools:text="Install Now"
-            android:clickable="false"
-            android:focusable="false"
-            android:lines="1"
-            android:duplicateParentState="true"
-            />
+
+    <Button
+        app:layout_constraintTop_toBottomOf="@+id/image"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:id="@+id/native_ad_action_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?survey_submit_enable_bg"
+        android:gravity="center_vertical|center_horizontal"
+        android:layout_marginTop="10dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:minHeight="42dp"
+        android:textAllCaps="true"
+        android:elevation="6dp"
+        android:textColor="?expandable_uni_cta_color"
+        android:textSize="14sp"
+        android:fontFamily="?mx_font_semi_bold"
+        tools:text="Install Now"
+        android:clickable="false"
+        android:focusable="false"
+        android:lines="1"
+        android:duplicateParentState="true"
+        />
 
 
-    </LinearLayout>
-
-</FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -74,6 +74,9 @@ abstract class PlayerBottomCompanion(
             }
         }else{
             expandHandler!!.visibility = View.GONE
+            action.layoutParams = (action.layoutParams as ConstraintLayout.LayoutParams).apply {
+                this.rightMargin = context.resources.getDimensionPixelSize(R.dimen.ad_action_cta_margin)
+            }
         }
         companionState =CompanionState.PRELOADED
         companionView?.setOnClickListener { onAdClick() }

@@ -3,6 +3,7 @@ package com.mxplay.adloader.utils
 import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
+import android.content.res.Resources
 import android.view.Display
 import android.view.Surface
 
@@ -22,4 +23,11 @@ object DeviceUtils {
             else -> if (orientation == Configuration.ORIENTATION_LANDSCAPE) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
     }
+
+    @JvmStatic
+    fun getDeviceWidth(): Int {
+        val displayMetrics = Resources.getSystem().displayMetrics
+        return displayMetrics.widthPixels
+    }
+
 }

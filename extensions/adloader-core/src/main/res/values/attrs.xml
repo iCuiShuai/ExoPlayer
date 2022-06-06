@@ -23,6 +23,7 @@
         <attr name="expandable_uni_cta_color" format="reference" />
         <attr name="expandable_ad_bg" format="reference" />
         <attr name="expandable_ad_subtitle_color" format="reference" />
+        <attr name="expandable_ad_item_subtitle_color" format="reference"/>
         <attr name="expandable_ad_tag" format="reference" />
         <attr name="expandable_ad_cta_bg" format="reference" />
         <attr name="mx_font_regular" format="string" />

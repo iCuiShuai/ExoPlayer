@@ -2,12 +2,14 @@ package com.mxplay.adloader.nativeCompanion.expandable
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.*
 import ccom.mxplay.adloader.R
 import com.mxplay.adloader.nativeCompanion.CompanionResourceProvider
@@ -69,7 +71,7 @@ class BigBannerCompanion(
             }
         }
 
-        resourceProvider.loadImage(ad.bannerUrl(payload.imageCdnUrl), banner)
+        resourceProvider.loadImage(ad.bannerUrl(payload.imageCdnUrl), banner, 0, 0)
         bindCTA(templateBannerView!!.findViewById(R.id.native_ad_action_button))
         return templateBannerView
     }
@@ -91,7 +93,7 @@ class BigBannerCompanion(
     }
 
     override fun display() {
-        super.display()
+
         ZenLogger.dt(TAG, " BigBannerCompanion loadCompanion")
         expandOverlayContainer?.removeAllViews()
         expandOverlayContainer?.visibility = View.VISIBLE
@@ -128,6 +130,7 @@ class BigBannerCompanion(
             }
 
         }
+        super.display()
     }
 
     private val hostViewVisibilityTrackerListener = object : VisibilityTracker.VisibilityTrackerListener{

@@ -21,12 +21,13 @@
         app:layout_constraintBottom_toBottomOf="parent"
         >
 
-        <ImageView
+        <com.makeramen.roundedimageview.RoundedImageView
             android:id="@+id/logo"
             android:layout_width="36dp"
             android:layout_height="36dp"
             android:scaleType="centerCrop"
             android:visibility="visible"
+            app:riv_corner_radius="6dp"
             android:layout_marginRight="10dp"
              />
 
@@ -40,6 +41,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:layout_marginRight="10dp"
+        android:gravity="start|center_vertical"
         app:layout_constraintTop_toTopOf="@+id/logoContainer"
         app:layout_constraintBottom_toBottomOf="@+id/logoContainer"
         app:layout_constraintEnd_toStartOf="@+id/cta_button"
@@ -50,7 +52,7 @@
             android:id="@+id/title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="?mx_font_regular"
+            android:fontFamily="?mx_font_semi_bold"
             android:lines="1"
             android:textColor="?survey_title_color"
             android:textSize="12sp"
@@ -60,7 +62,7 @@
             android:id="@+id/subtitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="4dp"
             android:drawablePadding="6dp"
             android:fontFamily="?mx_font_regular"
             android:lines="1"
@@ -84,7 +86,7 @@
     <ImageButton
         android:id="@+id/expand"
         style="?attr/borderlessButtonStyle"
-        android:layout_width="36dp"
+        android:layout_width="40dp"
         android:layout_height="wrap_content"
         android:src="@drawable/navigation_down_arrow"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -95,12 +97,13 @@
 
     <Button
         android:id="@+id/cta_button"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="?expandable_ad_cta_bg"
         android:fontFamily="?mx_font_semi_bold"
         android:minHeight="28dp"
-        android:layout_marginRight="10dp"
+        app:layout_constraintWidth_max="160dp"
+        app:layout_constraintWidth_min="68dp"
         android:text="@string/cta_learn_more"
         android:textAllCaps="true"
         android:textColor="?survey_input_dialog_cta_color"

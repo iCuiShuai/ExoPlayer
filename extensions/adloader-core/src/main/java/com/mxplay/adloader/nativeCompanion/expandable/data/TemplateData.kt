@@ -2,6 +2,7 @@ package com.mxplay.adloader.nativeCompanion.expandable.data
 
 import android.webkit.URLUtil
 import androidx.annotation.Keep
+import com.google.android.gms.common.images.Size
 import com.google.gson.annotations.SerializedName
 
 @Keep
@@ -20,7 +21,10 @@ open class TemplateData(
     @SerializedName("creativeId") val creativeId: String,
     @SerializedName("templateId") val templateId: String,
     @SerializedName("type") val type: String?,
+    @SerializedName("item_aspect_ratio") private val itemAspectRatio: String? = null
 ) {
+
+
     companion object{
         fun stitchUrl(baseUrl : String, url : String?) : String?{
             if (url != null){
@@ -38,4 +42,11 @@ open class TemplateData(
 
     fun getTrackingData() = CompanionTrackingInfo(adId, campaignId, campaignName, creativeId, templateId, type)
 
+    fun getItemAspectRatio(): Size?{
+        val result =  kotlin.runCatching { itemAspectRatio?.let {
+            val split = itemAspectRatio.split("x".toRegex())
+            Size(split.first().toInt(), split.last().toInt())}
+        }
+        return result.getOrNull()
+    }
 }
