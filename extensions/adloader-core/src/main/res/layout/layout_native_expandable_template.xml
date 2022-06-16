@@ -33,7 +33,7 @@
         android:textColor="?expandable_uni_cta_color"
         android:textSize="14sp"
         android:elevation="4dp"
-        android:fontFamily="?mx_font_semi_bold"
+        android:fontFamily="?mx_font_bold"
         android:textStyle="bold"
         tools:text="Install Now"
         android:clickable="false"

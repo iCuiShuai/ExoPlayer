@@ -49,7 +49,7 @@
         android:elevation="6dp"
         android:textColor="?expandable_uni_cta_color"
         android:textSize="14sp"
-        android:fontFamily="?mx_font_semi_bold"
+        android:fontFamily="?mx_font_bold"
         tools:text="Install Now"
         android:clickable="false"
         android:focusable="false"
