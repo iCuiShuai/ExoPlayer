@@ -8,7 +8,7 @@
     <item name="ad_content_padding" type="dimen">16dp</item>
     <item name="big_banner_max_height" type="dimen">320dp</item>
     <item name="recycler_view_height_image" type="dimen">320dp</item>
-    <item name="recycler_view_height_detailed" type="dimen">390dp</item>
+    <item name="recycler_view_height_detailed" type="dimen">365dp</item>
     <item name="ad_action_cta_margin" type="dimen">10dp</item>
 
 </resources>
