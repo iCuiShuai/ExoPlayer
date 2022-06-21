@@ -67,6 +67,8 @@ import com.google.android.exoplayer2.video.VideoFrameMetadataListener;
 import com.google.android.exoplayer2.video.VideoListener;
 import com.google.android.exoplayer2.video.VideoRendererEventListener;
 import com.google.android.exoplayer2.video.spherical.CameraMotionListener;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -1569,6 +1571,11 @@ public class SimpleExoPlayer extends BasePlayer
   public void setForegroundMode(boolean foregroundMode) {
     verifyApplicationThread();
     player.setForegroundMode(foregroundMode);
+  }
+
+  public  void forceStop(IOException e){
+    if (!playerReleased)
+    player.stop(true, ExoPlaybackException.createForSource(e));
   }
 
   @Override
