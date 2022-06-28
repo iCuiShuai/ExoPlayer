@@ -44,7 +44,7 @@ class NativeCompanionAdManager(val tracker: VideoAdsTracker, val adsBehaviour: A
         }else if (adEvent.type == AdEvent.AdEventType.STARTED && ad != null){
             nativeCompanions.get(ad)?.forEach { it.display()}
         }
-        else if (adEvent.type == AdEvent.AdEventType.COMPLETED){
+        else if (adEvent.type == AdEvent.AdEventType.COMPLETED || adEvent.type == AdEvent.AdEventType.SKIPPED){
             adsBehaviour?.setNativeCompanionAdInfo(null)
             val iterator = nativeCompanions[ad]?.iterator()
             if (iterator != null){
