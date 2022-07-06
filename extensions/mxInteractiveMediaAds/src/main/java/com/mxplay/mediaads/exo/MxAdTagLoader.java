@@ -1401,6 +1401,7 @@ import java.util.Objects;
         pendingAdRequestContext = null;
         adPlaybackState = new AdPlaybackState(adsId);
         updateAdPlaybackState();
+        handler.post(() -> adsBehaviour.onAdError(new com.mxplay.interactivemedia.api.AdErrorEvent(new com.mxplay.interactivemedia.api.AdError(com.mxplay.interactivemedia.api.AdError.AdErrorType.LOAD, com.mxplay.interactivemedia.api.AdError.AdErrorCode.REQUEST_ADMANAGER_FAILURE, "Fail to create ad manager"), null)));
       } else if (OmaUtil.isAdGroupLoadError(error)) {
         try {
           handleAdGroupLoadError(error);
