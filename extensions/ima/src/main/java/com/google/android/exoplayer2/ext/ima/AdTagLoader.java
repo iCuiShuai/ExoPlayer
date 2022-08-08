@@ -1010,6 +1010,16 @@ import java.util.concurrent.TimeUnit;
     AdInfo adInfo = new AdInfo(adGroupIndex, adIndexInAdGroup);
     // The ad URI may already be known, so force put to update it if needed.
     adInfoByAdMediaInfo.forcePut(adMediaInfo, adInfo);
+
+    if(adsBehaviour.shouldSkipAd(adGroupIndex, adIndexInAdGroup)) {
+      if(configuration.debugModeEnabled) {
+        Log.d(TAG, "loadAdInternal: skipping, adGroupIndex: " + adGroupIndex + ", ad pod " + adPodInfo);
+      }
+      adPlaybackState = adPlaybackState.withSkippedAdGroup(adGroupIndex);
+      updateAdPlaybackState();
+      return;
+    }
+
     if (configuration.debugModeEnabled) {
       Log.d(TAG, "loadAd " + getAdMediaInfoString(adMediaInfo));
     }
@@ -1047,6 +1057,20 @@ import java.util.concurrent.TimeUnit;
     }
     if (adsManager == null) {
       // Drop events after release.
+      return;
+    }
+
+    @Nullable AdInfo adInfo = adInfoByAdMediaInfo.get(adMediaInfo);
+    if(adInfo != null && adsBehaviour.shouldSkipAd(adInfo.adGroupIndex, adInfo.adIndexInAdGroup)) {
+      if(configuration.debugModeEnabled) {
+        Log.d(TAG, "playAdInternal: skipping, adInfo: " + adInfo);
+      }
+      adPlaybackState = adPlaybackState.withSkippedAdGroup(adInfo.adGroupIndex);
+      imaAdState = IMA_AD_STATE_NONE;
+      for (int i = 0; i < adCallbacks.size(); i++) {
+        adCallbacks.get(i).onError(adMediaInfo);
+      }
+      updateAdPlaybackState();
       return;
     }
 

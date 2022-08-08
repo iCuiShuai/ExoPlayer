@@ -38,6 +38,9 @@ interface IAdsBehaviour : AdEvent.AdEventListener, com.google.ads.interactivemed
     fun setNativeCompanionAdInfo(adPodInfo: AdPodInfo?)
     fun onNativeCompanionLoaded(isLoaded: Boolean)
     fun onVideoSizeChanged(width: Int, height: Int)
+    fun shouldSkipAd(adGroupIndex: Int, adIndexInGroup: Int): Boolean {
+        return false
+    }
     fun release(){
 
     }
