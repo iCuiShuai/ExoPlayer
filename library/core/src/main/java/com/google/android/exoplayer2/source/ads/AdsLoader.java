@@ -15,6 +15,7 @@
  */
 package com.google.android.exoplayer2.source.ads;
 
+import android.net.Uri;
 import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.IntDef;
@@ -247,4 +248,16 @@ public interface AdsLoader {
    */
   void handlePrepareError(
       AdsMediaSource adsMediaSource, int adGroupIndex, int adIndexInAdGroup, IOException exception);
+
+  /**
+   * Gets Ad Uri
+   * Implementations should update the ad playback state as the specified ad has failed to load.
+   * Called on the main thread by {@link AdsMediaSource}.
+   *
+   * @param adsMediaSource The ads media source for which preparation of ad media failed.
+   * @param adGroupIndex The index of the ad group.
+   * @param adIndexInAdGroup The index of the ad in the ad group.
+   */
+  Uri getAdUri(AdsMediaSource adsMediaSource, int adGroupIndex, int adIndexInAdGroup);
+
 }

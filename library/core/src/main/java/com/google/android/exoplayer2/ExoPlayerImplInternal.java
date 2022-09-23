@@ -19,6 +19,7 @@ import static com.google.android.exoplayer2.util.Util.castNonNull;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
+import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -35,11 +36,14 @@ import com.google.android.exoplayer2.Player.PlaybackSuppressionReason;
 import com.google.android.exoplayer2.Player.RepeatMode;
 import com.google.android.exoplayer2.analytics.AnalyticsCollector;
 import com.google.android.exoplayer2.metadata.Metadata;
+import com.google.android.exoplayer2.source.MaskingMediaPeriod;
 import com.google.android.exoplayer2.source.MediaPeriod;
+import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.MediaSource.MediaPeriodId;
 import com.google.android.exoplayer2.source.SampleStream;
 import com.google.android.exoplayer2.source.ShuffleOrder;
 import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.source.ads.AdsMediaSource;
 import com.google.android.exoplayer2.text.TextRenderer;
 import com.google.android.exoplayer2.trackselection.ExoTrackSelection;
 import com.google.android.exoplayer2.trackselection.MXHybridTrackSelection;
@@ -1753,10 +1757,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
     // Ad loader implementations may only load ad media once playback has nearly reached the ad, but
     // it is possible for playback to be stuck buffering waiting for this. Therefore, we start
     // playback regardless of buffered duration if we are waiting for an ad media period to prepare.
+    Uri adUri = null;
+    if (loadingHolder.info.id.isAd() && loadingHolder.mediaPeriod instanceof MaskingMediaPeriod) {
+      MediaSource mediaSource = ((MaskingMediaPeriod) loadingHolder.mediaPeriod).getMediaSource();
+      if (mediaSource instanceof AdsMediaSource) {
+          AdsMediaSource adsMediaSource = (AdsMediaSource) mediaSource;
+          int adGroupIndex = loadingHolder.info.id.adGroupIndex;
+          int adIndexInAdGroup = loadingHolder.info.id.adIndexInAdGroup;
+          adUri = adsMediaSource.getAdsLoader().getAdUri(adsMediaSource, adGroupIndex, adIndexInAdGroup);
+      }
+    }
     boolean isAdPendingPreparation = loadingHolder.info.id.isAd() && !loadingHolder.prepared;
     return isBufferedToEnd
         || isAdPendingPreparation
-        || loadControl.shouldStartPlayback(
+        || loadControl.shouldStartPlayback(adUri,
             getTotalBufferedDurationUs(),
             mediaClock.getPlaybackParameters().speed,
             isRebuffering,
