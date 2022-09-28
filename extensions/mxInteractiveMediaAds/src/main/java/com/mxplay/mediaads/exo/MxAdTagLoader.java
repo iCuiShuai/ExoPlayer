@@ -612,6 +612,7 @@ import java.util.Objects;
             : supportedMimeTypes;
     configuration.getMxMediaSdkConfig().setMediaMimeTypes(mimeTypes);
     adsRenderingSettings.setMimeTypes(mimeTypes);
+    adsRenderingSettings.setEnableCustomTab(configuration.getEnableCustomTab());
 
     boolean isSetupDone = adsBehaviour.doSetupAdsRendering(contentPositionMs, contentDurationMs, configuration.getPlayAdBeforeStartPosition());
     if (isSetupDone) {
