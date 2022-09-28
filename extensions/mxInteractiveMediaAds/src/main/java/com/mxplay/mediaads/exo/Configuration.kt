@@ -90,6 +90,7 @@ class Configuration(builder: Builder) {
         fun trackersConfig(trackersConfig: MxMediaSdkConfig.TrackersConfig) = apply { this.trackersConfig = trackersConfig }
         fun mxAdCustomTracker(mxAdCustomTracker: IMxAdCustomTracker) = apply { this.mxAdCustomTracker = mxAdCustomTracker }
         fun adTagUri(adTagUri: Uri) = apply { this.adTagUri = adTagUri }
+        fun enableCustomTab(enable : Boolean) = apply { this.enableCustomTab = enable }
 
         fun build(): Configuration {
             return Configuration(this)
