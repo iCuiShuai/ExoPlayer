@@ -12,7 +12,7 @@ import java.util.*
 object Util {
     val UTF_8 = Charset.forName("UTF-8")
 
-    const val BUFFER_FOR_PLAYBACK_MS: String = "BufferForPlaybackMs"
+    const val INITIAL_BUFFER_FOR_AD_PLAYBACK_MS: String = "InitialBufferForAdPlaybackMs"
 
     /**
      * Reads data from the specified opened [DataSource] until it ends, and returns a byte array

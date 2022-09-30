@@ -20,7 +20,7 @@ import static com.google.android.exoplayer2.util.Assertions.checkNotNull;
 import static com.google.android.exoplayer2.util.Assertions.checkState;
 import static com.mxplay.mediaads.exo.OmaUtil.getAdGroupTimesUsForCuePoints;
 import static com.mxplay.mediaads.exo.OmaUtil.getImaLooper;
-import static com.mxplay.mediaads.exo.Util.BUFFER_FOR_PLAYBACK_MS;
+import static com.mxplay.mediaads.exo.Util.INITIAL_BUFFER_FOR_AD_PLAYBACK_MS;
 import static java.lang.Math.max;
 
 import android.content.Context;
@@ -40,7 +40,6 @@ import com.google.android.exoplayer2.source.ads.AdPlaybackState;
 import com.google.android.exoplayer2.source.ads.AdsLoader.AdViewProvider;
 import com.google.android.exoplayer2.source.ads.AdsLoader.EventListener;
 import com.google.android.exoplayer2.source.ads.AdsLoader.OverlayInfo;
-import com.google.android.exoplayer2.source.ads.AdsMediaSource;
 import com.google.android.exoplayer2.source.ads.AdsMediaSource.AdLoadException;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.upstream.DataSpec;
@@ -994,10 +993,15 @@ import java.util.Objects;
       }
     }
 
-    Uri adUri = new Uri.Builder()
-            .encodedPath(adMediaInfo.getUrl())
-            .appendQueryParameter(BUFFER_FOR_PLAYBACK_MS, "1500").build();
-    adUri = Uri.parse(adUri.toString());
+    Uri.Builder adUriBuilder = new Uri.Builder()
+            .encodedPath(adMediaInfo.getUrl());
+
+    if (configuration.getInitialBufferSizeForAdPlaybackMs() != -1) {
+      int initialBufferSizeForAdPlaybackMs = configuration.getInitialBufferSizeForAdPlaybackMs();
+      adUriBuilder.appendQueryParameter(INITIAL_BUFFER_FOR_AD_PLAYBACK_MS, Integer.toString(initialBufferSizeForAdPlaybackMs));
+    }
+
+    Uri adUri = Uri.parse(adUriBuilder.build().toString());
     adUriMap.put(adInfo, adUri);
     adPlaybackState =
         adPlaybackState.withAdUri(adInfo.adGroupIndex, adInfo.adIndexInAdGroup, adUri);

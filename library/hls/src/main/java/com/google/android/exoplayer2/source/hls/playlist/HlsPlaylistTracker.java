@@ -46,11 +46,15 @@ public interface HlsPlaylistTracker {
      * @param dataSourceFactory The {@link HlsDataSourceFactory} to use for playlist loading.
      * @param loadErrorHandlingPolicy The {@link LoadErrorHandlingPolicy} for playlist load errors.
      * @param playlistParserFactory The {@link HlsPlaylistParserFactory} for playlist parsing.
+     * @param isVideoAdMediaSource boolean to identify that the tracker is for a video Ad.
+     * @param initialMaxResolutionForVideoAdPlayback int to identify the max resolution of the initial segment that should be fetched
      */
     HlsPlaylistTracker createTracker(
         HlsDataSourceFactory dataSourceFactory,
         LoadErrorHandlingPolicy loadErrorHandlingPolicy,
-        HlsPlaylistParserFactory playlistParserFactory);
+        HlsPlaylistParserFactory playlistParserFactory,
+        boolean isVideoAdMediaSource,
+        int initialMaxResolutionForVideoAdPlayback);
   }
 
   /** Listener for primary playlist changes. */

@@ -77,6 +77,8 @@ public final class DefaultHlsPlaylistTracker
   @Nullable private HlsMediaPlaylist primaryMediaPlaylistSnapshot;
   private boolean isLive;
   private long initialStartTimeUs;
+  private boolean isVideoAdMediaSource;
+  private int initialMaxResolutionForVideoAdPlayback;
 
   /**
    * Creates an instance.
@@ -88,12 +90,16 @@ public final class DefaultHlsPlaylistTracker
   public DefaultHlsPlaylistTracker(
       HlsDataSourceFactory dataSourceFactory,
       LoadErrorHandlingPolicy loadErrorHandlingPolicy,
-      HlsPlaylistParserFactory playlistParserFactory) {
+      HlsPlaylistParserFactory playlistParserFactory,
+      boolean isVideoAdMediaSource,
+      int initialMaxResolutionForVideoAdPlayback) {
     this(
         dataSourceFactory,
         loadErrorHandlingPolicy,
         playlistParserFactory,
-        DEFAULT_PLAYLIST_STUCK_TARGET_DURATION_COEFFICIENT);
+        DEFAULT_PLAYLIST_STUCK_TARGET_DURATION_COEFFICIENT,
+        isVideoAdMediaSource,
+        initialMaxResolutionForVideoAdPlayback);
   }
 
   /**
@@ -111,11 +117,15 @@ public final class DefaultHlsPlaylistTracker
       HlsDataSourceFactory dataSourceFactory,
       LoadErrorHandlingPolicy loadErrorHandlingPolicy,
       HlsPlaylistParserFactory playlistParserFactory,
-      double playlistStuckTargetDurationCoefficient) {
+      double playlistStuckTargetDurationCoefficient,
+      boolean isVideoAdMediaSource,
+      int initialMaxResolutionForVideoAdPlayback) {
     this.dataSourceFactory = dataSourceFactory;
     this.playlistParserFactory = playlistParserFactory;
     this.loadErrorHandlingPolicy = loadErrorHandlingPolicy;
     this.playlistStuckTargetDurationCoefficient = playlistStuckTargetDurationCoefficient;
+    this.isVideoAdMediaSource = isVideoAdMediaSource;
+    this.initialMaxResolutionForVideoAdPlayback = initialMaxResolutionForVideoAdPlayback;
     listeners = new ArrayList<>();
     playlistBundles = new HashMap<>();
     initialStartTimeUs = C.TIME_UNSET;
@@ -242,7 +252,7 @@ public final class DefaultHlsPlaylistTracker
       masterPlaylist = (HlsMasterPlaylist) result;
     }
     this.masterPlaylist = masterPlaylist;
-    primaryMediaPlaylistUrl = masterPlaylist.variants.get(0).url;
+    primaryMediaPlaylistUrl = getPrimaryMediaPlaylistUrl(masterPlaylist);
     createBundles(masterPlaylist.mediaPlaylistUrls);
     LoadEventInfo loadEventInfo =
         new LoadEventInfo(
@@ -262,6 +272,34 @@ public final class DefaultHlsPlaylistTracker
     }
     loadErrorHandlingPolicy.onLoadTaskConcluded(loadable.loadTaskId);
     eventDispatcher.loadCompleted(loadEventInfo, C.DATA_TYPE_MANIFEST);
+  }
+
+  private Uri getPrimaryMediaPlaylistUrl(HlsMasterPlaylist masterPlaylist) {
+    int index = getPrimaryMediaPlaylistIndex(masterPlaylist);
+    return masterPlaylist.variants.get(index).url;
+  }
+
+  private int getPrimaryMediaPlaylistIndex(HlsMasterPlaylist masterPlaylist) {
+    if (isVideoAdMediaSource && initialMaxResolutionForVideoAdPlayback != -1) {
+      int maxResolution = 0;
+      int index = 0;
+      for (int i= 0; i < masterPlaylist.variants.size() - 1; i++) {
+        HlsMasterPlaylist.Variant variant = masterPlaylist.variants.get(i);
+        if (variant.format.height <= initialMaxResolutionForVideoAdPlayback && variant.format.height > maxResolution) {
+          maxResolution = variant.format.height;
+          index = i;
+        }
+      }
+      return index;
+    }
+    return 0;
+  }
+
+  public int getPrimaryMediaPlaylistIndex() {
+    if (masterPlaylist != null) {
+      return getPrimaryMediaPlaylistIndex(masterPlaylist);
+    }
+    return 0;
   }
 
   @Override

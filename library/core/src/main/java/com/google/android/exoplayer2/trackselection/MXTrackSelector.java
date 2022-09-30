@@ -213,6 +213,7 @@ public class MXTrackSelector extends MappingTrackSelector {
     private boolean forceInvalidate;
     private int rendererIndex;
     private TrackGroupArray groups;
+    private int initialMaxResolutionForAdPlayback;
 
     private final SparseArray<Map<TrackGroupArray, @NullableType SelectionOverride>>
         selectionOverrides;
@@ -1915,6 +1916,13 @@ public class MXTrackSelector extends MappingTrackSelector {
    */
   public Parameters getParameters() {
     return parametersReference.get();
+  }
+
+  public int getInitialMaxResolutionForAdPlayback() {
+    if (trackSelectionFactory instanceof MXHybridTrackSelection.Factory) {
+      return ((MXHybridTrackSelection.Factory)trackSelectionFactory).getInitialMaxResolutionForAdPlayback();
+    }
+    return -1;
   }
 
   /** Returns a new {@link ParametersBuilder} initialized with the current selection parameters. */

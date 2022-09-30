@@ -422,7 +422,8 @@ public class DefaultHlsPlaylistTrackerTest {
         new DefaultHlsPlaylistTracker(
             dataType -> dataSourceFactory.createDataSource(),
             new DefaultLoadErrorHandlingPolicy(),
-            new DefaultHlsPlaylistParserFactory());
+            new DefaultHlsPlaylistParserFactory(),
+            false, -1);
 
     List<HlsMediaPlaylist> mediaPlaylists = new ArrayList<>();
     AtomicInteger playlistCounter = new AtomicInteger();
