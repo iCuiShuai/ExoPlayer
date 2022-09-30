@@ -616,10 +616,12 @@ import java.util.Objects;
   private AdsRenderingSettings setupAdsRendering(long contentPositionMs, long contentDurationMs) {
     AdsRenderingSettings adsRenderingSettings = omaFactory.createAdsRenderingSettings();
     adsRenderingSettings.setEnablePreloading(true);
-    adsRenderingSettings.setMimeTypes(
-        configuration.getMxMediaSdkConfig().getAdMediaMimeTypes() != null
+    List<String> mimeTypes = configuration.getMxMediaSdkConfig().getAdMediaMimeTypes() != null
             ? configuration.getMxMediaSdkConfig().getAdMediaMimeTypes()
-            : supportedMimeTypes);
+            : supportedMimeTypes;
+    configuration.getMxMediaSdkConfig().setMediaMimeTypes(mimeTypes);
+    adsRenderingSettings.setMimeTypes(mimeTypes);
+    adsRenderingSettings.setEnableCustomTab(configuration.getEnableCustomTab());
 
     boolean isSetupDone = adsBehaviour.doSetupAdsRendering(contentPositionMs, contentDurationMs, configuration.getPlayAdBeforeStartPosition());
     if (isSetupDone) {
