@@ -281,12 +281,12 @@ public final class DefaultHlsPlaylistTracker
 
   private int getPrimaryMediaPlaylistIndex(HlsMasterPlaylist masterPlaylist) {
     if (isVideoAdMediaSource && initialMaxResolutionForVideoAdPlayback != -1) {
-      int maxResolution = 0;
+      int minResolution = Integer.MAX_VALUE;
       int index = 0;
       for (int i= 0; i < masterPlaylist.variants.size() - 1; i++) {
         HlsMasterPlaylist.Variant variant = masterPlaylist.variants.get(i);
-        if (variant.format.height <= initialMaxResolutionForVideoAdPlayback && variant.format.height > maxResolution) {
-          maxResolution = variant.format.height;
+        if (variant.format.height >= initialMaxResolutionForVideoAdPlayback && variant.format.height < minResolution) {
+          minResolution = variant.format.height;
           index = i;
         }
       }

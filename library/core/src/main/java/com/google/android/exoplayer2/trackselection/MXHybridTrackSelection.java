@@ -661,20 +661,51 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
    *     Long#MIN_VALUE} to ignore blacklisting.
    */
   private int determineIdealSelectedIndex(long nowMs) {
+    if (isMediaPeriodAd && nowMs == Long.MIN_VALUE &&
+            initialMaxResolutionForAdPlayback != -1) {
+      return determineIdeaSelectionIndexForInitialAdPlayback(nowMs);
+    }
     long effectiveBitrate = bandwidthProvider.getAllocatedBandwidth();
     int lowestBitrateNonBlacklistedIndex = 0;
     for (int i = 0; i < length; i++) {
       if (nowMs == Long.MIN_VALUE || !isBlacklisted(i, nowMs)) {
         Format format = getFormat(i);
-        if (isMediaPeriodAd && nowMs == Long.MIN_VALUE &&
-                initialMaxResolutionForAdPlayback != -1 && format.height > initialMaxResolutionForAdPlayback) {
-          continue;
-        }
         if (format.height >= minVideoResolutionInAutoMode && format.height <= maxVideoResolutionInAutoMode) {
           lowestBitrateNonBlacklistedIndex = i;
           if (canSelectFormat(format, format.bitrate, playbackSpeed, effectiveBitrate)) {
             return i;
           }
+        }
+      }
+    }
+    return lowestBitrateNonBlacklistedIndex;
+  }
+
+  private int determineIdeaSelectionIndexForInitialAdPlayback(long nowMs) {
+    long effectiveBitrate = bandwidthProvider.getAllocatedBandwidth();
+    int lowestBitrateNonBlacklistedIndex = 0;
+    for (int i = 0; i < length; i++) {
+      if (nowMs == Long.MIN_VALUE || !isBlacklisted(i, nowMs)) {
+        Format format = getFormat(i);
+        if (format.height >= minVideoResolutionInAutoMode &&
+                format.height <= maxVideoResolutionInAutoMode) {
+          lowestBitrateNonBlacklistedIndex = i;
+          if (canSelectFormat(format, format.bitrate, playbackSpeed, effectiveBitrate)) {
+            break;
+          }
+        }
+      }
+    }
+    if (getFormat(lowestBitrateNonBlacklistedIndex).height <= initialMaxResolutionForAdPlayback) return lowestBitrateNonBlacklistedIndex;
+
+    for (int i= length - 1; i > lowestBitrateNonBlacklistedIndex; i--) {
+      if (nowMs == Long.MIN_VALUE || !isBlacklisted(i, nowMs)) {
+        Format format = getFormat(i);
+        if (format.height >= minVideoResolutionInAutoMode &&
+                format.height <= maxVideoResolutionInAutoMode &&
+                format.height >= initialMaxResolutionForAdPlayback &&
+                canSelectFormat(format, format.bitrate, playbackSpeed, effectiveBitrate)) {
+          return i;
         }
       }
     }
