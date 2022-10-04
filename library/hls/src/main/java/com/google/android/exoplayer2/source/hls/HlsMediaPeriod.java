@@ -751,6 +751,7 @@ public final class HlsMediaPeriod implements MediaPeriod, HlsSampleStreamWrapper
       long positionUs) {
     HlsChunkSource defaultChunkSource =
         new HlsChunkSource(
+            trackType,
             extractorFactory,
             playlistTracker,
             playlistUrls,

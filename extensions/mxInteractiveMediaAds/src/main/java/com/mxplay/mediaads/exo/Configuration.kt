@@ -26,6 +26,7 @@ class Configuration(builder: Builder) {
     val debugModeEnabled: Boolean
     val adsBehaviour: IAdsBehaviour
     val mxMediaSdkConfig: MxMediaSdkConfig
+    val initialBufferSizeForAdPlaybackMs: Int
     val enableCustomTab : Boolean
 
     init {
@@ -47,6 +48,7 @@ class Configuration(builder: Builder) {
             debugModeEnabled = builder.debugModeEnabled
             isOfflineAds = adsBehaviour is AdsBehaviourOffline
         }.build()
+        initialBufferSizeForAdPlaybackMs = builder.initialBufferSizeForAdPlaybackMs ?: -1
 
     }
 
@@ -70,6 +72,7 @@ class Configuration(builder: Builder) {
         var trackersConfig: MxMediaSdkConfig.TrackersConfig? = null
         var mxAdCustomTracker: IMxAdCustomTracker? = null
         var adTagUri: Uri? = null
+        var initialBufferSizeForAdPlaybackMs: Int? = null
         var enableCustomTab = false
 
         fun appName(appName: String) = apply { this.appName = appName }
@@ -90,6 +93,7 @@ class Configuration(builder: Builder) {
         fun trackersConfig(trackersConfig: MxMediaSdkConfig.TrackersConfig) = apply { this.trackersConfig = trackersConfig }
         fun mxAdCustomTracker(mxAdCustomTracker: IMxAdCustomTracker) = apply { this.mxAdCustomTracker = mxAdCustomTracker }
         fun adTagUri(adTagUri: Uri) = apply { this.adTagUri = adTagUri }
+        fun initialBufferSizeForAdPlaybackMs(initialBufferSizeForAdPlaybackMs: Int) = apply { this.initialBufferSizeForAdPlaybackMs = initialBufferSizeForAdPlaybackMs}
         fun enableCustomTab(enable : Boolean) = apply { this.enableCustomTab = enable }
 
         fun build(): Configuration {

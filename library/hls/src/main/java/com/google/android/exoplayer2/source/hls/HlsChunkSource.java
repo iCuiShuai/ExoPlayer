@@ -15,6 +15,8 @@
  */
 package com.google.android.exoplayer2.source.hls;
 
+import static com.google.android.exoplayer2.C.TRACK_TYPE_DEFAULT;
+import static com.google.android.exoplayer2.C.TRACK_TYPE_VIDEO;
 import static com.google.android.exoplayer2.util.Assertions.checkNotNull;
 import static java.lang.Math.max;
 
@@ -33,6 +35,7 @@ import com.google.android.exoplayer2.source.chunk.Chunk;
 import com.google.android.exoplayer2.source.chunk.DataChunk;
 import com.google.android.exoplayer2.source.chunk.MediaChunk;
 import com.google.android.exoplayer2.source.chunk.MediaChunkIterator;
+import com.google.android.exoplayer2.source.hls.playlist.DefaultHlsPlaylistTracker;
 import com.google.android.exoplayer2.source.hls.playlist.HlsMediaPlaylist;
 import com.google.android.exoplayer2.source.hls.playlist.HlsMediaPlaylist.Segment;
 import com.google.android.exoplayer2.source.hls.playlist.HlsPlaylistTracker;
@@ -161,6 +164,7 @@ import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
    *     information is available in the master playlist.
    */
   public HlsChunkSource(
+      int trackType,
       HlsExtractorFactory extractorFactory,
       HlsPlaylistTracker playlistTracker,
       Uri[] playlistUrls,
@@ -192,7 +196,7 @@ import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
       }
     }
     trackSelection =
-        new InitializationTrackSelection(trackGroup, Ints.toArray(initialTrackSelection));
+        new InitializationTrackSelection(trackType, playlistTracker, trackGroup, Ints.toArray(initialTrackSelection));
   }
 
   /**
@@ -822,11 +826,22 @@ import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 
     private int selectedIndex;
 
-    public InitializationTrackSelection(TrackGroup group, int[] tracks) {
+    public InitializationTrackSelection(int trackType, HlsPlaylistTracker playlistTracker, TrackGroup group, int[] tracks) {
       super(group, tracks);
       // The initially selected index corresponds to the first EXT-X-STREAMINF tag in the master
       // playlist.
-      selectedIndex = indexOf(group.getFormat(tracks[0]));
+      selectedIndex = indexOf(group.getFormat(tracks[getTrackIndex(trackType, playlistTracker, tracks.length)]));
+    }
+
+    private int getTrackIndex(int trackType, HlsPlaylistTracker playlistTracker, int numberOfTracks) {
+      if ((trackType == TRACK_TYPE_VIDEO || trackType == TRACK_TYPE_DEFAULT)
+              && playlistTracker instanceof DefaultHlsPlaylistTracker) {
+        int selectedIndex = ((DefaultHlsPlaylistTracker)playlistTracker).getPrimaryMediaPlaylistIndex();
+        if (selectedIndex < numberOfTracks) {
+          return selectedIndex;
+        }
+      }
+      return 0;
     }
 
     @Override

@@ -23,6 +23,7 @@ import static com.google.android.exoplayer2.util.Assertions.checkNotNull;
 import static com.google.android.exoplayer2.util.Assertions.checkState;
 
 import android.content.Context;
+import android.net.Uri;
 import android.os.Looper;
 import android.view.View;
 import android.view.ViewGroup;
@@ -607,6 +608,11 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     }
     checkNotNull(adTagLoaderByAdsMediaSource.get(adsMediaSource))
         .handlePrepareError(adGroupIndex, adIndexInAdGroup, exception);
+  }
+
+  @Override
+  public Uri getAdUri(AdsMediaSource adsMediaSource, int adGroupIndex, int adIndexInAdGroup) {
+    return null;
   }
 
   // Player.EventListener implementation.
