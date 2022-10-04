@@ -116,6 +116,10 @@ public final class MaskingMediaPeriod implements MediaPeriod, MediaPeriod.Callba
     this.mediaSource = mediaSource;
   }
 
+  public MediaSource getMediaSource() {
+    return this.mediaSource;
+  }
+
   /**
    * Calls {@link MediaSource#createPeriod(MediaPeriodId, Allocator, long)} on the wrapped source
    * then prepares it if {@link #prepare(Callback, long)} has been called. Call {@link

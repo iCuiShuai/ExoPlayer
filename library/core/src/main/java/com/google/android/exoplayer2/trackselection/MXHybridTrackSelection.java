@@ -49,6 +49,8 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
     private final float bufferedFractionToLiveEdgeForQualityIncrease;
     private final long minTimeBetweenBufferReevaluationMs;
     private final Clock clock;
+    private int initialMaxResolutionForAdPlayback;
+
 
     /** Creates an adaptive track selection factory with default parameters. */
     public Factory() {
@@ -202,7 +204,16 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
       this.bufferedFractionToLiveEdgeForQualityIncrease =
           bufferedFractionToLiveEdgeForQualityIncrease;
       this.minTimeBetweenBufferReevaluationMs = minTimeBetweenBufferReevaluationMs;
+      this.initialMaxResolutionForAdPlayback = DEFAULT_INITIAL_MAX_RESOLUTION_FOR_AD_PLAYBACK;
       this.clock = clock;
+    }
+
+    public void setInitialMaxResolutionForAdPlayback(int initialMaxResolutionForAdPlayback) {
+      this.initialMaxResolutionForAdPlayback = initialMaxResolutionForAdPlayback;
+    }
+
+    public int getInitialMaxResolutionForAdPlayback() {
+      return this.initialMaxResolutionForAdPlayback;
     }
 
     @Override
@@ -234,7 +245,8 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
           MXHybridTrackSelection adaptiveSelection =
               createMXHybridTrackSelection(
                   definition.group, bandwidthMeter, definition.tracks, definition.preferredTrack,
-                      definition.minVideoResolution, definition.maxVideoResolution, totalFixedBandwidth);
+                      definition.minVideoResolution, definition.maxVideoResolution, totalFixedBandwidth,
+                      mediaPeriodId.isAd(), initialMaxResolutionForAdPlayback);
           adaptiveSelections.add(adaptiveSelection);
           selections[i] = adaptiveSelection;
         }
@@ -276,7 +288,9 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
         int preferredTrackIndex,
         int minVideoResolution,
         int maxVideoResolution,
-        int totalFixedTrackBandwidth) {
+        int totalFixedTrackBandwidth,
+        boolean isMediaPeriodAd,
+        int initialMaxResolutionForAdPlayback) {
       return new MXHybridTrackSelection(
           group,
           tracks,
@@ -289,7 +303,9 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
           minDurationToRetainAfterDiscardMs,
           bufferedFractionToLiveEdgeForQualityIncrease,
           minTimeBetweenBufferReevaluationMs,
-          clock);
+          clock, isMediaPeriodAd,
+          initialMaxResolutionForAdPlayback,
+          DEFAULT_MIN_DURATION_FOR_AD_QUALITY_INCREASE_MS);
     }
   }
 
@@ -299,6 +315,8 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
   public static final float DEFAULT_BANDWIDTH_FRACTION = 0.7f;
   public static final float DEFAULT_BUFFERED_FRACTION_TO_LIVE_EDGE_FOR_QUALITY_INCREASE = 0.75f;
   public static final long DEFAULT_MIN_TIME_BETWEEN_BUFFER_REEVALUTATION_MS = 2000;
+  public static final int DEFAULT_INITIAL_MAX_RESOLUTION_FOR_AD_PLAYBACK = -1;
+  public static final int DEFAULT_MIN_DURATION_FOR_AD_QUALITY_INCREASE_MS = 2500;
 
   private final BandwidthProvider bandwidthProvider;
   private final long minDurationForQualityIncreaseUs;
@@ -306,7 +324,10 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
   private final long minDurationToRetainAfterDiscardUs;
   private final float bufferedFractionToLiveEdgeForQualityIncrease;
   private final long minTimeBetweenBufferReevaluationMs;
+  private final long minDurationForAdQualityIncreaseUs;
+  private final int initialMaxResolutionForAdPlayback;
   private final Clock clock;
+  private final boolean isMediaPeriodAd;
 
   private float playbackSpeed;
   private int selectedIndex;
@@ -337,7 +358,9 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
         DEFAULT_BANDWIDTH_FRACTION,
         DEFAULT_BUFFERED_FRACTION_TO_LIVE_EDGE_FOR_QUALITY_INCREASE,
         DEFAULT_MIN_TIME_BETWEEN_BUFFER_REEVALUTATION_MS,
-        Clock.DEFAULT);
+        Clock.DEFAULT, false,
+        DEFAULT_INITIAL_MAX_RESOLUTION_FOR_AD_PLAYBACK,
+        DEFAULT_MIN_DURATION_FOR_AD_QUALITY_INCREASE_MS);
   }
 
   /**
@@ -380,7 +403,10 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
       float bandwidthFraction,
       float bufferedFractionToLiveEdgeForQualityIncrease,
       long minTimeBetweenBufferReevaluationMs,
-      Clock clock) {
+      Clock clock,
+      boolean isMediaPeriodAd,
+      int initialMaxResolutionForAdPlayback,
+      int minDurationForAdQualityIncreaseMs) {
     this(
         group,
         tracks,
@@ -393,7 +419,9 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
         minDurationToRetainAfterDiscardMs,
         bufferedFractionToLiveEdgeForQualityIncrease,
         minTimeBetweenBufferReevaluationMs,
-        clock);
+        clock, isMediaPeriodAd,
+        initialMaxResolutionForAdPlayback,
+        minDurationForAdQualityIncreaseMs);
   }
 
   private MXHybridTrackSelection(
@@ -408,7 +436,9 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
       long minDurationToRetainAfterDiscardMs,
       float bufferedFractionToLiveEdgeForQualityIncrease,
       long minTimeBetweenBufferReevaluationMs,
-      Clock clock) {
+      Clock clock, boolean isMediaPeriodAd,
+      int initialMaxResolutionForAdPlayback,
+      int minDurationForAdQualityIncreaseMs) {
     super(group, tracks);
     this.minVideoResolutionInAutoMode = minVideoResolutionInAutoMode;
     this.maxVideoResolutionInAutoMode = maxVideoResolutionInAutoMode;
@@ -420,6 +450,9 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
         bufferedFractionToLiveEdgeForQualityIncrease;
     this.minTimeBetweenBufferReevaluationMs = minTimeBetweenBufferReevaluationMs;
     this.clock = clock;
+    this.isMediaPeriodAd = isMediaPeriodAd;
+    this.initialMaxResolutionForAdPlayback = initialMaxResolutionForAdPlayback;
+    this.minDurationForAdQualityIncreaseUs = minDurationForAdQualityIncreaseMs * 1000L;
     playbackSpeed = 1f;
     reason = C.SELECTION_REASON_UNKNOWN;
     lastBufferEvaluationMs = C.TIME_UNSET;
@@ -628,6 +661,10 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
    *     Long#MIN_VALUE} to ignore blacklisting.
    */
   private int determineIdealSelectedIndex(long nowMs) {
+    if (isMediaPeriodAd && nowMs == Long.MIN_VALUE &&
+            initialMaxResolutionForAdPlayback != -1) {
+      return determineIdeaSelectionIndexForInitialAdPlayback(nowMs);
+    }
     long effectiveBitrate = bandwidthProvider.getAllocatedBandwidth();
     int lowestBitrateNonBlacklistedIndex = 0;
     for (int i = 0; i < length; i++) {
@@ -644,12 +681,44 @@ public class MXHybridTrackSelection extends BaseTrackSelection {
     return lowestBitrateNonBlacklistedIndex;
   }
 
+  private int determineIdeaSelectionIndexForInitialAdPlayback(long nowMs) {
+    long effectiveBitrate = bandwidthProvider.getAllocatedBandwidth();
+    int lowestBitrateNonBlacklistedIndex = 0;
+    for (int i = 0; i < length; i++) {
+      if (nowMs == Long.MIN_VALUE || !isBlacklisted(i, nowMs)) {
+        Format format = getFormat(i);
+        if (format.height >= minVideoResolutionInAutoMode &&
+                format.height <= maxVideoResolutionInAutoMode) {
+          lowestBitrateNonBlacklistedIndex = i;
+          if (canSelectFormat(format, format.bitrate, playbackSpeed, effectiveBitrate)) {
+            break;
+          }
+        }
+      }
+    }
+    if (getFormat(lowestBitrateNonBlacklistedIndex).height <= initialMaxResolutionForAdPlayback) return lowestBitrateNonBlacklistedIndex;
+
+    for (int i= length - 1; i > lowestBitrateNonBlacklistedIndex; i--) {
+      if (nowMs == Long.MIN_VALUE || !isBlacklisted(i, nowMs)) {
+        Format format = getFormat(i);
+        if (format.height >= minVideoResolutionInAutoMode &&
+                format.height <= maxVideoResolutionInAutoMode &&
+                format.height >= initialMaxResolutionForAdPlayback &&
+                canSelectFormat(format, format.bitrate, playbackSpeed, effectiveBitrate)) {
+          return i;
+        }
+      }
+    }
+    return lowestBitrateNonBlacklistedIndex;
+  }
+
   private long minDurationForQualityIncreaseUs(long availableDurationUs) {
+    long minDuration = isMediaPeriodAd ? minDurationForAdQualityIncreaseUs : minDurationForQualityIncreaseUs;
     boolean isAvailableDurationTooShort = availableDurationUs != C.TIME_UNSET
-        && availableDurationUs <= minDurationForQualityIncreaseUs;
+        && availableDurationUs <= minDuration;
     return isAvailableDurationTooShort
         ? (long) (availableDurationUs * bufferedFractionToLiveEdgeForQualityIncrease)
-        : minDurationForQualityIncreaseUs;
+        : minDuration;
   }
 
   /** Provides the allocated bandwidth. */

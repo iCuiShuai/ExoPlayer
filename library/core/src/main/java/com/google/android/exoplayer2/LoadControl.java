@@ -15,6 +15,8 @@
  */
 package com.google.android.exoplayer2;
 
+import android.net.Uri;
+
 import com.google.android.exoplayer2.source.TrackGroup;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.ExoTrackSelection;
@@ -111,5 +113,6 @@ public interface LoadControl {
    * @return Whether playback should be allowed to start or resume.
    */
   boolean shouldStartPlayback(
+          Uri adUri,
       long bufferedDurationUs, float playbackSpeed, boolean rebuffering, long targetLiveOffsetUs);
 }
