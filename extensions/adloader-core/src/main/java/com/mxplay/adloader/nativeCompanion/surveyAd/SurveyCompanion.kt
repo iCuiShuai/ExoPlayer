@@ -34,8 +34,8 @@ class SurveyCompanion(
         private val adsBehaviour: AdsBehaviour?
 ): NativeCompanion(), SurveyAdRequest.SurveyAdsListener, SurveyRenderer.SurveyRendererListener {
 
-    private val context = companionAdSlot.container.context
-    private val container = companionAdSlot.container
+    private val context = companionAdSlot.getContainer()?.context!!
+    private val container = companionAdSlot.getContainer()!!
     private val layoutInflater = LayoutInflater.from(context)
 
     private var submitEnable = true

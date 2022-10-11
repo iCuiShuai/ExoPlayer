@@ -143,7 +143,7 @@ class NativeCompanionAdManager(val tracker: VideoAdsTracker, val adsBehaviour: A
                 val height = _size[1].toInt()
                 val companionAdSlots = mxMediaSdkConfig.companionAdSlots
                 companionAdSlots?.forEach {
-                    if(it.width == width && it.height == height) {
+                    if(it.getWidth() == width && it.getHeight() == height) {
                         return it
                     }
                 }

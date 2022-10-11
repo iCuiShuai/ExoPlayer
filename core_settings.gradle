@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 def rootDir = gradle.ext.exoplayerRoot
-def DEBUG_MX_VID_AD = false
+def DEBUG_MX_VID_AD = true
 
 if (DEBUG_MX_VID_AD){
     gradle.ext.debugMxVidSdk = true
@@ -59,7 +59,7 @@ include modulePrefix + 'extension-workmanager'
 include modulePrefix + 'extension-vvc'
 include modulePrefix + 'extension-adloader-core'
 if (gradle.ext.has('debugMxVidSdk') && gradle.ext.debugMxVidSdk){
-    include modulePrefix + 'extension-mxMediaAdsLib-vid-ad-library'
+    include modulePrefix + 'extension-mxMediaAdsLib-vid-ad-library-shared'
 }
 
 
@@ -85,7 +85,7 @@ project(modulePrefix + 'extension-adloader-core').projectDir = new File(rootDir,
 project(modulePrefix + 'extension-mxInteractiveMediaAds').projectDir = new File(rootDir, 'extensions/mxInteractiveMediaAds')
 if (gradle.ext.has('debugMxVidSdk') && gradle.ext.debugMxVidSdk){
     System.out.println("Including mx vid lib")
-    project(modulePrefix + 'extension-mxMediaAdsLib-vid-ad-library').projectDir = new File(rootDir, 'extensions/mxMediaAdsLib/vid-ad-library')
+    project(modulePrefix + 'extension-mxMediaAdsLib-vid-ad-library-shared').projectDir = new File(rootDir, 'extensions/mxMediaAdsLib/vid-ad-library-shared')
 }
 project(modulePrefix + 'extension-ima').projectDir = new File(rootDir, 'extensions/ima')
 project(modulePrefix + 'extension-cast').projectDir = new File(rootDir, 'extensions/cast')

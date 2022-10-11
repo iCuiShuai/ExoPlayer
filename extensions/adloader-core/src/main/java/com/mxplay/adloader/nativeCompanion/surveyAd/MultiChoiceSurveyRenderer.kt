@@ -17,7 +17,7 @@ class MultiChoiceSurveyRenderer(
         private var listener: SurveyRendererListener? = null
 ): SurveyRenderer() {
 
-    private val context = companionAdSlot.container.context
+    private val context = companionAdSlot.getContainer()?.context!!
     private var selectedBtn: RadioButton? = null
     private var selectedPosition = -1
 

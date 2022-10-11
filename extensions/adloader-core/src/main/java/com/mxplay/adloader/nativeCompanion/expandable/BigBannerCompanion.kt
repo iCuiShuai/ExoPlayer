@@ -29,8 +29,8 @@ class BigBannerCompanion(
 ) : PlayerBottomCompanion(payload, companionAdSlot, eventsTracker, resourceProvider) {
 
 
-    private val context: Context = companionAdSlot.container.context
-    private val expandOverlayContainer : ViewGroup? = (companionAdSlot.container.parent as ViewGroup).findViewById(R.id.expandable_overlay)
+    private val context: Context = companionAdSlot.getContainer()?.context!!
+    private val expandOverlayContainer : ViewGroup? = (companionAdSlot.getContainer()?.parent as ViewGroup).findViewById(R.id.expandable_overlay)
     private var  templateBannerView : ViewGroup? = null
     private var  hostViewVisibilityTracker : VisibilityTracker? = null
 

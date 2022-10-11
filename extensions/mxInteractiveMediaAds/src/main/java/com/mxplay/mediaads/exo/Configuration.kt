@@ -24,7 +24,7 @@ class Configuration(builder: Builder) {
     val adPreloadTimeoutMs: Long
 
     val playAdBeforeStartPosition: Boolean
-    val applicationVideoAdPlayerCallback: com.mxplay.interactivemedia.api.player.VideoAdPlayer.VideoAdPlayerCallback?
+    val applicationVideoAdPlayerCallback: com.mxplay.interactivemedia.api.player.VideoAdPlayerCallback?
     val debugModeEnabled: Boolean
     val adsBehaviour: IAdsBehaviour
     val mxMediaSdkConfig: MxMediaSdkConfig
@@ -63,8 +63,8 @@ class Configuration(builder: Builder) {
         var mediaLoadTimeoutMs: Int? = null
         var playAdBeforeStartPosition: Boolean = true
         var adMediaMimeTypes: List<String>? = null
-        var companionAdSlots: Collection<com.mxplay.interactivemedia.api.CompanionAdSlot>? = null
-        var applicationVideoAdPlayerCallback: com.mxplay.interactivemedia.api.player.VideoAdPlayer.VideoAdPlayerCallback? = null
+        var companionAdSlots: MutableCollection<com.mxplay.interactivemedia.api.CompanionAdSlot>? = null
+        var applicationVideoAdPlayerCallback: com.mxplay.interactivemedia.api.player.VideoAdPlayerCallback? = null
         var debugModeEnabled: Boolean = false
         var adsBehaviour: IAdsBehaviour? = null
         var trackersConfig: MxMediaSdkConfig.TrackersConfig? = null
@@ -82,8 +82,8 @@ class Configuration(builder: Builder) {
         }
         fun playAdBeforeStartPosition(playAdBeforeStartPosition: Boolean) = apply { this.playAdBeforeStartPosition = playAdBeforeStartPosition }
         fun adMediaMimeTypes(adMediaMimeTypes: List<String>?) = apply { this.adMediaMimeTypes = adMediaMimeTypes }
-        fun companionAdSlots(companionAdSlots: Collection<com.mxplay.interactivemedia.api.CompanionAdSlot>?) = apply { this.companionAdSlots = companionAdSlots }
-        fun applicationVideoAdPlayerCallback(applicationVideoAdPlayerCallback: com.mxplay.interactivemedia.api.player.VideoAdPlayer.VideoAdPlayerCallback?) = apply { this.applicationVideoAdPlayerCallback = applicationVideoAdPlayerCallback }
+        fun companionAdSlots(companionAdSlots: MutableCollection<com.mxplay.interactivemedia.api.CompanionAdSlot>?) = apply { this.companionAdSlots = companionAdSlots }
+        fun applicationVideoAdPlayerCallback(applicationVideoAdPlayerCallback: com.mxplay.interactivemedia.api.player.VideoAdPlayerCallback?) = apply { this.applicationVideoAdPlayerCallback = applicationVideoAdPlayerCallback }
         fun debugModeEnabled(debugModeEnabled: Boolean) = apply { this.debugModeEnabled = debugModeEnabled }
         fun adsBehaviour(adsBehaviour: IAdsBehaviour) = apply { this.adsBehaviour = adsBehaviour }
         fun trackersConfig(trackersConfig: MxMediaSdkConfig.TrackersConfig) = apply { this.trackersConfig = trackersConfig }

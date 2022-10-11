@@ -17,7 +17,7 @@ class ParagraphAnsSurveyRenderer(
         private var listener: SurveyRendererListener? = null
 ) : SurveyRenderer() {
 
-    private var context = companionAdSlot.container.context
+    private var context = companionAdSlot.getContainer()?.context!!
     private var answerView: TextView? = null
     var inputDialog: SurveyInputDialog? = null
 

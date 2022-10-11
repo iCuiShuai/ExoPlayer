@@ -62,6 +62,7 @@ import com.mxplay.interactivemedia.api.AdsRequest;
 import com.mxplay.interactivemedia.api.player.AdMediaInfo;
 import com.mxplay.interactivemedia.api.player.ContentProgressProvider;
 import com.mxplay.interactivemedia.api.player.VideoAdPlayer;
+import com.mxplay.interactivemedia.api.player.VideoAdPlayerCallback;
 import com.mxplay.interactivemedia.api.player.VideoProgressUpdate;
 import java.io.IOException;
 import java.lang.annotation.Documented;
@@ -73,7 +74,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /** Handles loading and playback of a single ad tag. */
-/* package */ final class MxAdTagLoader implements Player.EventListener {
+/* package */ final class MxAdTagLoaderV0 implements Player.EventListener {
 
   private static final String TAG = "MxAdTagLoader";
 
@@ -81,7 +82,7 @@ import java.util.Objects;
    * Interval at which ad progress updates are provided to the IMA SDK, in milliseconds. 100 ms is
    * the interval recommended by the IMA documentation.
    *
-   * @see VideoAdPlayer.VideoAdPlayerCallback
+   * @see VideoAdPlayerCallback
    */
   private static final int AD_PROGRESS_UPDATE_INTERVAL_MS = 100;
 
@@ -129,7 +130,7 @@ import java.util.Objects;
   private final Handler handler;
   private final ComponentListener componentListener;
   private final List<EventListener> eventListeners;
-  private final List<VideoAdPlayer.VideoAdPlayerCallback> adCallbacks;
+  private final List<VideoAdPlayerCallback> adCallbacks;
   private final Runnable updateAdProgressRunnable;
   private final BiMap<AdMediaInfo, AdInfo> adInfoByAdMediaInfo;
   private final AdDisplayContainer adDisplayContainer;
@@ -207,7 +208,7 @@ import java.util.Objects;
 
   /** Creates a new ad tag loader, starting the ad request if the ad tag is valid. */
   @SuppressWarnings({"methodref.receiver.bound.invalid", "method.invocation.invalid"})
-  public MxAdTagLoader(
+  public MxAdTagLoaderV0(
       Context context,
       Configuration configuration,
       OmaUtil.OmaFactory omaFactory,
@@ -264,13 +265,13 @@ import java.util.Objects;
       @Override
       @NonNull
       public AdPlaybackState getAdPlaybackState() {
-        return MxAdTagLoader.this.adPlaybackState;
+        return MxAdTagLoaderV0.this.adPlaybackState;
       }
 
       @Override
       public void updateAdPlaybackState(@org.jetbrains.annotations.Nullable AdPlaybackState adPlaybackState, boolean notifyExo) {
-        MxAdTagLoader.this.adPlaybackState = adPlaybackState;
-        MxAdTagLoader.this.updateAdPlaybackState();
+        MxAdTagLoaderV0.this.adPlaybackState = adPlaybackState;
+        MxAdTagLoaderV0.this.updateAdPlaybackState();
       }
 
       @Override
@@ -1351,7 +1352,7 @@ import java.util.Objects;
       }
       adsBehaviour.onAdsManagerLoaded(adsManager.getAdCuePoints());
       pendingAdRequestContext = null;
-      MxAdTagLoader.this.adsManager = adsManager;
+      MxAdTagLoaderV0.this.adsManager = adsManager;
       adsManager.addAdErrorListener(this);
       adsManager.addAdErrorListener(adsBehaviour);
       adsManager.addAdEventListener(this);

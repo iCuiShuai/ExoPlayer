@@ -248,8 +248,8 @@ open class AdsBehaviour private constructor(
 
     override fun onNativeCompanionLoaded(isLoaded: Boolean) {
         if(!isLoaded && nativeCompanionAdInfo != null) {
-            val adGroupIndex = getAdGroupIndexForAdPod(nativeCompanionAdInfo!!.podIndex, nativeCompanionAdInfo!!.timeOffset.toDouble(), null, null, null)
-            discardNativeCompanionAd(adGroupIndex, nativeCompanionAdInfo!!.adPosition - 1)
+            val adGroupIndex = getAdGroupIndexForAdPod(nativeCompanionAdInfo!!.getPodIndex(), nativeCompanionAdInfo!!.getTimeOffset().toDouble(), null, null, null)
+            discardNativeCompanionAd(adGroupIndex, nativeCompanionAdInfo!!.getAdPosition() - 1)
         }
     }
 
