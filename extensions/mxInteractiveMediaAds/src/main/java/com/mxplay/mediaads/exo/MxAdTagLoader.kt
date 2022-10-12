@@ -645,7 +645,7 @@ internal class MxAdTagLoader(
             }
             AdEvent.AdEventType.LOADED -> if (Objects.requireNonNull(adEvent.ad)!!.getVastMediaWidth() <= 1 && adEvent.ad!!.getVastMediaHeight() <= 1) {
                 val adPodInfo = adEvent.ad!!.getAdPodInfo()
-                adsBehaviour.handleAudioAdLoaded(adPodInfo.getPodIndex(), adPodInfo.getAdPosition() - 1)
+                adsBehaviour.handleAudioAdLoaded(adPodInfo.podIndex, adPodInfo.adPosition - 1)
             }
             else -> {}
         }
@@ -788,8 +788,8 @@ internal class MxAdTagLoader(
             }
             return
         }
-        val adGroupIndex = adsBehaviour.getAdGroupIndexForAdPod(adPodInfo!!.getPodIndex(), adPodInfo.getTimeOffset().toDouble(), player, timeline, period)
-        val adIndexInAdGroup = adPodInfo.getAdPosition() - 1
+        val adGroupIndex = adsBehaviour.getAdGroupIndexForAdPod(adPodInfo!!.podIndex, adPodInfo.timeOffset.toDouble(), player, timeline, period)
+        val adIndexInAdGroup = adPodInfo.adPosition - 1
         val adInfo = AdInfo(adGroupIndex, adIndexInAdGroup)
         // The ad URI may already be known, so force put to update it if needed.
         adInfoByAdMediaInfo.forcePut(adMediaInfo, adInfo)
@@ -815,7 +815,7 @@ internal class MxAdTagLoader(
         // ad has loaded. See also https://github.com/google/ExoPlayer/issues/7477.
         var adGroup = adPlaybackState.adGroups[adInfo.adGroupIndex]
         adPlaybackState = adPlaybackState.withAdCount(
-                adInfo.adGroupIndex, Math.max(adPodInfo.getTotalAds(), adGroup.states.size))
+                adInfo.adGroupIndex, Math.max(adPodInfo.totalAds, adGroup.states.size))
         adGroup = adPlaybackState.adGroups[adInfo.adGroupIndex]
         for (i in 0 until adIndexInAdGroup) {
             // Any preceding ads that haven't loaded are not going to load.
@@ -825,7 +825,7 @@ internal class MxAdTagLoader(
         }
         val adUri = Uri.parse(adMediaInfo!!.url)
         adPlaybackState = adPlaybackState.withAdUri(adInfo.adGroupIndex, adInfo.adIndexInAdGroup, adUri)
-        adsBehaviour.onAdLoad(adGroupIndex, adIndexInAdGroup, adUri, adPodInfo.getPodIndex())
+        adsBehaviour.onAdLoad(adGroupIndex, adIndexInAdGroup, adUri, adPodInfo.podIndex)
         updateAdPlaybackState()
     }
 
@@ -1076,10 +1076,10 @@ internal class MxAdTagLoader(
     }
 
     private fun getAdGroupIndexForAdPod(adPodInfo: AdPodInfo): Int {
-        return if (adPodInfo.getPodIndex() == -1) {
+        return if (adPodInfo.podIndex == -1) {
             // This is a postroll ad.
             adPlaybackState.adGroupCount - 1
-        } else getAdGroupIndexForCuePointTimeSeconds(adPodInfo.getTimeOffset().toDouble())
+        } else getAdGroupIndexForCuePointTimeSeconds(adPodInfo.timeOffset.toDouble())
 
         // adPodInfo.podIndex may be 0-based or 1-based, so for now look up the cue point instead.
     }
