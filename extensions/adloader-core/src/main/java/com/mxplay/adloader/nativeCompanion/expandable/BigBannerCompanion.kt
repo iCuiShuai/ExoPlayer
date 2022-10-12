@@ -2,14 +2,12 @@ package com.mxplay.adloader.nativeCompanion.expandable
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.widget.*
 import ccom.mxplay.adloader.R
 import com.mxplay.adloader.nativeCompanion.CompanionResourceProvider

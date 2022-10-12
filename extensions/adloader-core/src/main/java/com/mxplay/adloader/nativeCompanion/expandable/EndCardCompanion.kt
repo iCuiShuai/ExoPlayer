@@ -11,7 +11,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.widget.AppCompatTextView
-import androidx.core.content.ContextCompat
 import ccom.mxplay.adloader.R
 import com.mxplay.adloader.AdsBehaviour
 import com.mxplay.adloader.nativeCompanion.*

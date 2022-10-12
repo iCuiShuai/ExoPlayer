@@ -7,13 +7,10 @@ import android.os.Looper
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.annotation.CallSuper
 import com.mxplay.adloader.nativeCompanion.expandable.PlayerBottomCompanion
-import com.mxplay.interactivemedia.api.Ad
 import com.mxplay.interactivemedia.api.AdEvent
 import com.mxplay.logger.ZenLogger
-import org.json.JSONObject
 import java.util.*
 
 abstract class NativeCompanion() : AdEvent.AdEventListener{
