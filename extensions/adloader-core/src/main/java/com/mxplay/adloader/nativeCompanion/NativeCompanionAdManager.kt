@@ -144,7 +144,7 @@ class NativeCompanionAdManager(val tracker: VideoAdsTracker, val adsBehaviour: A
                 val companionAdSlots = mxMediaSdkConfig.companionAdSlots
                 companionAdSlots?.forEach {
                     if(it.getWidth() == width && it.getHeight() == height) {
-                        return it
+                        return it as CompanionAdSlot
                     }
                 }
             } catch (e: Exception) {}
