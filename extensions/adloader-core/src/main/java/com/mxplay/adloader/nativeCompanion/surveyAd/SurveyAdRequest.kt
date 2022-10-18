@@ -99,8 +99,7 @@ class SurveyAdRequest private constructor(builder: Builder) {
         val deResponse: HttpResponse = response
         var content: String? = null
         try {
-            val responseBody: ResponseBody = deResponse.body()
-            content = responseBody.string()
+            content = deResponse.body()
 
             // reponse failed
             if (!remoteDataSource.isSuccessful(response)) {

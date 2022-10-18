@@ -109,6 +109,8 @@ public final class HlsMediaSource extends BaseMediaSource
     private List<StreamKey> streamKeys;
     @Nullable private Object tag;
     private long elapsedRealTimeOffsetMs;
+    private boolean isVideoAdMediaSource;
+    private int initialMaxResolutionForVideoAdPlayback;
 
     /**
      * Creates a new factory for {@link HlsMediaSource}s.
@@ -281,6 +283,16 @@ public final class HlsMediaSource extends BaseMediaSource
       return this;
     }
 
+    public Factory setIsVideoAdMediaSource(boolean isVideoAdMediaSource) {
+      this.isVideoAdMediaSource = isVideoAdMediaSource;
+      return this;
+    }
+
+    public Factory setInitialMaxResolutionForVideoAdPlayback(int initialMaxResolutionForVideoAdPlayback) {
+      this.initialMaxResolutionForVideoAdPlayback = initialMaxResolutionForVideoAdPlayback;
+      return this;
+    }
+
     @Override
     public Factory setDrmSessionManagerProvider(
         @Nullable DrmSessionManagerProvider drmSessionManagerProvider) {
@@ -395,7 +407,8 @@ public final class HlsMediaSource extends BaseMediaSource
           drmSessionManagerProvider.get(mediaItem),
           loadErrorHandlingPolicy,
           playlistTrackerFactory.createTracker(
-              hlsDataSourceFactory, loadErrorHandlingPolicy, playlistParserFactory),
+              hlsDataSourceFactory, loadErrorHandlingPolicy, playlistParserFactory,
+                  isVideoAdMediaSource, initialMaxResolutionForVideoAdPlayback),
           elapsedRealTimeOffsetMs,
           allowChunklessPreparation,
           metadataType,

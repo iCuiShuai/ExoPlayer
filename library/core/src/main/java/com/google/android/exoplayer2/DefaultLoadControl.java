@@ -19,6 +19,8 @@ import static com.google.android.exoplayer2.util.Assertions.checkState;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
+import android.net.Uri;
+
 import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.ExoTrackSelection;
@@ -378,7 +380,7 @@ public class DefaultLoadControl implements LoadControl {
   }
 
   @Override
-  public boolean shouldStartPlayback(
+  public boolean shouldStartPlayback(Uri adUri,
       long bufferedDurationUs, float playbackSpeed, boolean rebuffering, long targetLiveOffsetUs) {
     bufferedDurationUs = Util.getPlayoutDurationForMediaDuration(bufferedDurationUs, playbackSpeed);
     long minBufferDurationUs = rebuffering ? bufferForPlaybackAfterRebufferUs : bufferForPlaybackUs;

@@ -8,6 +8,7 @@ import com.mxplay.adloader.AdsBehaviourOffline
 import com.mxplay.adloader.IAdsBehaviour
 import com.mxplay.interactivemedia.api.IMxAdCustomTracker
 import com.mxplay.interactivemedia.api.MxMediaSdkConfig
+import com.mxplay.interactivemedia.api.player.VideoAdPlayer
 import com.mxplay.interactivemedia.api.player.VideoAdPlayerCallback
 import java.util.concurrent.ExecutorService
 
@@ -27,6 +28,8 @@ class Configuration(builder: Builder) {
     val debugModeEnabled: Boolean
     val adsBehaviour: IAdsBehaviour
     val mxMediaSdkConfig: MxMediaSdkConfig
+    val initialBufferSizeForAdPlaybackMs: Int
+    val enableCustomTab : Boolean
 
     init {
         adUnitId = builder.adUnitId
@@ -36,6 +39,7 @@ class Configuration(builder: Builder) {
         debugModeEnabled = builder.debugModeEnabled
         adsBehaviour = builder.adsBehaviour ?: AdsBehaviour(builder.vastLoadTimeoutMs
                 ?: MxMediaSdkConfig.VAST_LOAD_TIMEOUT_MS, debugModeEnabled)
+        enableCustomTab = builder.enableCustomTab
         mxMediaSdkConfig = MxMediaSdkConfig.Builder(context, builder.userInfo, builder.trackersConfig).apply {
             builder.adMediaMimeTypes?.let { this.adMediaMimeTypes = it }
             builder.vastLoadTimeoutMs?.let { this.vastLoadTimeoutMs = it }
@@ -46,6 +50,7 @@ class Configuration(builder: Builder) {
             debugModeEnabled = builder.debugModeEnabled
             isOfflineAds = adsBehaviour is AdsBehaviourOffline
         }.build()
+        initialBufferSizeForAdPlaybackMs = builder.initialBufferSizeForAdPlaybackMs ?: -1
 
     }
 
@@ -69,6 +74,8 @@ class Configuration(builder: Builder) {
         var trackersConfig: MxMediaSdkConfig.TrackersConfig? = null
         var mxAdCustomTracker: IMxAdCustomTracker? = null
         var adTagUri: Uri? = null
+        var initialBufferSizeForAdPlaybackMs: Int? = null
+        var enableCustomTab = false
 
         fun appName(appName: String) = apply { this.appName = appName }
         fun adUnitId(adUnitId: String) = apply { this.adUnitId = adUnitId }
@@ -88,6 +95,8 @@ class Configuration(builder: Builder) {
         fun trackersConfig(trackersConfig: MxMediaSdkConfig.TrackersConfig) = apply { this.trackersConfig = trackersConfig }
         fun mxAdCustomTracker(mxAdCustomTracker: IMxAdCustomTracker) = apply { this.mxAdCustomTracker = mxAdCustomTracker }
         fun adTagUri(adTagUri: Uri) = apply { this.adTagUri = adTagUri }
+        fun initialBufferSizeForAdPlaybackMs(initialBufferSizeForAdPlaybackMs: Int) = apply { this.initialBufferSizeForAdPlaybackMs = initialBufferSizeForAdPlaybackMs}
+        fun enableCustomTab(enable : Boolean) = apply { this.enableCustomTab = enable }
 
         fun build(): Configuration {
             return Configuration(this)
