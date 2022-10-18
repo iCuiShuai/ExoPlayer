@@ -20,6 +20,7 @@ import static com.google.android.exoplayer2.util.Assertions.checkNotNull;
 import static com.google.android.exoplayer2.util.Assertions.checkState;
 import static com.mxplay.mediaads.exo.OmaUtil.getAdGroupTimesUsForCuePoints;
 import static com.mxplay.mediaads.exo.OmaUtil.getImaLooper;
+import static com.mxplay.mediaads.exo.Util.INITIAL_BUFFER_FOR_AD_PLAYBACK_MS;
 import static java.lang.Math.max;
 
 import android.content.Context;
@@ -69,6 +70,7 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -136,6 +138,7 @@ import java.util.Objects;
   private final AdDisplayContainer adDisplayContainer;
   private final AdsLoader adsLoader;
   private final IAdsBehaviour adsBehaviour;
+  private Map<AdInfo, Uri> adUriMap = new HashMap<>();
 
   @Nullable private Object pendingAdRequestContext;
   @Nullable private Player player;
@@ -253,6 +256,11 @@ import java.util.Objects;
     adsBehaviour = configuration.getAdsBehaviour();
     adsBehaviour.bind(createAdPlaybackStateHost(), handler);
     adsLoader = requestAds(context, adDisplayContainer);
+  }
+
+  public Uri getAdUri(int adGroupIndex, int adIndexInAdGroup) {
+    AdInfo adInfo = new AdInfo(adGroupIndex, adIndexInAdGroup);
+    return adUriMap.get(adInfo);
   }
 
   private  AdsBehaviour.AdPlaybackStateHost createAdPlaybackStateHost() {
@@ -436,6 +444,7 @@ import java.util.Objects;
     for (int i = 0; i < adPlaybackState.adGroupCount; i++) {
       adPlaybackState = adPlaybackState.withSkippedAdGroup(i);
     }
+    adUriMap.clear();
     updateAdPlaybackState();
   }
 
@@ -608,10 +617,12 @@ import java.util.Objects;
   private AdsRenderingSettings setupAdsRendering(long contentPositionMs, long contentDurationMs) {
     AdsRenderingSettings adsRenderingSettings = omaFactory.createAdsRenderingSettings();
     adsRenderingSettings.setEnablePreloading(true);
-    adsRenderingSettings.setMimeTypes(
-        configuration.getMxMediaSdkConfig().getAdMediaMimeTypes() != null
+    List<String> mimeTypes = configuration.getMxMediaSdkConfig().getAdMediaMimeTypes() != null
             ? configuration.getMxMediaSdkConfig().getAdMediaMimeTypes()
-            : supportedMimeTypes);
+            : supportedMimeTypes;
+    configuration.getMxMediaSdkConfig().setMediaMimeTypes(mimeTypes);
+    adsRenderingSettings.setMimeTypes(mimeTypes);
+    adsRenderingSettings.setEnableCustomTab(configuration.getEnableCustomTab());
 
     boolean isSetupDone = adsBehaviour.doSetupAdsRendering(contentPositionMs, contentDurationMs, configuration.getPlayAdBeforeStartPosition());
     if (isSetupDone) {
@@ -985,7 +996,16 @@ import java.util.Objects;
       }
     }
 
-    Uri adUri = Uri.parse(adMediaInfo.getUrl());
+    Uri.Builder adUriBuilder = new Uri.Builder()
+            .encodedPath(adMediaInfo.getUrl());
+
+    if (configuration.getInitialBufferSizeForAdPlaybackMs() != -1) {
+      int initialBufferSizeForAdPlaybackMs = configuration.getInitialBufferSizeForAdPlaybackMs();
+      adUriBuilder.appendQueryParameter(INITIAL_BUFFER_FOR_AD_PLAYBACK_MS, Integer.toString(initialBufferSizeForAdPlaybackMs));
+    }
+
+    Uri adUri = Uri.parse(adUriBuilder.build().toString());
+    adUriMap.put(adInfo, adUri);
     adPlaybackState =
         adPlaybackState.withAdUri(adInfo.adGroupIndex, adInfo.adIndexInAdGroup, adUri);
     adsBehaviour.onAdLoad(adGroupIndex, adIndexInAdGroup, adUri, adPodInfo.getPodIndex());

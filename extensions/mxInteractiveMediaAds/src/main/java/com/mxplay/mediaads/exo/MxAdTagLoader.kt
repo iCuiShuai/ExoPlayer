@@ -21,41 +21,37 @@ import android.os.Handler
 import android.os.SystemClock
 import android.util.Pair
 import android.view.ViewGroup
-import com.mxplay.mediaads.exo.OmaUtil.Companion.imaLooper
-import com.mxplay.mediaads.exo.OmaUtil.Companion.getAdGroupTimesUsForCuePoints
-import com.mxplay.mediaads.exo.OmaUtil.Companion.getFriendlyObstructionPurpose
-import com.mxplay.mediaads.exo.OmaUtil.Companion.getAdsRequestForAdTagDataSpec
-import com.mxplay.mediaads.exo.OmaUtil.Companion.getStringForVideoProgressUpdate
-import com.mxplay.mediaads.exo.OmaUtil.Companion.isAdGroupLoadError
-import com.mxplay.mediaads.exo.OmaUtil.OmaFactory
-import com.google.android.exoplayer2.upstream.DataSpec
-import com.google.android.exoplayer2.Player
 import androidx.annotation.IntDef
 import com.google.android.exoplayer2.C
-import com.google.android.exoplayer2.Timeline
-import com.google.common.collect.BiMap
-import com.mxplay.adloader.IAdsBehaviour
-import com.google.android.exoplayer2.source.ads.AdsMediaSource.AdLoadException
-import com.google.android.exoplayer2.source.ads.AdPlaybackState
-import com.mxplay.adloader.AdsBehaviour.AdPlaybackStateHost
-import com.google.android.exoplayer2.source.ads.AdsLoader.AdViewProvider
-import com.google.android.exoplayer2.util.Assertions
-import com.google.android.exoplayer2.Player.TimelineChangeReason
-import com.google.android.exoplayer2.Player.DiscontinuityReason
-import com.google.android.exoplayer2.Player.PlayWhenReadyChangeReason
 import com.google.android.exoplayer2.ExoPlaybackException
-import com.mxplay.adloader.AdTagData
-import com.mxplay.adloader.AdsBehaviourWatchTime
+import com.google.android.exoplayer2.Player
+import com.google.android.exoplayer2.Player.*
+import com.google.android.exoplayer2.Timeline
+import com.google.android.exoplayer2.source.ads.AdPlaybackState
 import com.google.android.exoplayer2.source.ads.AdsLoader
+import com.google.android.exoplayer2.source.ads.AdsLoader.AdViewProvider
+import com.google.android.exoplayer2.source.ads.AdsMediaSource.AdLoadException
+import com.google.android.exoplayer2.upstream.DataSpec
+import com.google.android.exoplayer2.util.Assertions
 import com.google.android.exoplayer2.util.Log
 import com.google.android.exoplayer2.util.Util
+import com.google.common.collect.BiMap
 import com.google.common.collect.HashBiMap
+import com.mxplay.adloader.AdTagData
+import com.mxplay.adloader.AdsBehaviour.AdPlaybackStateHost
+import com.mxplay.adloader.AdsBehaviourWatchTime
+import com.mxplay.adloader.IAdsBehaviour
 import com.mxplay.interactivemedia.api.*
 import com.mxplay.interactivemedia.api.player.*
+import com.mxplay.mediaads.exo.OmaUtil.Companion.getAdGroupTimesUsForCuePoints
+import com.mxplay.mediaads.exo.OmaUtil.Companion.getAdsRequestForAdTagDataSpec
+import com.mxplay.mediaads.exo.OmaUtil.Companion.getFriendlyObstructionPurpose
+import com.mxplay.mediaads.exo.OmaUtil.Companion.getStringForVideoProgressUpdate
+import com.mxplay.mediaads.exo.OmaUtil.Companion.imaLooper
+import com.mxplay.mediaads.exo.OmaUtil.Companion.isAdGroupLoadError
+import com.mxplay.mediaads.exo.OmaUtil.OmaFactory
+import com.mxplay.mediaads.exo.Util.INITIAL_BUFFER_FOR_AD_PLAYBACK_MS
 import java.io.IOException
-import java.lang.Exception
-import java.lang.IllegalStateException
-import java.lang.RuntimeException
 import java.lang.annotation.Documented
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
@@ -88,6 +84,7 @@ internal class MxAdTagLoader(
     /** Returns the underlying IMA SDK ads loader.  */
     val adsLoader: com.mxplay.interactivemedia.api.AdsLoader?
     private val adsBehaviour: IAdsBehaviour
+    private val adUriMap = mutableMapOf<AdInfo, Uri>()
     private var pendingAdRequestContext: Any? = null
     private var player: Player? = null
     private var lastContentProgress: VideoProgressUpdate
@@ -160,6 +157,13 @@ internal class MxAdTagLoader(
      * having preloaded an ad, or [C.TIME_UNSET] if not applicable.
      */
     private var waitingForPreloadElapsedRealtimeMs: Long
+
+    fun getAdUri(adGroupIndex: Int, adIndexInAdGroup: Int): Uri? {
+        val adInfo = AdInfo(adGroupIndex, adIndexInAdGroup)
+        return adUriMap.get(adInfo)
+    }
+
+
     private fun createAdPlaybackStateHost(): AdPlaybackStateHost {
         return object : AdPlaybackStateHost {
             override fun onVastCallMaxWaitingTimeOver() {}
@@ -314,6 +318,7 @@ internal class MxAdTagLoader(
         for (i in 0 until adPlaybackState.adGroupCount) {
             adPlaybackState = adPlaybackState.withSkippedAdGroup(i)
         }
+        adUriMap.clear();
         updateAdPlaybackState()
     }
 
@@ -823,7 +828,21 @@ internal class MxAdTagLoader(
                 adPlaybackState = adPlaybackState.withAdLoadError(adGroupIndex,  /* adIndexInAdGroup= */i)
             }
         }
-        val adUri = Uri.parse(adMediaInfo!!.url)
+        val adUriBuilder = Uri.Builder()
+            .encodedPath(adMediaInfo!!.url)
+
+        if (configuration.initialBufferSizeForAdPlaybackMs != -1) {
+            val initialBufferSizeForAdPlaybackMs = configuration.initialBufferSizeForAdPlaybackMs
+            adUriBuilder.appendQueryParameter(
+                INITIAL_BUFFER_FOR_AD_PLAYBACK_MS,
+                Integer.toString(initialBufferSizeForAdPlaybackMs)
+            )
+        }
+
+        val adUri = Uri.parse(adUriBuilder.build().toString())
+        adUriMap[adInfo] = adUri
+
+
         adPlaybackState = adPlaybackState.withAdUri(adInfo.adGroupIndex, adInfo.adIndexInAdGroup, adUri)
         adsBehaviour.onAdLoad(adGroupIndex, adIndexInAdGroup, adUri, adPodInfo.podIndex)
         updateAdPlaybackState()

@@ -15,6 +15,7 @@
  */
 package com.google.android.exoplayer2;
 
+import android.net.Uri;
 import android.os.Build;
 import android.os.SystemClock;
 
@@ -267,7 +268,7 @@ public class DynamicLoadControl implements LoadControl {
   }
 
   @Override
-  public boolean shouldStartPlayback(
+  public boolean shouldStartPlayback(Uri adUri,
       long bufferedDurationUs, float playbackSpeed, boolean rebuffering, long targetLiveOffsetUs) {
     if (!rebuffering)
       return true;

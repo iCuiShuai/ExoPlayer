@@ -20,6 +20,7 @@ import static com.google.android.exoplayer2.util.Assertions.checkState;
 import static com.mxplay.mediaads.exo.OmaUtil.getImaLooper;
 
 import android.content.Context;
+import android.net.Uri;
 import android.os.Looper;
 import android.view.View;
 import android.view.ViewGroup;
@@ -277,6 +278,11 @@ public final class MxMediaAdLoader implements Player.EventListener, AdsLoader {
     }
     checkNotNull(adTagLoaderByAdsMediaSource.get(adsMediaSource))
         .handlePrepareError(adGroupIndex, adIndexInAdGroup, exception);
+  }
+
+  @Override
+  public Uri getAdUri(AdsMediaSource adsMediaSource, int adGroupIndex, int adIndexInAdGroup) {
+    return adTagLoaderByAdsMediaSource.get(adsMediaSource).getAdUri(adGroupIndex, adIndexInAdGroup);
   }
 
   // Player.Listener implementation.
