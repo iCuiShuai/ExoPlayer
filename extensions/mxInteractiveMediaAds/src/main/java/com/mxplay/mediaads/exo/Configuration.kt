@@ -69,7 +69,7 @@ class Configuration(builder: Builder) {
         var mediaLoadTimeoutMs: Int? = null
         var playAdBeforeStartPosition: Boolean = true
         var adMediaMimeTypes: List<String>? = null
-        var companionAdSlots: MutableCollection<com.mxplay.interactivemedia.api.CompanionAdSlot>? = null
+        var companionAdSlots: MutableCollection<com.mxplay.interactivemedia.api.ICompanionAdSlot>? = null
         var applicationVideoAdPlayerCallback: VideoAdPlayerCallback? = null
         var debugModeEnabled: Boolean = false
         var adsBehaviour: IAdsBehaviour? = null
@@ -90,7 +90,7 @@ class Configuration(builder: Builder) {
         }
         fun playAdBeforeStartPosition(playAdBeforeStartPosition: Boolean) = apply { this.playAdBeforeStartPosition = playAdBeforeStartPosition }
         fun adMediaMimeTypes(adMediaMimeTypes: List<String>?) = apply { this.adMediaMimeTypes = adMediaMimeTypes }
-        fun companionAdSlots(companionAdSlots: MutableCollection<com.mxplay.interactivemedia.api.CompanionAdSlot>?) = apply { this.companionAdSlots = companionAdSlots }
+        fun companionAdSlots(companionAdSlots: MutableCollection<com.mxplay.interactivemedia.api.ICompanionAdSlot>?) = apply { this.companionAdSlots = companionAdSlots }
         fun applicationVideoAdPlayerCallback(applicationVideoAdPlayerCallback: VideoAdPlayerCallback?) = apply { this.applicationVideoAdPlayerCallback = applicationVideoAdPlayerCallback }
         fun debugModeEnabled(debugModeEnabled: Boolean) = apply { this.debugModeEnabled = debugModeEnabled }
         fun adsBehaviour(adsBehaviour: IAdsBehaviour) = apply { this.adsBehaviour = adsBehaviour }
