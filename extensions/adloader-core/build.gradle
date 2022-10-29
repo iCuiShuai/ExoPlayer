@@ -24,7 +24,7 @@ dependencies {
     implementation 'androidx.annotation:annotation:' + androidxAnnotationVersion
     api project(modulePrefix + 'library-core')
     if (gradle.ext.has('debugMxVidSdk') && gradle.ext.debugMxVidSdk){
-        api project(modulePrefix + 'extension-mxMediaAdsLib-vid-ad-library-shared')
+        api project(modulePrefix + 'extension-mxMediaAdsLib-vidAdLibrary')
     }else{
         api "com.mxplay.code:mxvideoadlib:1.1.47"
     }

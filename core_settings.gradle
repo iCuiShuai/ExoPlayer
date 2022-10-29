@@ -59,7 +59,7 @@ include modulePrefix + 'extension-workmanager'
 include modulePrefix + 'extension-vvc'
 include modulePrefix + 'extension-adloader-core'
 if (gradle.ext.has('debugMxVidSdk') && gradle.ext.debugMxVidSdk){
-    include modulePrefix + 'extension-mxMediaAdsLib-vid-ad-library-shared'
+    include modulePrefix + 'extension-mxMediaAdsLib-vidAdLibrary'
 }
 
 
@@ -85,7 +85,7 @@ project(modulePrefix + 'extension-adloader-core').projectDir = new File(rootDir,
 project(modulePrefix + 'extension-mxInteractiveMediaAds').projectDir = new File(rootDir, 'extensions/mxInteractiveMediaAds')
 if (gradle.ext.has('debugMxVidSdk') && gradle.ext.debugMxVidSdk){
     System.out.println("Including mx vid lib")
-    project(modulePrefix + 'extension-mxMediaAdsLib-vid-ad-library-shared').projectDir = new File(rootDir, 'extensions/mxMediaAdsLib/vid-ad-library-shared')
+    project(modulePrefix + 'extension-mxMediaAdsLib-vidAdLibrary').projectDir = new File(rootDir, 'extensions/mxMediaAdsLib/vidAdLibrary')
 }
 project(modulePrefix + 'extension-ima').projectDir = new File(rootDir, 'extensions/ima')
 project(modulePrefix + 'extension-cast').projectDir = new File(rootDir, 'extensions/cast')
