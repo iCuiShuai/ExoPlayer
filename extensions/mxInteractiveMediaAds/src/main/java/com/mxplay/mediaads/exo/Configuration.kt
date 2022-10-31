@@ -48,7 +48,7 @@ class Configuration(builder: Builder) {
             builder.mediaLoadTimeoutMs?.let { this.mediaLoadTimeoutMs = it }
             builder.companionAdSlots?.let { this.companionAdSlots = it.map { x -> x as CompanionAdSlot }.toMutableList()}
             builder.mxAdCustomTracker?.let { this.mxAdCustomTracker = it }
-            builder.adTagUri?.let { this.adTagUri = it }
+            builder.adTagUri?.let { this.adTagUri = it.toString() }
             debugModeEnabled = builder.debugModeEnabled
             isOfflineAds = adsBehaviour is AdsBehaviourOffline
         }.build()
