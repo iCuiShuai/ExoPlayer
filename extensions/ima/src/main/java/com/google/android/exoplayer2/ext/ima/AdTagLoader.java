@@ -21,6 +21,7 @@ import static com.google.android.exoplayer2.ext.ima.ImaUtil.getAdGroupTimesUsFor
 import static com.google.android.exoplayer2.ext.ima.ImaUtil.getImaLooper;
 import static com.google.android.exoplayer2.util.Assertions.checkNotNull;
 import static com.google.android.exoplayer2.util.Assertions.checkState;
+import static com.mxplay.adloader.utils.Utils.INITIAL_BUFFER_FOR_AD_PLAYBACK_MS;
 import static java.lang.Math.max;
 
 import android.content.Context;
@@ -78,6 +79,7 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -149,6 +151,7 @@ import java.util.concurrent.TimeUnit;
   private final AdDisplayContainer adDisplayContainer;
   private final AdsLoader adsLoader;
   private final IAdsBehaviour adsBehaviour;
+  private Map<AdInfo, Uri> adUriMap = new HashMap<>();
 
   @Nullable private Object pendingAdRequestContext;
   @Nullable private Player player;
@@ -275,6 +278,11 @@ import java.util.concurrent.TimeUnit;
     adsBehaviour = configuration.adsBehaviour;
     adsBehaviour.bind(adPlaybackStateHost, handler);
     adsLoader = requestAds(context, imaSdkSettings, adDisplayContainer);
+  }
+
+  public Uri getAdUri(int adGroupIndex, int adIndexInAdGroup) {
+    AdInfo adInfo = new AdInfo(adGroupIndex, adIndexInAdGroup);
+    return adUriMap.get(adInfo);
   }
 
   private final AdsBehaviour.AdPlaybackStateHost adPlaybackStateHost = new AdsBehaviour.AdPlaybackStateHost() {
@@ -457,6 +465,7 @@ import java.util.concurrent.TimeUnit;
     for (int i = 0; i < adPlaybackState.adGroupCount; i++) {
       adPlaybackState = adPlaybackState.withSkippedAdGroup(i);
     }
+    adUriMap.clear();
     updateAdPlaybackState();
   }
 
@@ -1044,7 +1053,16 @@ import java.util.concurrent.TimeUnit;
       }
     }
 
-    Uri adUri = Uri.parse(adMediaInfo.getUrl());
+    Uri.Builder adUriBuilder = new Uri.Builder()
+        .encodedPath(adMediaInfo.getUrl());
+
+    if (configuration.initialBufferSizeForAdPlaybackMs != -1) {
+      int initialBufferSizeForAdPlaybackMs = configuration.initialBufferSizeForAdPlaybackMs;
+      adUriBuilder.appendQueryParameter(INITIAL_BUFFER_FOR_AD_PLAYBACK_MS, Integer.toString(initialBufferSizeForAdPlaybackMs));
+    }
+
+    Uri adUri = Uri.parse(adUriBuilder.build().toString());
+    adUriMap.put(adInfo, adUri);
     adPlaybackState =
         adPlaybackState.withAdUri(adInfo.adGroupIndex, adInfo.adIndexInAdGroup, adUri);
     adsBehaviour.onAdLoad(adGroupIndex, adIndexInAdGroup, adUri, adPodInfo.getPodIndex());
