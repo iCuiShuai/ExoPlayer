@@ -103,6 +103,7 @@ import java.util.Set;
     @Nullable public final ImaSdkSettings imaSdkSettings;
     public final IAdsBehaviour adsBehaviour;
     public final boolean debugModeEnabled;
+    public final int initialBufferSizeForAdPlaybackMs;
 
     public Configuration(
         long adPreloadTimeoutMs,
@@ -119,7 +120,8 @@ import java.util.Set;
         @Nullable AdEvent.AdEventListener applicationAdEventListener,
         @Nullable VideoAdPlayer.VideoAdPlayerCallback applicationVideoAdPlayerCallback,
         @Nullable ImaSdkSettings imaSdkSettings, @Nullable IAdsBehaviour adsBehaviour,
-        boolean debugModeEnabled) {
+        boolean debugModeEnabled,
+        @Nullable int initialBufferSizeForAdPlaybackMs) {
       this.adPreloadTimeoutMs = adPreloadTimeoutMs;
       this.vastLoadTimeoutMs = vastLoadTimeoutMs;
       this.mediaLoadTimeoutMs = mediaLoadTimeoutMs;
@@ -136,6 +138,7 @@ import java.util.Set;
       this.imaSdkSettings = imaSdkSettings;
       this.adsBehaviour = adsBehaviour == null ? new AdsBehaviour(vastLoadTimeoutMs, debugModeEnabled) : adsBehaviour;
       this.debugModeEnabled = debugModeEnabled;
+      this.initialBufferSizeForAdPlaybackMs = initialBufferSizeForAdPlaybackMs;
     }
   }
 

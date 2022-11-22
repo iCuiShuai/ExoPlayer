@@ -125,6 +125,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     private boolean focusSkipButtonWhenAvailable;
     private boolean playAdBeforeStartPosition;
     private boolean debugModeEnabled;
+    private int initialBufferSizeForAdPlaybackMs = -1;
     private ImaUtil.ImaFactory imaFactory;
     private IAdsBehaviour adsBehaviour;
 
@@ -360,6 +361,11 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
       return this;
     }
 
+    public Builder setInitialBufferSizeForAdPlaybackMs(int initialBufferSizeForAdPlaybackMs) {
+      this.initialBufferSizeForAdPlaybackMs = initialBufferSizeForAdPlaybackMs;
+      return this;
+    }
+
     @VisibleForTesting
     /* package */ Builder setImaFactory(ImaUtil.ImaFactory imaFactory) {
       this.imaFactory = checkNotNull(imaFactory);
@@ -386,7 +392,8 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
               videoAdPlayerCallback,
               imaSdkSettings,
               adsBehaviour,
-              debugModeEnabled),
+              debugModeEnabled,
+              initialBufferSizeForAdPlaybackMs),
           imaFactory);
     }
   }
@@ -612,7 +619,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
 
   @Override
   public Uri getAdUri(AdsMediaSource adsMediaSource, int adGroupIndex, int adIndexInAdGroup) {
-    return null;
+    return adTagLoaderByAdsMediaSource.get(adsMediaSource).getAdUri(adGroupIndex, adIndexInAdGroup);
   }
 
   // Player.EventListener implementation.

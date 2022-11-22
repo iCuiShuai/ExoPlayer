@@ -18,9 +18,9 @@ package com.mxplay.mediaads.exo;
 
 import static com.google.android.exoplayer2.util.Assertions.checkNotNull;
 import static com.google.android.exoplayer2.util.Assertions.checkState;
+import static com.mxplay.adloader.utils.Utils.INITIAL_BUFFER_FOR_AD_PLAYBACK_MS;
 import static com.mxplay.mediaads.exo.OmaUtil.getAdGroupTimesUsForCuePoints;
 import static com.mxplay.mediaads.exo.OmaUtil.getImaLooper;
-import static com.mxplay.mediaads.exo.Util.INITIAL_BUFFER_FOR_AD_PLAYBACK_MS;
 import static java.lang.Math.max;
 
 import android.content.Context;
