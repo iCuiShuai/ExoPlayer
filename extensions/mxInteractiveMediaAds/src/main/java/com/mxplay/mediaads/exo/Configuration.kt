@@ -11,7 +11,7 @@ import com.mxplay.interactivemedia.api.MxMediaSdkConfig
 import java.util.concurrent.ExecutorService
 
 /** Stores configuration for ad loading and playback.  */
-class Configuration(builder: Builder) {
+class Configuration(builder: Builder, appId: String) {
 
     companion object {
         const val DEFAULT_AD_PRELOAD_TIMEOUT_MS = 10 * C.MILLIS_PER_SECOND
@@ -47,7 +47,7 @@ class Configuration(builder: Builder) {
             builder.adTagUri?.let { this.adTagUri = it }
             debugModeEnabled = builder.debugModeEnabled
             isOfflineAds = adsBehaviour is AdsBehaviourOffline
-        }.build()
+        }.build(appId)
         initialBufferSizeForAdPlaybackMs = builder.initialBufferSizeForAdPlaybackMs ?: -1
 
     }
@@ -96,8 +96,8 @@ class Configuration(builder: Builder) {
         fun initialBufferSizeForAdPlaybackMs(initialBufferSizeForAdPlaybackMs: Int) = apply { this.initialBufferSizeForAdPlaybackMs = initialBufferSizeForAdPlaybackMs}
         fun enableCustomTab(enable : Boolean) = apply { this.enableCustomTab = enable }
 
-        fun build(): Configuration {
-            return Configuration(this)
+        fun build(appId : String): Configuration {
+            return Configuration(this, appId)
         }
     }
 
