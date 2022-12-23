@@ -278,6 +278,9 @@ import java.util.concurrent.TimeUnit;
     adsBehaviour = configuration.adsBehaviour;
     adsBehaviour.bind(adPlaybackStateHost, handler);
     adsLoader = requestAds(context, imaSdkSettings, adDisplayContainer);
+    if (configuration.debugModeEnabled) {
+      Log.d(TAG, "Created " + this.hashCode());
+    }
   }
 
   public Uri getAdUri(int adGroupIndex, int adIndexInAdGroup) {
@@ -467,6 +470,9 @@ import java.util.concurrent.TimeUnit;
     }
     adUriMap.clear();
     updateAdPlaybackState();
+    if (configuration.debugModeEnabled) {
+      Log.d(TAG, "Released " + this.hashCode());
+    }
   }
 
   /** Notifies the IMA SDK that the specified ad has been prepared for playback. */
