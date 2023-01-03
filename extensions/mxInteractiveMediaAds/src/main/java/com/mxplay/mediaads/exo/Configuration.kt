@@ -42,6 +42,7 @@ class Configuration(builder: Builder, appId: String) {
             builder.adMediaMimeTypes?.let { this.adMediaMimeTypes = it }
             builder.vastLoadTimeoutMs?.let { this.vastLoadTimeoutMs = it }
             builder.mediaLoadTimeoutMs?.let { this.mediaLoadTimeoutMs = it }
+            builder.maxMediaBitrate?.let { this.maxMediaBitrate = it }
             builder.companionAdSlots?.let { this.companionAdSlots = it }
             builder.mxAdCustomTracker?.let { this.mxAdCustomTracker = it }
             builder.adTagUri?.let { this.adTagUri = it }
@@ -63,6 +64,7 @@ class Configuration(builder: Builder, appId: String) {
         var adPreloadTimeoutMs: Long? = null
         var vastLoadTimeoutMs: Int? = null
         var mediaLoadTimeoutMs: Int? = null
+        var maxMediaBitrate: Int? = null
         var playAdBeforeStartPosition: Boolean = true
         var adMediaMimeTypes: List<String>? = null
         var companionAdSlots: Collection<com.mxplay.interactivemedia.api.CompanionAdSlot>? = null
@@ -83,6 +85,10 @@ class Configuration(builder: Builder, appId: String) {
         }
         fun mediaLoadTimeoutMs(mediaLoadTimeoutMs: Int) = apply {
             this.mediaLoadTimeoutMs = if(mediaLoadTimeoutMs > 0) mediaLoadTimeoutMs else MxMediaSdkConfig.MEDIA_LOAD_TIMEOUT_MS
+        }
+        fun maxMediaBitrateKbps(maxMediaBitrate : Int) =  apply{
+            this.maxMediaBitrate = if(maxMediaBitrate > 0) maxMediaBitrate else MxMediaSdkConfig.DEFAULT_MAX_BITRATE
+
         }
         fun playAdBeforeStartPosition(playAdBeforeStartPosition: Boolean) = apply { this.playAdBeforeStartPosition = playAdBeforeStartPosition }
         fun adMediaMimeTypes(adMediaMimeTypes: List<String>?) = apply { this.adMediaMimeTypes = adMediaMimeTypes }
