@@ -39,12 +39,12 @@ class NativeCompanionAdManager(val tracker: VideoAdsTracker, val adsBehaviour: A
 
     override fun onAdEvent(adEvent: AdEvent) {
         val ad = adEvent.ad
-        if(adEvent.type == AdEvent.AdEventType.LOADED && ad != null) {
+        if(adEvent.type == AdEventType.LOADED && ad != null) {
             checkAndLoadNativeCompanion(ad, ad.getTraffickingParameters(), adEvent.ad!!.getAdPodInfo())
-        }else if (adEvent.type == AdEvent.AdEventType.STARTED && ad != null){
+        }else if (adEvent.type ==AdEventType.STARTED && ad != null){
             nativeCompanions.get(ad)?.forEach { it.display()}
         }
-        else if (adEvent.type == AdEvent.AdEventType.COMPLETED || adEvent.type == AdEvent.AdEventType.SKIPPED){
+        else if (adEvent.type == AdEventType.COMPLETED || adEvent.type == AdEventType.SKIPPED){
             adsBehaviour?.setNativeCompanionAdInfo(null)
             val iterator = nativeCompanions[ad]?.iterator()
             if (iterator != null){
@@ -56,7 +56,7 @@ class NativeCompanionAdManager(val tracker: VideoAdsTracker, val adsBehaviour: A
                 }
             }
 
-        }else if (adEvent.type == AdEvent.AdEventType.ALL_ADS_COMPLETED || adEvent.type == AdEvent.AdEventType.CONTENT_RESUME_REQUESTED){
+        }else if (adEvent.type == AdEventType.ALL_ADS_COMPLETED || adEvent.type == AdEventType.CONTENT_RESUME_REQUESTED){
             releaseNativeCompanions(adEvent)
             adsBehaviour?.setNativeCompanionAdInfo(null)
         }

@@ -610,7 +610,7 @@ internal class MxAdTagLoader(
             return
         }
         when (adEvent.type) {
-            AdEvent.AdEventType.AD_BREAK_FETCH_ERROR -> {
+            AdEventType.AD_BREAK_FETCH_ERROR -> {
                 val adGroupTimeSecondsString = Assertions.checkNotNull(adEvent.adData!!["adBreakTime"])
                 if (configuration.debugModeEnabled) {
                     Log.d(TAG, "Fetch error for ad at $adGroupTimeSecondsString seconds")
@@ -619,36 +619,36 @@ internal class MxAdTagLoader(
                 val adGroupIndex = if (adGroupTimeSeconds == -1.0) adPlaybackState.adGroupCount - 1 else getAdGroupIndexForCuePointTimeSeconds(adGroupTimeSeconds)
                 markAdGroupInErrorStateAndClearPendingContentPosition(adGroupIndex)
             }
-            AdEvent.AdEventType.CONTENT_PAUSE_REQUESTED -> {
+            AdEventType.CONTENT_PAUSE_REQUESTED -> {
                 // After CONTENT_PAUSE_REQUESTED, IMA will playAd/pauseAd/stopAd to show one or more ads
                 // before sending CONTENT_RESUME_REQUESTED.
                 imaPausedContent = true
                 pauseContentInternal()
             }
-            AdEvent.AdEventType.TAPPED -> {
+            AdEventType.TAPPED -> {
                 var i = 0
                 while (i < eventListeners.size) {
                     eventListeners[i].onAdTapped()
                     i++
                 }
             }
-            AdEvent.AdEventType.CLICKED -> {
+            AdEventType.CLICKED -> {
                 var i = 0
                 while (i < eventListeners.size) {
                     eventListeners[i].onAdClicked()
                     i++
                 }
             }
-            AdEvent.AdEventType.CONTENT_RESUME_REQUESTED -> {
+            AdEventType.CONTENT_RESUME_REQUESTED -> {
                 imaPausedContent = false
                 resumeContentInternal()
             }
-            AdEvent.AdEventType.LOG -> {
+            AdEventType.LOG -> {
                 val adData = adEvent.adData
                 val message = "AdEvent: $adData"
                 Log.i(TAG, message)
             }
-            AdEvent.AdEventType.LOADED -> if (Objects.requireNonNull(adEvent.ad)!!.getVastMediaWidth() <= 1 && adEvent.ad!!.getVastMediaHeight() <= 1) {
+            AdEventType.LOADED -> if (Objects.requireNonNull(adEvent.ad)!!.getVastMediaWidth() <= 1 && adEvent.ad!!.getVastMediaHeight() <= 1) {
                 val adPodInfo = adEvent.ad!!.getAdPodInfo()
                 adsBehaviour.handleAudioAdLoaded(adPodInfo.podIndex, adPodInfo.adPosition - 1)
             }
@@ -1210,7 +1210,7 @@ internal class MxAdTagLoader(
         // AdEvent.AdEventListener implementation.
         override fun onAdEvent(adEvent: AdEvent) {
             val adEventType = adEvent.type
-            if (configuration.debugModeEnabled && adEventType !== AdEvent.AdEventType.AD_PROGRESS) {
+            if (configuration.debugModeEnabled && adEventType !== AdEventType.AD_PROGRESS) {
                 Log.d(TAG, "onAdEvent: $adEventType")
             }
             try {

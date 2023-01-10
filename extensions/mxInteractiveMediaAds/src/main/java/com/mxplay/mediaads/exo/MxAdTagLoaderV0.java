@@ -54,6 +54,7 @@ import com.mxplay.interactivemedia.api.AdDisplayContainer;
 import com.mxplay.interactivemedia.api.AdError;
 import com.mxplay.interactivemedia.api.AdErrorEvent;
 import com.mxplay.interactivemedia.api.AdEvent;
+import com.mxplay.interactivemedia.api.AdEventType;
 import com.mxplay.interactivemedia.api.AdPodInfo;
 import com.mxplay.interactivemedia.api.AdsLoader;
 import com.mxplay.interactivemedia.api.AdsManager;
@@ -1422,8 +1423,8 @@ import java.util.Objects;
 
     @Override
     public void onAdEvent(AdEvent adEvent) {
-      AdEvent.AdEventType adEventType = adEvent.getType();
-      if (configuration.getDebugModeEnabled() && adEventType != AdEvent.AdEventType.AD_PROGRESS) {
+      AdEventType adEventType = adEvent.getType();
+      if (configuration.getDebugModeEnabled() && adEventType != AdEventType.AD_PROGRESS) {
         Log.d(TAG, "onAdEvent: " + adEventType);
       }
       try {
