@@ -13,6 +13,8 @@ import com.mxplay.adloader.nativeCompanion.CompanionResourceProvider
 import com.mxplay.interactivemedia.api.AdEvent
 import com.mxplay.interactivemedia.api.AdPodInfo
 import com.mxplay.interactivemedia.api.MxMediaSdkConfig
+import com.mxplay.interactivemedia.internal.data.model.AdBreakErrorEvent
+import com.mxplay.interactivemedia.internal.tracking.VastErrorEvent
 import com.mxplay.logger.ZenLogger
 
 open class AdsBehaviour private constructor(
@@ -279,6 +281,14 @@ open class AdsBehaviour private constructor(
     override fun release() {
         super.release()
         composedAdEventListener.release()
+    }
+
+    override fun onError(adBreakErrorEvent: AdBreakErrorEvent) {
+
+    }
+
+    override fun onVastError(vastErrorEvent: VastErrorEvent) {
+
     }
 
     companion object {

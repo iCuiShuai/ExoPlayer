@@ -66,6 +66,10 @@ import com.mxplay.interactivemedia.api.player.ContentProgressProvider;
 import com.mxplay.interactivemedia.api.player.VideoAdPlayer;
 import com.mxplay.interactivemedia.api.player.VideoAdPlayerCallback;
 import com.mxplay.interactivemedia.api.player.VideoProgressUpdate;
+import com.mxplay.interactivemedia.internal.data.model.AdBreakErrorEvent;
+import com.mxplay.interactivemedia.internal.tracking.VastErrorEvent;
+import com.mxplay.interactivemedia.internal.util.ErrorEventListener;
+
 import java.io.IOException;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -1356,11 +1360,10 @@ import java.util.Objects;
   }
 
   private final class ComponentListener
-      implements AdsLoader.AdsLoadedListener,
-      ContentProgressProvider,
-      AdEvent.AdEventListener,
-      AdErrorEvent.AdErrorListener,
-          VideoAdPlayer {
+          implements AdsLoader.AdsLoadedListener,
+          ContentProgressProvider,
+          AdEvent.AdEventListener,
+          VideoAdPlayer, ErrorEventListener {
 
     // AdsLoader.AdsLoadedListener implementation.
 
@@ -1522,6 +1525,16 @@ import java.util.Objects;
     @Override
     public void release() {
       // Do nothing.
+    }
+
+    @Override
+    public void onError(@NonNull AdBreakErrorEvent adBreakErrorEvent) {
+
+    }
+
+    @Override
+    public void onVastError(@NonNull VastErrorEvent vastErrorEvent) {
+
     }
   }
 
