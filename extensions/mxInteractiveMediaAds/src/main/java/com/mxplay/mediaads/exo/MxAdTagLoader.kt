@@ -43,9 +43,6 @@ import com.mxplay.adloader.AdsBehaviourWatchTime
 import com.mxplay.adloader.IAdsBehaviour
 import com.mxplay.interactivemedia.api.*
 import com.mxplay.interactivemedia.api.player.*
-import com.mxplay.interactivemedia.internal.data.model.AdBreakErrorEvent
-import com.mxplay.interactivemedia.internal.tracking.VastErrorEvent
-import com.mxplay.interactivemedia.internal.util.ErrorEventListener
 import com.mxplay.mediaads.exo.OmaUtil.Companion.getAdGroupTimesUsForCuePoints
 import com.mxplay.mediaads.exo.OmaUtil.Companion.getAdsRequestForAdTagDataSpec
 import com.mxplay.mediaads.exo.OmaUtil.Companion.getFriendlyObstructionPurpose
@@ -1159,8 +1156,7 @@ internal class MxAdTagLoader(
         }
     }
 
-    private inner class ComponentListener : com.mxplay.interactivemedia.api.AdsLoader.AdsLoadedListener, ContentProgressProvider, AdEvent.AdEventListener,
-        ErrorEventListener, VideoAdPlayer {
+    private inner class ComponentListener : com.mxplay.interactivemedia.api.AdsLoader.AdsLoadedListener, ContentProgressProvider, AdEvent.AdEventListener, AdErrorEvent.AdErrorListener, VideoAdPlayer {
         // AdsLoader.AdsLoadedListener implementation.
         override fun onAdsManagerLoaded(adsManagerLoadedEvent: AdsManagerLoadedEvent?) {
             val adsManager = adsManagerLoadedEvent!!.adsManager
@@ -1247,18 +1243,6 @@ internal class MxAdTagLoader(
                 pendingAdLoadError = AdLoadException.createForAllAds(error)
             }
             maybeNotifyPendingAdLoadError()
-        }
-
-        override fun onError(adBreakErrorEvent: AdBreakErrorEvent) {
-            if (configuration.debugModeEnabled) {
-                Log.d(TAG, "onAdBreakError $adBreakErrorEvent")
-            }
-        }
-
-        override fun onVastError(vastErrorEvent: VastErrorEvent) {
-            if (configuration.debugModeEnabled) {
-                Log.d(TAG, "onAdError", vastErrorEvent.error)
-            }
         }
 
         // VideoAdPlayer implementation.
