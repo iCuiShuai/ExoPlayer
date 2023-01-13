@@ -70,7 +70,7 @@ class Configuration(builder: Builder, appId: String) {
         var applicationVideoAdPlayerCallback: VideoAdPlayerCallback? = null
         var debugModeEnabled: Boolean = false
         var adsBehaviour: IAdsBehaviour? = null
-        var trackersConfig: BaseMxMediaSdkConfig.TrackersConfig? = null
+        var trackersConfig: TrackersConfig? = null
         var mxAdCustomTracker: IMxAdCustomTracker? = null
         var adTagUri: String? = null
         var initialBufferSizeForAdPlaybackMs: Int? = null
@@ -86,7 +86,7 @@ class Configuration(builder: Builder, appId: String) {
             this.mediaLoadTimeoutMs = if(mediaLoadTimeoutMs > 0) mediaLoadTimeoutMs else BaseMxMediaSdkConfig.MEDIA_LOAD_TIMEOUT_MS
         }
         fun maxMediaBitrateKbps(maxMediaBitrate : Int) =  apply{
-            this.maxMediaBitrate = if(maxMediaBitrate > 0) maxMediaBitrate else MxMediaSdkConfig.DEFAULT_MAX_BITRATE
+            this.maxMediaBitrate = if(maxMediaBitrate > 0) maxMediaBitrate else BaseMxMediaSdkConfig.DEFAULT_MAX_BITRATE
         }
         fun playAdBeforeStartPosition(playAdBeforeStartPosition: Boolean) = apply { this.playAdBeforeStartPosition = playAdBeforeStartPosition }
         fun adMediaMimeTypes(adMediaMimeTypes: List<String>?) = apply { this.adMediaMimeTypes = adMediaMimeTypes }
@@ -94,7 +94,7 @@ class Configuration(builder: Builder, appId: String) {
         fun applicationVideoAdPlayerCallback(applicationVideoAdPlayerCallback: VideoAdPlayerCallback?) = apply { this.applicationVideoAdPlayerCallback = applicationVideoAdPlayerCallback }
         fun debugModeEnabled(debugModeEnabled: Boolean) = apply { this.debugModeEnabled = debugModeEnabled }
         fun adsBehaviour(adsBehaviour: IAdsBehaviour) = apply { this.adsBehaviour = adsBehaviour }
-        fun trackersConfig(trackersConfig: BaseMxMediaSdkConfig.TrackersConfig) = apply { this.trackersConfig = trackersConfig }
+        fun trackersConfig(trackersConfig: TrackersConfig) = apply { this.trackersConfig = trackersConfig }
         fun mxAdCustomTracker(mxAdCustomTracker: IMxAdCustomTracker) = apply { this.mxAdCustomTracker = mxAdCustomTracker }
         fun adTagUri(adTagUri: String) = apply { this.adTagUri = adTagUri }
         fun initialBufferSizeForAdPlaybackMs(initialBufferSizeForAdPlaybackMs: Int) = apply { this.initialBufferSizeForAdPlaybackMs = initialBufferSizeForAdPlaybackMs}

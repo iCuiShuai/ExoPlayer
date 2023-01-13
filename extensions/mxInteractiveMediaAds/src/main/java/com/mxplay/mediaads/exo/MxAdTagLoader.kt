@@ -41,6 +41,7 @@ import com.mxplay.adloader.AdTagData
 import com.mxplay.adloader.AdsBehaviour.AdPlaybackStateHost
 import com.mxplay.adloader.AdsBehaviourWatchTime
 import com.mxplay.adloader.IAdsBehaviour
+import com.mxplay.adloader.utils.Utils
 import com.mxplay.interactivemedia.api.*
 import com.mxplay.interactivemedia.api.player.*
 import com.mxplay.mediaads.exo.OmaUtil.Companion.getAdGroupTimesUsForCuePoints
@@ -50,7 +51,6 @@ import com.mxplay.mediaads.exo.OmaUtil.Companion.getStringForVideoProgressUpdate
 import com.mxplay.mediaads.exo.OmaUtil.Companion.imaLooper
 import com.mxplay.mediaads.exo.OmaUtil.Companion.isAdGroupLoadError
 import com.mxplay.mediaads.exo.OmaUtil.OmaFactory
-import com.mxplay.mediaads.exo.Util.INITIAL_BUFFER_FOR_AD_PLAYBACK_MS
 import java.io.IOException
 import java.lang.annotation.Documented
 import java.lang.annotation.Retention
@@ -569,7 +569,7 @@ internal class MxAdTagLoader(
     private fun updateAdProgress() {
         val videoProgressUpdate = getAdVideoProgressUpdate()
         if (configuration.debugModeEnabled) {
-            Log.d(TAG, "Ad progress: " + getStringForVideoProgressUpdate(videoProgressUpdate))
+            Log.d(TAG, "Ad progress: $imaAdState :: " + getStringForVideoProgressUpdate(videoProgressUpdate))
         }
         if (imaAdState == IMA_AD_STATE_NONE || imaAdMediaInfo == null) return
         val adMediaInfo = Assertions.checkNotNull(imaAdMediaInfo)
@@ -834,7 +834,7 @@ internal class MxAdTagLoader(
         if (configuration.initialBufferSizeForAdPlaybackMs != -1) {
             val initialBufferSizeForAdPlaybackMs = configuration.initialBufferSizeForAdPlaybackMs
             adUriBuilder.appendQueryParameter(
-                INITIAL_BUFFER_FOR_AD_PLAYBACK_MS,
+                Utils.INITIAL_BUFFER_FOR_AD_PLAYBACK_MS,
                 Integer.toString(initialBufferSizeForAdPlaybackMs)
             )
         }
