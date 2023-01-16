@@ -149,6 +149,7 @@ public final class SubtitleView extends FrameLayout implements TextOutput {
     output = canvasSubtitleOutput;
     innerSubtitleView = canvasSubtitleOutput;
     addView(innerSubtitleView);
+    innerSubtitleView.setVisibility(VISIBLE);
     viewType = VIEW_TYPE_CANVAS;
   }
 
