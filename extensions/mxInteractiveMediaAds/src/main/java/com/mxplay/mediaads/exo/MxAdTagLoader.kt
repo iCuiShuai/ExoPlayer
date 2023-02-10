@@ -190,15 +190,7 @@ internal class MxAdTagLoader(
         }
     }
 
-    /**
-     * Moves UI focus to the skip button (or other interactive elements), if currently shown. See
-     * [AdsManager.focus].
-     */
-    fun focusSkipButton() {
-        if (adsManager != null) {
-            adsManager!!.focus()
-        }
-    }
+
 
     /**
      * Starts passing events from this instance (including any pending ad playback state) and
@@ -260,7 +252,7 @@ internal class MxAdTagLoader(
                 if (configuration.debugModeEnabled) {
                     Log.d(TAG, "Discarding preloaded ad $imaAdInfo")
                 }
-                adsManager.discardAdBreak()
+                adsManager.discardAdBreak() //TODO not implemented admanager
             }
             if (playWhenReady) {
                 adsManager.resume()
