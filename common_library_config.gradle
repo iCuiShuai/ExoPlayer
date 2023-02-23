@@ -31,4 +31,8 @@ android {
     }
 
     testOptions.unitTests.includeAndroidResources = true
+
+    lintOptions {
+        lintConfig file('lint.xml')
+    }
 }
