@@ -20,7 +20,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.2.2'
+        classpath 'com.android.tools.build:gradle:7.2.2'
         classpath 'com.google.android.gms:strict-version-matcher-plugin:1.2.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
@@ -30,12 +30,14 @@ allprojects {
         google()
         jcenter()
         maven { url 'http://mx.nexus.com:8098/nexus/content/repositories/releases/'
+            allowInsecureProtocol = true
             credentials {
                 username "$System.env.MX_NEXUS_USER"
                 password "$System.env.MX_NEXUS_PW"
             }
         }
         maven { url 'http://mx.nexus.com:8098/nexus/content/repositories/snapshots/'
+            allowInsecureProtocol = true
             credentials {
                 username "$System.env.MX_NEXUS_USER"
                 password "$System.env.MX_NEXUS_PW"
