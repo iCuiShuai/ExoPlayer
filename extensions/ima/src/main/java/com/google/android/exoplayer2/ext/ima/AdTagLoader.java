@@ -630,13 +630,21 @@ import java.util.concurrent.TimeUnit;
     }
     request.setContentProgressProvider(componentListener);
     adsBehaviour.onAllAdsRequested();
-    if (request.getAdTagUrl() != null) {
-      adsBehaviour.provideAdTagUri(Uri.parse(request.getAdTagUrl()), adTagData -> {
-        request.setAdTagUrl(adTagData.getAdTag().toString());
+    try {
+      if (request.getAdTagUrl() != null) {
+        adsBehaviour.provideAdTagUri(Uri.parse(request.getAdTagUrl()), adTagData -> {
+          request.setAdTagUrl(adTagData.getAdTag().toString());
+          adsLoader.requestAds(request);
+        });
+      }else
         adsLoader.requestAds(request);
-      });
-    }else
-      adsLoader.requestAds(request);
+    }catch (Exception e){
+      adPlaybackState = new AdPlaybackState(adsId);
+      updateAdPlaybackState();
+      pendingAdLoadError = AdLoadException.createForAllAds(e);
+      maybeNotifyPendingAdLoadError();
+    }
+
 
     return adsLoader;
   }
