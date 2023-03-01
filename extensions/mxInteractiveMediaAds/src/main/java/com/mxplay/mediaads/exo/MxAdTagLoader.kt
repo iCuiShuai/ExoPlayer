@@ -89,7 +89,6 @@ internal class MxAdTagLoader(
     private var player: Player? = null
     private var lastContentProgress: VideoProgressUpdate
     private var lastAdProgress: VideoProgressUpdate
-    private var lastVolumePercent = 0
     private var adsManager: AdsManager? = null
     private var isAdsManagerInitialized = false
     private var pendingAdLoadError: AdLoadException? = null
@@ -206,7 +205,6 @@ internal class MxAdTagLoader(
             }
             return
         }
-        lastVolumePercent = 0
         lastAdProgress = VideoProgressUpdate.VIDEO_TIME_NOT_READY
         lastContentProgress = VideoProgressUpdate.VIDEO_TIME_NOT_READY
         maybeNotifyPendingAdLoadError()
@@ -273,7 +271,6 @@ internal class MxAdTagLoader(
             adPlaybackState = adPlaybackState.withAdResumePositionUs(
                     if (playingAd) C.msToUs(player.currentPosition) else 0)
         }
-        lastVolumePercent = getPlayerVolumePercent()
         lastAdProgress = getAdVideoProgressUpdate()
         lastContentProgress = getContentVideoProgressUpdate()
         player.removeListener(this)
@@ -576,25 +573,7 @@ internal class MxAdTagLoader(
         handler.removeCallbacks(updateAdProgressRunnable)
     }
 
-    // Check for a selected track using an audio renderer.
-    private fun getPlayerVolumePercent(): Int {
-        val player = player ?: return lastVolumePercent
-        val audioComponent = player.audioComponent
-        if (audioComponent != null) {
-            return (audioComponent.volume * 100).toInt()
-        }
 
-        // Check for a selected track using an audio renderer.
-        val trackSelections = player.currentTrackSelections
-        var i = 0
-        while (i < player.rendererCount && i < trackSelections.length) {
-            if (player.getRendererType(i) == C.TRACK_TYPE_AUDIO && trackSelections[i] != null) {
-                return 100
-            }
-            i++
-        }
-        return 0
-    }
 
     private fun handleAdEvent(adEvent: AdEvent) {
         if (adsManager == null) {
@@ -1251,7 +1230,7 @@ internal class MxAdTagLoader(
         }
 
         override val volume: Int
-            get() = getPlayerVolumePercent()
+            get() = 1 //Since player don't have volume controls so always return 1
 
         override fun loadAd(adMediaInfo: AdMediaInfo?, adPodInfo: AdPodInfo?) {
             try {
