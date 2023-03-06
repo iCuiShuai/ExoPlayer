@@ -127,7 +127,7 @@ class BehaviourTracker(
     override fun onAdError(adErrorEvent: AdErrorEvent?) {
         val adError = adErrorEvent?.error
         if (adError != null) {
-            if (adPlaybackStateHost?.adPlaybackState == AdPlaybackState.NONE){
+            if (adPlaybackStateHost?.adPlaybackState == AdPlaybackState.NONE || adPlaybackStateHost?.adPlaybackState?.adGroupCount == 0){
                 videoAdsTracker.run { onAdsManagerRequestFailed(adError.errorCodeNumber, Exception(adError.message)) }
             }else{
                 videoAdsTracker.run { trackEvent(VideoAdsTracker.EVENT_ERROR, buildErrorParams(adError.errorCodeNumber, Exception(adError.message), lastStartRequestAdPodIndex, lastRequestedAdIndexInPod)) }
