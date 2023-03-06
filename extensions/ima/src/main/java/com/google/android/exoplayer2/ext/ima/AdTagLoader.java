@@ -454,6 +454,7 @@ import java.util.concurrent.TimeUnit;
     destroyAdsManager();
     adsLoader.removeAdsLoadedListener(componentListener);
     adsLoader.removeAdErrorListener(componentListener);
+    adsLoader.removeAdErrorListener(adsBehaviour.provideBehaviourTracker());
     if (configuration.applicationAdErrorListener != null) {
       adsLoader.removeAdErrorListener(configuration.applicationAdErrorListener);
     }
@@ -606,6 +607,7 @@ import java.util.concurrent.TimeUnit;
       Context context, ImaSdkSettings imaSdkSettings, AdDisplayContainer adDisplayContainer) {
     AdsLoader adsLoader = imaFactory.createAdsLoader(context, imaSdkSettings, adDisplayContainer);
     adsLoader.addAdErrorListener(componentListener);
+    adsLoader.addAdErrorListener(adsBehaviour.provideBehaviourTracker());
     if (configuration.applicationAdErrorListener != null) {
       adsLoader.addAdErrorListener(configuration.applicationAdErrorListener);
     }
@@ -1420,10 +1422,12 @@ import java.util.concurrent.TimeUnit;
       if (configuration.applicationAdErrorListener != null) {
         adsManager.removeAdErrorListener(configuration.applicationAdErrorListener);
       }
+      adsManager.removeAdErrorListener(adsBehaviour.provideBehaviourTracker());
       adsManager.removeAdEventListener(componentListener);
       if (configuration.applicationAdEventListener != null) {
         adsManager.removeAdEventListener(configuration.applicationAdEventListener);
       }
+      adsManager.removeAdEventListener(adsBehaviour.provideBehaviourTracker());
       adsManager.destroy();
       adsManager = null;
     }
