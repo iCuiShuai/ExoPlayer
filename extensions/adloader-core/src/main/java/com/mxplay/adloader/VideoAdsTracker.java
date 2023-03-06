@@ -246,7 +246,6 @@ public abstract class VideoAdsTracker {
         result.put(AD_LOADER_NAME, adLoaderName);
         result.put(START_TIME, String.valueOf(startTime));
         result.put(TIME_STAMP, String.valueOf(System.currentTimeMillis()));
-        result.put("isNetworkConnected", String.valueOf(isNetworkConnected()));
         result.put(CATEGORY, CATEGORY_DFP_ADS);
         trackEvent(EVENT_AD_OPPORTUNITY, result);
     }
@@ -263,6 +262,4 @@ public abstract class VideoAdsTracker {
     public abstract void trackEvent(@NonNull String eventName, @NonNull Map<String, String> params);
 
     public abstract boolean isVmapRequest();
-
-    public boolean isNetworkConnected() {return true;}
 }
