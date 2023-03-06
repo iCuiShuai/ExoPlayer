@@ -26,6 +26,8 @@ public abstract class VideoAdsTracker {
     public static final String EVENT_VAST_SUCCESS = "vastSuccess";
     public static final String EVENT_VAST_FAIL = "vastFail";
     public static final String EVENT_ERROR = "error";
+    public static final String EVENT_AD_OPPORTUNITY = "AdOpportunity";
+    public static final String EVENT_AD_SHOWN = "AdShown";
 
 
 
@@ -239,8 +241,28 @@ public abstract class VideoAdsTracker {
         trackEvent(eventName, params);
     }
 
-    
+    public void sendAdOpportunity() {
+        Map<String, String> result = new HashMap<>();
+        result.put(AD_LOADER_NAME, adLoaderName);
+        result.put(START_TIME, String.valueOf(startTime));
+        result.put(TIME_STAMP, String.valueOf(System.currentTimeMillis()));
+        result.put("isNetworkConnected", String.valueOf(isNetworkConnected()));
+        result.put(CATEGORY, CATEGORY_DFP_ADS);
+        trackEvent(EVENT_AD_OPPORTUNITY, result);
+    }
+
+    public void adShown() {
+        Map<String, String> result = new HashMap<>();
+        result.put(AD_LOADER_NAME, adLoaderName);
+        result.put(START_TIME, String.valueOf(startTime));
+        result.put(TIME_STAMP, String.valueOf(System.currentTimeMillis()));
+        result.put(CATEGORY, CATEGORY_DFP_ADS);
+        trackEvent(EVENT_AD_SHOWN, result);
+    }
+
     public abstract void trackEvent(@NonNull String eventName, @NonNull Map<String, String> params);
 
     public abstract boolean isVmapRequest();
+
+    public boolean isNetworkConnected() {return true;}
 }

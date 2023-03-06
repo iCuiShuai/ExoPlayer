@@ -55,6 +55,14 @@ class BehaviourTracker(
         videoAdsTracker.onAdManagerRequested(emptyMap())
     }
 
+    override fun sendAdOpportunity() {
+        videoAdsTracker.sendAdOpportunity()
+    }
+
+    override fun adShown() {
+        videoAdsTracker.adShown()
+    }
+
     override fun onContentPositionChanged(player: Player, timeline: Timeline, period: Timeline.Period?, adGroupIndexProvider: (adPlaybackState: AdPlaybackState, playerPositionUs: Long) -> Int) {
         val contentPositionMs = AdsBehaviour.getContentPeriodPositionMs(player, timeline, period)
         tryTrackingVastRequest(contentPositionMs, adGroupIndexProvider)
