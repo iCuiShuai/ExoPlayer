@@ -51,6 +51,7 @@ public abstract class VideoAdsTracker {
 
     public final static String AD_UNIT_ID = "adUnitId";
     public final static String AD_UNIT_NAME = "adUnitName";
+    public final static String AD_PATH = "adPath";
 
     public static VideoAdsTracker getNoOpTracker(){
         return new VideoAdsTracker("") {
