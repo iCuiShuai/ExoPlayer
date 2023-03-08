@@ -222,6 +222,11 @@ import java.util.concurrent.TimeUnit;
    */
   private long waitingForPreloadElapsedRealtimeMs;
 
+  /**
+   *  only tracked once even though there are multiple
+   */
+  private boolean adShownTracked;
+
   /** Creates a new ad tag loader, starting the ad request if the ad tag is valid. */
   @SuppressWarnings({"methodref.receiver.bound.invalid", "method.invocation.invalid"})
   public AdTagLoader(
@@ -632,6 +637,7 @@ import java.util.concurrent.TimeUnit;
     }
     request.setContentProgressProvider(componentListener);
     adsBehaviour.onAllAdsRequested();
+    adsBehaviour.sendAdOpportunity();
     try {
       if (request.getAdTagUrl() != null) {
         adsBehaviour.provideAdTagUri(Uri.parse(request.getAdTagUrl()), adTagData -> {
@@ -650,7 +656,6 @@ import java.util.concurrent.TimeUnit;
 
     return adsLoader;
   }
-
   private void maybeInitializeAdsManager(long contentPositionMs, long contentDurationMs) {
     @Nullable AdsManager adsManager = this.adsManager;
     if (!isAdsManagerInitialized && adsManager != null) {
@@ -1131,6 +1136,10 @@ import java.util.concurrent.TimeUnit;
         }
       }
       updateAdProgress();
+      if (!adShownTracked) {
+        adShownTracked = true;
+        adsBehaviour.adShown();
+      }
     } else {
       imaAdState = IMA_AD_STATE_PLAYING;
       checkState(adMediaInfo.equals(imaAdMediaInfo));

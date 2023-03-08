@@ -208,6 +208,12 @@ import java.util.Objects;
    */
   private long waitingForPreloadElapsedRealtimeMs;
 
+  /**
+   *  only tracked once even though there are multiple
+   */
+  private boolean adShownTracked;
+
+
   /** Creates a new ad tag loader, starting the ad request if the ad tag is valid. */
   @SuppressWarnings({"methodref.receiver.bound.invalid", "method.invocation.invalid"})
   public MxAdTagLoader(
@@ -577,6 +583,7 @@ import java.util.Objects;
     request.setUserRequestContext(pendingAdRequestContext);
     request.setContentProgressProvider(componentListener);
     adsBehaviour.onAllAdsRequested();
+    adsBehaviour.sendAdOpportunity();
     if (request.getAdTagUrl() != null) {
       adsBehaviour.provideAdTagUri(Uri.parse(request.getAdTagUrl()), adTagData -> {
         request.setAdTagUrl(adTagData.getAdTag().toString());
@@ -1057,6 +1064,10 @@ import java.util.Objects;
         }
       }
       updateAdProgress();
+      if (!adShownTracked) {
+        adShownTracked = true;
+        adsBehaviour.adShown();
+      }
     } else {
       imaAdState = IMA_AD_STATE_PLAYING;
       checkState(adMediaInfo.equals(imaAdMediaInfo));
