@@ -811,6 +811,12 @@ import java.util.Objects;
           AdPodInfo adPodInfo = adEvent.getAd().getAdPodInfo();
           adsBehaviour.handleAudioAdLoaded(adPodInfo.getPodIndex(), adPodInfo.getAdPosition() - 1);
         }
+      case STARTED:
+        if (!adShownTracked) {
+          adShownTracked = true;
+          adsBehaviour.adShown();
+        }
+        break;
       default:
         break;
     }
@@ -1064,10 +1070,6 @@ import java.util.Objects;
         }
       }
       updateAdProgress();
-      if (!adShownTracked) {
-        adShownTracked = true;
-        adsBehaviour.adShown();
-      }
     } else {
       imaAdState = IMA_AD_STATE_PLAYING;
       checkState(adMediaInfo.equals(imaAdMediaInfo));
