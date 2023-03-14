@@ -222,6 +222,11 @@ import java.util.concurrent.TimeUnit;
    */
   private long waitingForPreloadElapsedRealtimeMs;
 
+  /**
+   *  only tracked once even though there are multiple
+   */
+  private boolean adShownTracked;
+
   /** Creates a new ad tag loader, starting the ad request if the ad tag is valid. */
   @SuppressWarnings({"methodref.receiver.bound.invalid", "method.invocation.invalid"})
   public AdTagLoader(
@@ -454,6 +459,7 @@ import java.util.concurrent.TimeUnit;
     destroyAdsManager();
     adsLoader.removeAdsLoadedListener(componentListener);
     adsLoader.removeAdErrorListener(componentListener);
+    adsLoader.removeAdErrorListener(adsBehaviour.provideBehaviourTracker());
     if (configuration.applicationAdErrorListener != null) {
       adsLoader.removeAdErrorListener(configuration.applicationAdErrorListener);
     }
@@ -606,6 +612,7 @@ import java.util.concurrent.TimeUnit;
       Context context, ImaSdkSettings imaSdkSettings, AdDisplayContainer adDisplayContainer) {
     AdsLoader adsLoader = imaFactory.createAdsLoader(context, imaSdkSettings, adDisplayContainer);
     adsLoader.addAdErrorListener(componentListener);
+    adsLoader.addAdErrorListener(adsBehaviour.provideBehaviourTracker());
     if (configuration.applicationAdErrorListener != null) {
       adsLoader.addAdErrorListener(configuration.applicationAdErrorListener);
     }
@@ -630,17 +637,25 @@ import java.util.concurrent.TimeUnit;
     }
     request.setContentProgressProvider(componentListener);
     adsBehaviour.onAllAdsRequested();
-    if (request.getAdTagUrl() != null) {
-      adsBehaviour.provideAdTagUri(Uri.parse(request.getAdTagUrl()), adTagData -> {
-        request.setAdTagUrl(adTagData.getAdTag().toString());
+    adsBehaviour.sendAdOpportunity();
+    try {
+      if (request.getAdTagUrl() != null) {
+        adsBehaviour.provideAdTagUri(Uri.parse(request.getAdTagUrl()), adTagData -> {
+          request.setAdTagUrl(adTagData.getAdTag().toString());
+          adsLoader.requestAds(request);
+        });
+      }else
         adsLoader.requestAds(request);
-      });
-    }else
-      adsLoader.requestAds(request);
+    }catch (Exception e){
+      adPlaybackState = new AdPlaybackState(adsId);
+      updateAdPlaybackState();
+      pendingAdLoadError = AdLoadException.createForAllAds(e);
+      maybeNotifyPendingAdLoadError();
+    }
+
 
     return adsLoader;
   }
-
   private void maybeInitializeAdsManager(long contentPositionMs, long contentDurationMs) {
     @Nullable AdsManager adsManager = this.adsManager;
     if (!isAdsManagerInitialized && adsManager != null) {
@@ -868,6 +883,12 @@ import java.util.concurrent.TimeUnit;
         if (adEvent.getAd().getVastMediaWidth() <= 1 && adEvent.getAd().getVastMediaHeight() <= 1){
           AdPodInfo adPodInfo = adEvent.getAd().getAdPodInfo();
           adsBehaviour.handleAudioAdLoaded(adPodInfo.getPodIndex(), adPodInfo.getAdPosition() - 1);
+        }
+        break;
+      case STARTED:
+        if (!adShownTracked) {
+          adShownTracked = true;
+          adsBehaviour.adShown();
         }
         break;
       default:
@@ -1412,10 +1433,12 @@ import java.util.concurrent.TimeUnit;
       if (configuration.applicationAdErrorListener != null) {
         adsManager.removeAdErrorListener(configuration.applicationAdErrorListener);
       }
+      adsManager.removeAdErrorListener(adsBehaviour.provideBehaviourTracker());
       adsManager.removeAdEventListener(componentListener);
       if (configuration.applicationAdEventListener != null) {
         adsManager.removeAdEventListener(configuration.applicationAdEventListener);
       }
+      adsManager.removeAdEventListener(adsBehaviour.provideBehaviourTracker());
       adsManager.destroy();
       adsManager = null;
     }
