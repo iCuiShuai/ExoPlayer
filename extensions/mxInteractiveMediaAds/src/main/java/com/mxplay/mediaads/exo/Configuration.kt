@@ -1,13 +1,12 @@
 package com.mxplay.mediaads.exo
 
 import android.content.Context
-import android.net.Uri
 import com.google.android.exoplayer2.C
 import com.mxplay.adloader.AdsBehaviour
 import com.mxplay.adloader.AdsBehaviourOffline
 import com.mxplay.adloader.IAdsBehaviour
-import com.mxplay.interactivemedia.api.IMxAdCustomTracker
-import com.mxplay.interactivemedia.api.MxMediaSdkConfig
+import com.mxplay.interactivemedia.api.*
+import com.mxplay.interactivemedia.api.player.VideoAdPlayerCallback
 import java.util.concurrent.ExecutorService
 
 /** Stores configuration for ad loading and playback.  */
@@ -22,7 +21,7 @@ class Configuration(builder: Builder, appId: String) {
     val adPreloadTimeoutMs: Long
 
     val playAdBeforeStartPosition: Boolean
-    val applicationVideoAdPlayerCallback: com.mxplay.interactivemedia.api.player.VideoAdPlayer.VideoAdPlayerCallback?
+    val applicationVideoAdPlayerCallback: VideoAdPlayerCallback?
     val debugModeEnabled: Boolean
     val adsBehaviour: IAdsBehaviour
     val mxMediaSdkConfig: MxMediaSdkConfig
@@ -36,16 +35,17 @@ class Configuration(builder: Builder, appId: String) {
         applicationVideoAdPlayerCallback = builder.applicationVideoAdPlayerCallback
         debugModeEnabled = builder.debugModeEnabled
         adsBehaviour = builder.adsBehaviour ?: AdsBehaviour(builder.vastLoadTimeoutMs
-                ?: MxMediaSdkConfig.VAST_LOAD_TIMEOUT_MS, debugModeEnabled)
+                ?: BaseMxMediaSdkConfig.VAST_LOAD_TIMEOUT_MS, debugModeEnabled)
         enableCustomTab = builder.enableCustomTab
         mxMediaSdkConfig = MxMediaSdkConfig.Builder(context, builder.userInfo, builder.trackersConfig).apply {
             builder.adMediaMimeTypes?.let { this.adMediaMimeTypes = it }
             builder.vastLoadTimeoutMs?.let { this.vastLoadTimeoutMs = it }
             builder.mediaLoadTimeoutMs?.let { this.mediaLoadTimeoutMs = it }
             builder.maxMediaBitrate?.let { this.maxMediaBitrate = it }
-            builder.companionAdSlots?.let { this.companionAdSlots = it }
+            builder.companionAdSlots?.let { this.companionAdSlots = it.map { x -> x as CompanionAdSlot }.toMutableList()}
             builder.mxAdCustomTracker?.let { this.mxAdCustomTracker = it }
-            builder.adTagUri?.let { this.adTagUri = it }
+            this.ppid = builder.ppid
+            builder.adTagUri?.let { this.adTagUri = it.toString() }
             debugModeEnabled = builder.debugModeEnabled
             isOfflineAds = adsBehaviour is AdsBehaviourOffline
         }.build(appId)
@@ -55,7 +55,7 @@ class Configuration(builder: Builder, appId: String) {
 
 
     data class Builder(val context: Context,
-                       val ioExecutor: ExecutorService, val userInfo: MxMediaSdkConfig.UserInfo) {
+                       val ioExecutor: ExecutorService, val userInfo: UserInfo) {
 
         var appName: String = ""
             private set
@@ -67,44 +67,46 @@ class Configuration(builder: Builder, appId: String) {
         var maxMediaBitrate: Int? = null
         var playAdBeforeStartPosition: Boolean = true
         var adMediaMimeTypes: List<String>? = null
-        var companionAdSlots: Collection<com.mxplay.interactivemedia.api.CompanionAdSlot>? = null
-        var applicationVideoAdPlayerCallback: com.mxplay.interactivemedia.api.player.VideoAdPlayer.VideoAdPlayerCallback? = null
+        var companionAdSlots: MutableCollection<com.mxplay.interactivemedia.api.ICompanionAdSlot>? = null
+        var applicationVideoAdPlayerCallback: VideoAdPlayerCallback? = null
         var debugModeEnabled: Boolean = false
         var adsBehaviour: IAdsBehaviour? = null
-        var trackersConfig: MxMediaSdkConfig.TrackersConfig? = null
+        var trackersConfig: TrackersConfig? = null
         var mxAdCustomTracker: IMxAdCustomTracker? = null
-        var adTagUri: Uri? = null
+        var adTagUri: String? = null
         var initialBufferSizeForAdPlaybackMs: Int? = null
         var enableCustomTab = false
+        var ppid : String? = null
 
         fun appName(appName: String) = apply { this.appName = appName }
         fun adUnitId(adUnitId: String) = apply { this.adUnitId = adUnitId }
         fun adPreloadTimeoutMs(adPreloadTimeoutMs: Long) = apply { this.adPreloadTimeoutMs = adPreloadTimeoutMs }
         fun vastLoadTimeoutMs(vastLoadTimeoutMs: Int) = apply {
-            this.vastLoadTimeoutMs = if(vastLoadTimeoutMs > 0) vastLoadTimeoutMs else MxMediaSdkConfig.VAST_LOAD_TIMEOUT_MS
+            this.vastLoadTimeoutMs = if(vastLoadTimeoutMs > 0) vastLoadTimeoutMs else BaseMxMediaSdkConfig.VAST_LOAD_TIMEOUT_MS
         }
         fun mediaLoadTimeoutMs(mediaLoadTimeoutMs: Int) = apply {
-            this.mediaLoadTimeoutMs = if(mediaLoadTimeoutMs > 0) mediaLoadTimeoutMs else MxMediaSdkConfig.MEDIA_LOAD_TIMEOUT_MS
+            this.mediaLoadTimeoutMs = if(mediaLoadTimeoutMs > 0) mediaLoadTimeoutMs else BaseMxMediaSdkConfig.MEDIA_LOAD_TIMEOUT_MS
         }
         fun maxMediaBitrateKbps(maxMediaBitrate : Int) =  apply{
-            this.maxMediaBitrate = if(maxMediaBitrate > 0) maxMediaBitrate else MxMediaSdkConfig.DEFAULT_MAX_BITRATE
-
+            this.maxMediaBitrate = if(maxMediaBitrate > 0) maxMediaBitrate else BaseMxMediaSdkConfig.DEFAULT_MAX_BITRATE
         }
         fun playAdBeforeStartPosition(playAdBeforeStartPosition: Boolean) = apply { this.playAdBeforeStartPosition = playAdBeforeStartPosition }
         fun adMediaMimeTypes(adMediaMimeTypes: List<String>?) = apply { this.adMediaMimeTypes = adMediaMimeTypes }
-        fun companionAdSlots(companionAdSlots: Collection<com.mxplay.interactivemedia.api.CompanionAdSlot>?) = apply { this.companionAdSlots = companionAdSlots }
-        fun applicationVideoAdPlayerCallback(applicationVideoAdPlayerCallback: com.mxplay.interactivemedia.api.player.VideoAdPlayer.VideoAdPlayerCallback?) = apply { this.applicationVideoAdPlayerCallback = applicationVideoAdPlayerCallback }
+        fun companionAdSlots(companionAdSlots: MutableCollection<com.mxplay.interactivemedia.api.ICompanionAdSlot>?) = apply { this.companionAdSlots = companionAdSlots }
+        fun applicationVideoAdPlayerCallback(applicationVideoAdPlayerCallback: VideoAdPlayerCallback?) = apply { this.applicationVideoAdPlayerCallback = applicationVideoAdPlayerCallback }
         fun debugModeEnabled(debugModeEnabled: Boolean) = apply { this.debugModeEnabled = debugModeEnabled }
         fun adsBehaviour(adsBehaviour: IAdsBehaviour) = apply { this.adsBehaviour = adsBehaviour }
-        fun trackersConfig(trackersConfig: MxMediaSdkConfig.TrackersConfig) = apply { this.trackersConfig = trackersConfig }
+        fun trackersConfig(trackersConfig: TrackersConfig) = apply { this.trackersConfig = trackersConfig }
         fun mxAdCustomTracker(mxAdCustomTracker: IMxAdCustomTracker) = apply { this.mxAdCustomTracker = mxAdCustomTracker }
-        fun adTagUri(adTagUri: Uri) = apply { this.adTagUri = adTagUri }
+        fun adTagUri(adTagUri: String) = apply { this.adTagUri = adTagUri }
         fun initialBufferSizeForAdPlaybackMs(initialBufferSizeForAdPlaybackMs: Int) = apply { this.initialBufferSizeForAdPlaybackMs = initialBufferSizeForAdPlaybackMs}
         fun enableCustomTab(enable : Boolean) = apply { this.enableCustomTab = enable }
-
+        fun ppid(ppid: String): Builder = apply { this.ppid = ppid }
         fun build(appId : String): Configuration {
             return Configuration(this, appId)
         }
+
+
     }
 
 

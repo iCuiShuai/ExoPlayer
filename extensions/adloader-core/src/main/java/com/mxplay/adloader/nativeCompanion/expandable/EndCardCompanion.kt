@@ -11,13 +11,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.widget.AppCompatTextView
-import androidx.core.content.ContextCompat
 import ccom.mxplay.adloader.R
 import com.mxplay.adloader.AdsBehaviour
 import com.mxplay.adloader.nativeCompanion.*
 import com.mxplay.adloader.nativeCompanion.expandable.data.EndCardTemplateData
 import com.mxplay.adloader.utils.DeviceUtils
 import com.mxplay.interactivemedia.api.AdEvent
+import com.mxplay.interactivemedia.api.AdEventType
 import com.mxplay.interactivemedia.api.CompanionAdSlot
 import com.mxplay.logger.ZenLogger
 import org.json.JSONObject
@@ -44,8 +44,8 @@ class EndCardCompanion(
 
         }
     }
-    private val context: Context = companionAdSlot.container.context
-    private val container = companionAdSlot.container
+    private val context: Context = companionAdSlot.getContainer()?.context!!
+    private val container = companionAdSlot.getContainer()!!
     private var  hostViewVisibilityTracker : VisibilityTracker? = null
     private var companionView : ViewGroup? = null
     private var isImpressed : Boolean = false
@@ -113,10 +113,10 @@ class EndCardCompanion(
 
     override fun onAdEvent(adEvent: AdEvent) {
         super.onAdEvent(adEvent)
-        val type: AdEvent.AdEventType = adEvent.type
+        val type: AdEventType = adEvent.type
         val player = adsBehaviour?.getPlayer()
-        isThirdQuartileReached =  isThirdQuartileReached || type == AdEvent.AdEventType.THIRD_QUARTILE
-        if (type == AdEvent.AdEventType.AD_PROGRESS && player != null && companionState == CompanionState.PRELOADED) {
+        isThirdQuartileReached =  isThirdQuartileReached || type == AdEventType.THIRD_QUARTILE
+        if (type == AdEventType.AD_PROGRESS && player != null && companionState == CompanionState.PRELOADED) {
             val contentDuration: Long = player.duration
             val contentPos: Long = player.currentPosition
             val isCompanionDisabled = container.getTag(R.id.is_companion_disabled)

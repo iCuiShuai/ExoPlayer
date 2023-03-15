@@ -17,7 +17,7 @@ class MultiCorrectSurveyRenderer(
         private var listener: SurveyRendererListener?
 ): SurveyRenderer() {
 
-    private val context = companionAdSlot.container.context
+    private val context = companionAdSlot.getContainer()?.context
     private var selectedPosition = mutableSetOf<Int>()
 
     override fun getSurveyAnswer(): SurveyAnswerResponse? {

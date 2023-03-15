@@ -11,6 +11,7 @@ import com.google.android.exoplayer2.upstream.DataSchemeDataSource
 import com.google.android.exoplayer2.upstream.DataSpec
 import com.mxplay.interactivemedia.api.*
 import com.mxplay.interactivemedia.api.player.VideoAdPlayer
+import com.mxplay.interactivemedia.api.player.VideoProgressUpdate
 import java.io.IOException
 import java.util.*
 
@@ -124,9 +125,9 @@ class OmaUtil {
         fun isAdGroupLoadError(adError: AdError): Boolean {
             // TODO: Find out what other errors need to be handled (if any), and whether each one relates to
             // a single ad, ad group or the whole timeline.
-            return (adError.errorCode == com.mxplay.interactivemedia.api.AdError.AdErrorCode.VAST_LINEAR_ASSET_MISMATCH
+            return (adError.errorCode == AdError.AdErrorCode.VAST_LINEAR_ASSET_MISMATCH
                     || adError.errorCode == AdError.AdErrorCode.MEDIA_DURATION_MISMATCH
-                    || adError.errorCode == com.mxplay.interactivemedia.api.AdError.AdErrorCode.UNKNOWN_ERROR)
+                    || adError.errorCode == AdError.AdErrorCode.UNKNOWN_ERROR)
         }
 
 
@@ -139,8 +140,8 @@ class OmaUtil {
 
         /** Returns a human-readable representation of a video progress update.  */
         @JvmStatic
-        fun getStringForVideoProgressUpdate(videoProgressUpdate: com.mxplay.interactivemedia.api.player.VideoProgressUpdate): String {
-            return if (com.mxplay.interactivemedia.api.player.VideoProgressUpdate.VIDEO_TIME_NOT_READY == videoProgressUpdate) {
+        fun getStringForVideoProgressUpdate(videoProgressUpdate: VideoProgressUpdate): String {
+            return if (VideoProgressUpdate.VIDEO_TIME_NOT_READY == videoProgressUpdate) {
                 "not ready"
             } else {
                 Util.formatInvariant(

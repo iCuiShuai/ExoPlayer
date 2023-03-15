@@ -2,14 +2,12 @@ package com.mxplay.adloader.nativeCompanion.expandable
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.widget.*
 import ccom.mxplay.adloader.R
 import com.mxplay.adloader.nativeCompanion.CompanionResourceProvider
@@ -29,8 +27,8 @@ class BigBannerCompanion(
 ) : PlayerBottomCompanion(payload, companionAdSlot, eventsTracker, resourceProvider) {
 
 
-    private val context: Context = companionAdSlot.container.context
-    private val expandOverlayContainer : ViewGroup? = (companionAdSlot.container.parent as ViewGroup).findViewById(R.id.expandable_overlay)
+    private val context: Context = companionAdSlot.getContainer()?.context!!
+    private val expandOverlayContainer : ViewGroup? = (companionAdSlot.getContainer()?.parent as ViewGroup).findViewById(R.id.expandable_overlay)
     private var  templateBannerView : ViewGroup? = null
     private var  hostViewVisibilityTracker : VisibilityTracker? = null
 

@@ -38,8 +38,8 @@ class TableViewCompanion(
 ) {
 
 
-    private val context: Context = companionAdSlot.container.context
-    private val container = companionAdSlot.container
+    private val context: Context = companionAdSlot.getContainer()?.context!!
+    private val container = companionAdSlot.getContainer()!!
     private val expandOverlayContainer : ViewGroup? = (container.parent as ViewGroup).findViewById(R.id.expandable_overlay)
     private var  templateBannerView : ViewGroup? = null
     private var  hostViewVisibilityTracker : VisibilityTracker? = null

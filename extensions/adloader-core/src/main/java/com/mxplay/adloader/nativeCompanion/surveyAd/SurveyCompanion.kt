@@ -18,6 +18,7 @@ import com.mxplay.adloader.nativeCompanion.NativeCompanion
 import com.mxplay.adloader.nativeCompanion.surveyAd.model.*
 import com.mxplay.adloader.utils.SnackbarUtils
 import com.mxplay.interactivemedia.api.AdEvent
+import com.mxplay.interactivemedia.api.AdEventType
 import com.mxplay.interactivemedia.api.CompanionAdSlot
 import com.mxplay.interactivemedia.internal.data.RemoteDataSource
 import com.mxplay.logger.ZenLogger
@@ -34,8 +35,8 @@ class SurveyCompanion(
         private val adsBehaviour: AdsBehaviour?
 ): NativeCompanion(), SurveyAdRequest.SurveyAdsListener, SurveyRenderer.SurveyRendererListener {
 
-    private val context = companionAdSlot.container.context
-    private val container = companionAdSlot.container
+    private val context = companionAdSlot.getContainer()?.context!!
+    private val container = companionAdSlot.getContainer()!!
     private val layoutInflater = LayoutInflater.from(context)
 
     private var submitEnable = true
@@ -259,9 +260,9 @@ class SurveyCompanion(
 
     override fun onAdEvent(adEvent: AdEvent) {
         super.onAdEvent(adEvent)
-        val type: AdEvent.AdEventType = adEvent.type
+        val type: AdEventType = adEvent.type
 
-        if (type == AdEvent.AdEventType.CONTENT_RESUME_REQUESTED || type == AdEvent.AdEventType.COMPLETED || type == AdEvent.AdEventType.ALL_ADS_COMPLETED || type == AdEvent.AdEventType.SKIPPED) {
+        if (type == AdEventType.CONTENT_RESUME_REQUESTED || type == AdEventType.COMPLETED || type == AdEventType.ALL_ADS_COMPLETED || type == AdEventType.SKIPPED) {
             release()
             return
         }

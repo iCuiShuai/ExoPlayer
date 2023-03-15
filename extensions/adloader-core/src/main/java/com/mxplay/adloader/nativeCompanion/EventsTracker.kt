@@ -7,7 +7,6 @@ import com.mxplay.interactivemedia.internal.util.UrlStitchingService
 import com.mxplay.logger.ZenLogger
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import org.json.JSONObject
 
 @OptIn(FlowPreview::class)
 class EventsTracker(private val videoAdsTracker: VideoAdsTracker, private val urlStitchingService: UrlStitchingService, private val remoteDataSource: RemoteDataSource, private val companionSdkScope: CoroutineScope) {
@@ -75,7 +74,7 @@ class EventsTracker(private val videoAdsTracker: VideoAdsTracker, private val ur
             }
             clickTracker.forEach { clickTrackingUrl ->
                 try {
-                    val result = remoteDataSource.trackEventAsync(clickTrackingUrl, { url -> replaceMacros(urlStitchingService.replaceMacros(null, url, emptyMap()), data) }, { mutableMapOf() })
+                    val result = remoteDataSource.trackEventAsync(clickTrackingUrl, { url -> replaceMacros(urlStitchingService.replaceMacros(url), data) }, { mutableMapOf() })
                     if (result){
                         ZenLogger.dt(TAG, "Event tracked success")
                     } else ZenLogger.dt(TAG, "Event tracked failed")
@@ -114,7 +113,7 @@ class EventsTracker(private val videoAdsTracker: VideoAdsTracker, private val ur
             }
             impressionTracker.forEach { impressionUrl ->
                 try {
-                    val result = remoteDataSource.trackEventAsync(impressionUrl, { url -> replaceMacros(urlStitchingService.replaceMacros(null, url, emptyMap()), data) }, { mutableMapOf() })
+                    val result = remoteDataSource.trackEventAsync(impressionUrl, { url -> replaceMacros(urlStitchingService.replaceMacros(url), data) }, { mutableMapOf() })
                     if (result){
                         ZenLogger.dt(TAG, "Event impressionTracker success")
                     } else ZenLogger.dt(TAG, "Event impressionTracker failed")
@@ -149,7 +148,7 @@ class EventsTracker(private val videoAdsTracker: VideoAdsTracker, private val ur
                            item.isRemoteTracked = true
                            item.impressionTracker.forEach {
                                try {
-                                   val result = remoteDataSource.trackEventAsync(it, { url -> replaceMacros(urlStitchingService.replaceMacros(null, url, emptyMap()), item.data) }, { mutableMapOf() })
+                                   val result = remoteDataSource.trackEventAsync(it, { url -> replaceMacros(urlStitchingService.replaceMacros(url), item.data) }, { mutableMapOf() })
                                    if (result){
                                        ZenLogger.dt(TAG, "Event impressionTracker success")
                                    } else ZenLogger.dt(TAG, "Event impressionTracker failed")
@@ -171,7 +170,7 @@ class EventsTracker(private val videoAdsTracker: VideoAdsTracker, private val ur
              videoAdsTracker.trackCompanionEvent(name, data)
             trackers.forEach { trackerUrl ->
                 try {
-                    val result = remoteDataSource.trackEventAsync(trackerUrl, { url -> urlStitchingService.replaceMacros(null, url, emptyMap()) }, { mutableMapOf() })
+                    val result = remoteDataSource.trackEventAsync(trackerUrl, { url -> urlStitchingService.replaceMacros(url) }, { mutableMapOf() })
                     if (result){
                         ZenLogger.dt(TAG, "Survey Event ${name} tracker success")
                     } else ZenLogger.dt(TAG, "Survey Event ${name} tracker failed")

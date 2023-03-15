@@ -6,8 +6,11 @@ import com.mxplay.adloader.nativeCompanion.surveyAd.model.SurveyAdsResponse
 import com.mxplay.adloader.nativeCompanion.surveyAd.model.SurveyAnswerType
 import com.mxplay.interactivemedia.internal.data.RemoteDataSource
 import com.mxplay.logger.ZenLogger
+import io.ktor.client.call.*
+import io.ktor.client.statement.*
 import kotlinx.coroutines.*
 import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Response
 import okhttp3.ResponseBody
 import org.json.JSONObject
@@ -66,7 +69,7 @@ class SurveyAdRequest private constructor(builder: Builder) {
         if (!TextUtils.isEmpty(url)) {
             if (method == GET) return url + SURVEY_PATH_GET
             else {
-                val httpUrl = HttpUrl.parse(url + SURVEY_PATH_POST)
+                val httpUrl = (url + SURVEY_PATH_POST).toHttpUrlOrNull()
                 if (!requestParams.isNullOrEmpty()) {
                     val urlBuilder: HttpUrl.Builder? = httpUrl?.newBuilder()
                     for ((key, value) in requestParams.entries) {
@@ -91,21 +94,20 @@ class SurveyAdRequest private constructor(builder: Builder) {
         isAdLoading = false
     }
 
-    private suspend fun onApiResponseReceived(response: Response) = withContext(Dispatchers.IO) {
-        // decrypt response
-        val deResponse = response
+    private suspend fun onApiResponseReceived(response: HttpResponse) = withContext(Dispatchers.IO) {
+        // decrypt response0
+        val deResponse: HttpResponse = response
         var content: String? = null
         try {
-            val responseBody: ResponseBody? = deResponse.body()
-            content = responseBody?.string()
+            content = deResponse.body()
 
             // reponse failed
-            if (!response.isSuccessful) {
-                onFailed(response.code(), response.message(), content)
-            } else if (!deResponse.isSuccessful) { // decrypt reponse failed
-                onFailed(deResponse.code(), deResponse.message(), content)
+            if (!remoteDataSource.isSuccessful(response)) {
+                onFailed(response.status.value, response.status.description, content)
+            } else if (!remoteDataSource.isSuccessful(deResponse)) { // decrypt reponse failed
+                onFailed(deResponse.status.value, deResponse.status.description, content)
             } else if (TextUtils.isEmpty(content)) {
-                onFailed(deResponse.code(), "Read response body failed", content)
+                onFailed(deResponse.status.value, "Read response body failed", content)
             }
 
             onSucceed(content)

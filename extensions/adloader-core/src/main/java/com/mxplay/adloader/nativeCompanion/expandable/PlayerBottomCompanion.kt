@@ -29,8 +29,8 @@ abstract class PlayerBottomCompanion(
 ) : NativeCompanion(), VisibilityTracker.VisibilityTrackerListener {
 
 
-    private val context: Context = companionAdSlot.container.context
-    private val container = companionAdSlot.container
+    private val context: Context = companionAdSlot.getContainer()?.context!!
+    private val container = companionAdSlot.getContainer()!!
     private var visibilityTracker : VisibilityTracker? = null
     private var isImpressed : Boolean = false
     private var companionView : ViewGroup? = null
