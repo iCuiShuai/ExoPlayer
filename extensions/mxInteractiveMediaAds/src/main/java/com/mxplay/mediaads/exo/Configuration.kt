@@ -44,6 +44,7 @@ class Configuration(builder: Builder, appId: String) {
             builder.maxMediaBitrate?.let { this.maxMediaBitrate = it }
             builder.companionAdSlots?.let { this.companionAdSlots = it.map { x -> x as CompanionAdSlot }.toMutableList()}
             builder.mxAdCustomTracker?.let { this.mxAdCustomTracker = it }
+            this.ppid = builder.ppid
             builder.adTagUri?.let { this.adTagUri = it.toString() }
             debugModeEnabled = builder.debugModeEnabled
             isOfflineAds = adsBehaviour is AdsBehaviourOffline
@@ -75,6 +76,7 @@ class Configuration(builder: Builder, appId: String) {
         var adTagUri: String? = null
         var initialBufferSizeForAdPlaybackMs: Int? = null
         var enableCustomTab = false
+        var ppid : String? = null
 
         fun appName(appName: String) = apply { this.appName = appName }
         fun adUnitId(adUnitId: String) = apply { this.adUnitId = adUnitId }
@@ -99,10 +101,12 @@ class Configuration(builder: Builder, appId: String) {
         fun adTagUri(adTagUri: String) = apply { this.adTagUri = adTagUri }
         fun initialBufferSizeForAdPlaybackMs(initialBufferSizeForAdPlaybackMs: Int) = apply { this.initialBufferSizeForAdPlaybackMs = initialBufferSizeForAdPlaybackMs}
         fun enableCustomTab(enable : Boolean) = apply { this.enableCustomTab = enable }
-
+        fun ppid(ppid: String): Builder = apply { this.ppid = ppid }
         fun build(appId : String): Configuration {
             return Configuration(this, appId)
         }
+
+
     }
 
 
