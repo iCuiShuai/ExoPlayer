@@ -645,7 +645,9 @@ import java.util.concurrent.TimeUnit;
       }
       return adsLoader;
     } catch (Exception e) {
-      e.printStackTrace();
+      if (configuration.debugModeEnabled) {
+        e.printStackTrace();
+      }
       adPlaybackState = new AdPlaybackState(adsId);
       updateAdPlaybackState();
       pendingAdLoadError = AdLoadException.createForAllAds(e);
