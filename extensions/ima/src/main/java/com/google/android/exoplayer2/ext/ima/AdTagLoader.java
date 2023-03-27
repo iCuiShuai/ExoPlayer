@@ -149,7 +149,7 @@ import java.util.concurrent.TimeUnit;
   private final Runnable updateAdProgressRunnable;
   private final BiMap<AdMediaInfo, AdInfo> adInfoByAdMediaInfo;
   private final AdDisplayContainer adDisplayContainer;
-  private final AdsLoader adsLoader;
+  private final @Nullable AdsLoader adsLoader;
   private final IAdsBehaviour adsBehaviour;
   private Map<AdInfo, Uri> adUriMap = new HashMap<>();
 
@@ -316,15 +316,17 @@ import java.util.concurrent.TimeUnit;
           AdsLoadRequestTimeoutEvent adsLoadRequestTimeoutEvent = new AdsLoadRequestTimeoutEvent(pendingAdRequestContext);
           componentListener.onAdError(adsLoadRequestTimeoutEvent);
             adsBehaviour.onAdError(adsLoadRequestTimeoutEvent);
-            adsLoader.removeAdsLoadedListener(componentListener);
-            adsLoader.removeAdErrorListener(componentListener);
+            if (adsLoader != null){
+              adsLoader.removeAdsLoadedListener(componentListener);
+              adsLoader.removeAdErrorListener(componentListener);
+            }
             if (configuration.debugModeEnabled) Log.w(TAG, "Vast call forced time out");
         }
     }
   };
 
   /** Returns the underlying IMA SDK ads loader. */
-  public AdsLoader getAdsLoader() {
+  public @Nullable AdsLoader getAdsLoader() {
     return adsLoader;
   }
 
@@ -457,13 +459,15 @@ import java.util.concurrent.TimeUnit;
     released = true;
     pendingAdRequestContext = null;
     destroyAdsManager();
-    adsLoader.removeAdsLoadedListener(componentListener);
-    adsLoader.removeAdErrorListener(componentListener);
-    adsLoader.removeAdErrorListener(adsBehaviour.provideBehaviourTracker());
-    if (configuration.applicationAdErrorListener != null) {
-      adsLoader.removeAdErrorListener(configuration.applicationAdErrorListener);
+    if (this.adsLoader != null){
+      adsLoader.removeAdsLoadedListener(componentListener);
+      adsLoader.removeAdErrorListener(componentListener);
+      adsLoader.removeAdErrorListener(adsBehaviour.provideBehaviourTracker());
+      if (configuration.applicationAdErrorListener != null) {
+        adsLoader.removeAdErrorListener(configuration.applicationAdErrorListener);
+      }
+      adsLoader.release();
     }
-    adsLoader.release();
     imaPausedContent = false;
     imaAdState = IMA_AD_STATE_NONE;
     imaAdMediaInfo = null;
@@ -608,53 +612,46 @@ import java.util.concurrent.TimeUnit;
 
   // Internal methods.
 
-  private AdsLoader requestAds(
+  private @Nullable AdsLoader requestAds(
       Context context, ImaSdkSettings imaSdkSettings, AdDisplayContainer adDisplayContainer) {
-    AdsLoader adsLoader = imaFactory.createAdsLoader(context, imaSdkSettings, adDisplayContainer);
-    adsLoader.addAdErrorListener(componentListener);
-    adsLoader.addAdErrorListener(adsBehaviour.provideBehaviourTracker());
-    if (configuration.applicationAdErrorListener != null) {
-      adsLoader.addAdErrorListener(configuration.applicationAdErrorListener);
-    }
-    adsLoader.addAdsLoadedListener(componentListener);
-    AdsRequest request;
     try {
+      AdsLoader adsLoader = imaFactory.createAdsLoader(context, imaSdkSettings, adDisplayContainer);
+      adsLoader.addAdErrorListener(componentListener);
+      adsLoader.addAdErrorListener(adsBehaviour.provideBehaviourTracker());
+      if (configuration.applicationAdErrorListener != null) {
+        adsLoader.addAdErrorListener(configuration.applicationAdErrorListener);
+      }
+      adsLoader.addAdsLoadedListener(componentListener);
+      AdsRequest request;
       request = ImaUtil.getAdsRequestForAdTagDataSpec(imaFactory, adTagDataSpec);
-    } catch (IOException e) {
-      adPlaybackState = new AdPlaybackState(adsId);
-      updateAdPlaybackState();
-      pendingAdLoadError = AdLoadException.createForAllAds(e);
-      maybeNotifyPendingAdLoadError();
-      return adsLoader;
-    }
-    pendingAdRequestContext = new Object();
-    request.setUserRequestContext(pendingAdRequestContext);
-    if (configuration.enableContinuousPlayback != null) {
-      request.setContinuousPlayback(configuration.enableContinuousPlayback);
-    }
-    if (configuration.vastLoadTimeoutMs != TIMEOUT_UNSET) {
-      request.setVastLoadTimeout(configuration.vastLoadTimeoutMs);
-    }
-    request.setContentProgressProvider(componentListener);
-    adsBehaviour.onAllAdsRequested();
-    adsBehaviour.sendAdOpportunity();
-    try {
+      pendingAdRequestContext = new Object();
+      request.setUserRequestContext(pendingAdRequestContext);
+      if (configuration.enableContinuousPlayback != null) {
+        request.setContinuousPlayback(configuration.enableContinuousPlayback);
+      }
+      if (configuration.vastLoadTimeoutMs != TIMEOUT_UNSET) {
+        request.setVastLoadTimeout(configuration.vastLoadTimeoutMs);
+      }
+      request.setContentProgressProvider(componentListener);
+      adsBehaviour.onAllAdsRequested();
+      adsBehaviour.sendAdOpportunity();
       if (request.getAdTagUrl() != null) {
         adsBehaviour.provideAdTagUri(Uri.parse(request.getAdTagUrl()), adTagData -> {
           request.setAdTagUrl(adTagData.getAdTag().toString());
           adsLoader.requestAds(request);
         });
-      }else
+      }else {
         adsLoader.requestAds(request);
-    }catch (Exception e){
+      }
+      return adsLoader;
+    } catch (Exception e) {
+      e.printStackTrace();
       adPlaybackState = new AdPlaybackState(adsId);
       updateAdPlaybackState();
       pendingAdLoadError = AdLoadException.createForAllAds(e);
       maybeNotifyPendingAdLoadError();
+      return null;
     }
-
-
-    return adsLoader;
   }
   private void maybeInitializeAdsManager(long contentPositionMs, long contentDurationMs) {
     @Nullable AdsManager adsManager = this.adsManager;
