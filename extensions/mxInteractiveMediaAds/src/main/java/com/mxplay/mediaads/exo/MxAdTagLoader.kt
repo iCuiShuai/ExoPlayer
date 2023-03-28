@@ -1014,7 +1014,8 @@ internal class MxAdTagLoader(
                 && contentDurationMs != C.TIME_UNSET && pendingContentPositionMs == C.TIME_UNSET && (getContentPeriodPositionMs(Assertions.checkNotNull(player), timeline, period)
                         + THRESHOLD_END_OF_CONTENT_MS
                         >= contentDurationMs)) {
-            sendContentComplete()
+            //Not required since we are prefetching from the internal sdk itself.
+            //sendContentComplete()
         }
     }
 
@@ -1157,6 +1158,7 @@ internal class MxAdTagLoader(
         // ContentProgressProvider implementation.
         override fun getContentProgress(): VideoProgressUpdate {
             val videoProgressUpdate = getContentVideoProgressUpdate()
+            videoProgressUpdate.actualCurrentTimeMs = getContentPeriodPositionMs(player!!, timeline, period)
             if (configuration.debugModeEnabled) {
                 Log.d(
                         TAG,
