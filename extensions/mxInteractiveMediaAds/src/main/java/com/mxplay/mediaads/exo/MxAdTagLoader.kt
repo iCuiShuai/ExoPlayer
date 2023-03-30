@@ -748,6 +748,9 @@ internal class MxAdTagLoader(
                     fakeContentProgressOffsetMs = contentDurationMs
                 }
             }
+        } else if (!playingAd && wasPlayingAd && contentDurationMs != C.TIME_UNSET && imaAdState == IMA_AD_STATE_NONE) {
+            pendingContentPositionMs = C.TIME_UNSET
+            fakeContentProgressElapsedRealtimeMs = C.TIME_UNSET
         }
         if (configuration.debugModeEnabled) {
             Log.d(TAG, " handleTimelineOrPositionChanged $playingAd  fakeContentProgressElapsedRealtimeMs $fakeContentProgressElapsedRealtimeMs")
@@ -1158,7 +1161,6 @@ internal class MxAdTagLoader(
         // ContentProgressProvider implementation.
         override fun getContentProgress(): VideoProgressUpdate {
             val videoProgressUpdate = getContentVideoProgressUpdate()
-            videoProgressUpdate.actualCurrentTimeMs = getContentPeriodPositionMs(player!!, timeline, period)
             if (configuration.debugModeEnabled) {
                 Log.d(
                         TAG,
