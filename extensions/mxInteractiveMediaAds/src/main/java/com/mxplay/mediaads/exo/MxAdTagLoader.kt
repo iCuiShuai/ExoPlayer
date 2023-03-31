@@ -28,13 +28,11 @@ import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.Player.*
 import com.google.android.exoplayer2.Timeline
 import com.google.android.exoplayer2.source.ads.AdPlaybackState
-import com.google.android.exoplayer2.source.ads.AdsLoader
 import com.google.android.exoplayer2.source.ads.AdsLoader.AdViewProvider
 import com.google.android.exoplayer2.source.ads.AdsMediaSource.AdLoadException
 import com.google.android.exoplayer2.upstream.DataSpec
 import com.google.android.exoplayer2.util.Assertions
 import com.google.android.exoplayer2.util.Log
-import com.google.android.exoplayer2.util.Util
 import com.google.common.collect.BiMap
 import com.google.common.collect.HashBiMap
 import com.mxplay.adloader.AdTagData
@@ -75,7 +73,7 @@ internal class MxAdTagLoader(
     private val period: Timeline.Period
     private val handler: Handler
     private val componentListener: ComponentListener
-    private val eventListeners: MutableList<AdsLoader.EventListener>
+    private val eventListeners: MutableList<com.google.android.exoplayer2.source.ads.AdsLoader.EventListener>
     private val adCallbacks: MutableList<VideoAdPlayerCallback?>
     private val updateAdProgressRunnable: Runnable
     private val adInfoByAdMediaInfo: BiMap<AdMediaInfo?, AdInfo>
@@ -157,6 +155,11 @@ internal class MxAdTagLoader(
      */
     private var waitingForPreloadElapsedRealtimeMs: Long
 
+    /**
+     * only tracked once even though there are multiple
+     */
+    private var adShownTracked = false
+
     fun getAdUri(adGroupIndex: Int, adIndexInAdGroup: Int): Uri? {
         val adInfo = AdInfo(adGroupIndex, adIndexInAdGroup)
         return adUriMap.get(adInfo)
@@ -195,7 +198,7 @@ internal class MxAdTagLoader(
      * Starts passing events from this instance (including any pending ad playback state) and
      * registers obstructions.
      */
-    fun addListenerWithAdView(eventListener: AdsLoader.EventListener, adViewProvider: AdViewProvider) {
+    fun addListenerWithAdView(eventListener: com.google.android.exoplayer2.source.ads.AdsLoader.EventListener, adViewProvider: AdViewProvider) {
         val isStarted = !eventListeners.isEmpty()
         eventListeners.add(eventListener)
         if (isStarted) {
@@ -278,7 +281,7 @@ internal class MxAdTagLoader(
     }
 
     /** Stops passing of events from this instance and unregisters obstructions.  */
-    fun removeListener(eventListener: AdsLoader.EventListener) {
+    fun removeListener(eventListener: com.google.android.exoplayer2.source.ads.AdsLoader.EventListener) {
         eventListeners.remove(eventListener)
         if (eventListeners.isEmpty()) {
             adDisplayContainer!!.unregisterAllFriendlyObstructions()
@@ -429,6 +432,7 @@ internal class MxAdTagLoader(
         request.userRequestContext = pendingAdRequestContext
         request.contentProgressProvider = componentListener
         adsBehaviour.onAllAdsRequested()
+        adsBehaviour.sendAdOpportunity();
         if (request.adTagUrl != null) {
             adsBehaviour.provideAdTagUri(Uri.parse(request.adTagUrl)) { adTagData: AdTagData ->
                 request.adTagUrl = adTagData.adTag.toString()
@@ -622,6 +626,12 @@ internal class MxAdTagLoader(
             AdEventType.LOADED -> if (Objects.requireNonNull(adEvent.ad)!!.getVastMediaWidth() <= 1 && adEvent.ad!!.getVastMediaHeight() <= 1) {
                 val adPodInfo = adEvent.ad!!.getAdPodInfo()
                 adsBehaviour.handleAudioAdLoaded(adPodInfo.podIndex, adPodInfo.adPosition - 1)
+            }
+            AdEventType.STARTED -> {
+                if (!adShownTracked) {
+                    adShownTracked = true;
+                    adsBehaviour.adShown();
+                }
             }
             else -> {}
         }
@@ -1135,7 +1145,7 @@ internal class MxAdTagLoader(
         // AdsLoader.AdsLoadedListener implementation.
         override fun onAdsManagerLoaded(adsManagerLoadedEvent: AdsManagerLoadedEvent?) {
             val adsManager = adsManagerLoadedEvent!!.adsManager
-            if (!Util.areEqual(pendingAdRequestContext, adsManagerLoadedEvent.userRequestContext)) {
+            if (!com.google.android.exoplayer2.util.Util.areEqual(pendingAdRequestContext, adsManagerLoadedEvent.userRequestContext)) {
                 adsManager.destroy()
                 return
             }
@@ -1369,7 +1379,7 @@ internal class MxAdTagLoader(
     /** Creates a new ad tag loader, starting the ad request if the ad tag is valid.  */
     init {
         period = Timeline.Period()
-        handler = Util.createHandler(imaLooper,  /* callback= */null)
+        handler = com.google.android.exoplayer2.util.Util.createHandler(imaLooper,  /* callback= */null)
         componentListener = ComponentListener()
         eventListeners = ArrayList()
         adCallbacks = ArrayList( /* initialCapacity= */1)

@@ -149,7 +149,7 @@ import java.util.concurrent.TimeUnit;
   private final Runnable updateAdProgressRunnable;
   private final BiMap<AdMediaInfo, AdInfo> adInfoByAdMediaInfo;
   private final AdDisplayContainer adDisplayContainer;
-  private final AdsLoader adsLoader;
+  private final @Nullable AdsLoader adsLoader;
   private final IAdsBehaviour adsBehaviour;
   private Map<AdInfo, Uri> adUriMap = new HashMap<>();
 
@@ -221,6 +221,11 @@ import java.util.concurrent.TimeUnit;
    * having preloaded an ad, or {@link C#TIME_UNSET} if not applicable.
    */
   private long waitingForPreloadElapsedRealtimeMs;
+
+  /**
+   *  only tracked once even though there are multiple
+   */
+  private boolean adShownTracked;
 
   /** Creates a new ad tag loader, starting the ad request if the ad tag is valid. */
   @SuppressWarnings({"methodref.receiver.bound.invalid", "method.invocation.invalid"})
@@ -311,15 +316,17 @@ import java.util.concurrent.TimeUnit;
           AdsLoadRequestTimeoutEvent adsLoadRequestTimeoutEvent = new AdsLoadRequestTimeoutEvent(pendingAdRequestContext);
           componentListener.onAdError(adsLoadRequestTimeoutEvent);
             adsBehaviour.onAdError(adsLoadRequestTimeoutEvent);
-            adsLoader.removeAdsLoadedListener(componentListener);
-            adsLoader.removeAdErrorListener(componentListener);
+            if (adsLoader != null){
+              adsLoader.removeAdsLoadedListener(componentListener);
+              adsLoader.removeAdErrorListener(componentListener);
+            }
             if (configuration.debugModeEnabled) Log.w(TAG, "Vast call forced time out");
         }
     }
   };
 
   /** Returns the underlying IMA SDK ads loader. */
-  public AdsLoader getAdsLoader() {
+  public @Nullable AdsLoader getAdsLoader() {
     return adsLoader;
   }
 
@@ -452,12 +459,15 @@ import java.util.concurrent.TimeUnit;
     released = true;
     pendingAdRequestContext = null;
     destroyAdsManager();
-    adsLoader.removeAdsLoadedListener(componentListener);
-    adsLoader.removeAdErrorListener(componentListener);
-    if (configuration.applicationAdErrorListener != null) {
-      adsLoader.removeAdErrorListener(configuration.applicationAdErrorListener);
+    if (this.adsLoader != null){
+      adsLoader.removeAdsLoadedListener(componentListener);
+      adsLoader.removeAdErrorListener(componentListener);
+      adsLoader.removeAdErrorListener(adsBehaviour.provideBehaviourTracker());
+      if (configuration.applicationAdErrorListener != null) {
+        adsLoader.removeAdErrorListener(configuration.applicationAdErrorListener);
+      }
+      adsLoader.release();
     }
-    adsLoader.release();
     imaPausedContent = false;
     imaAdState = IMA_AD_STATE_NONE;
     imaAdMediaInfo = null;
@@ -602,45 +612,49 @@ import java.util.concurrent.TimeUnit;
 
   // Internal methods.
 
-  private AdsLoader requestAds(
+  private @Nullable AdsLoader requestAds(
       Context context, ImaSdkSettings imaSdkSettings, AdDisplayContainer adDisplayContainer) {
-    AdsLoader adsLoader = imaFactory.createAdsLoader(context, imaSdkSettings, adDisplayContainer);
-    adsLoader.addAdErrorListener(componentListener);
-    if (configuration.applicationAdErrorListener != null) {
-      adsLoader.addAdErrorListener(configuration.applicationAdErrorListener);
-    }
-    adsLoader.addAdsLoadedListener(componentListener);
-    AdsRequest request;
     try {
+      AdsLoader adsLoader = imaFactory.createAdsLoader(context, imaSdkSettings, adDisplayContainer);
+      adsLoader.addAdErrorListener(componentListener);
+      adsLoader.addAdErrorListener(adsBehaviour.provideBehaviourTracker());
+      if (configuration.applicationAdErrorListener != null) {
+        adsLoader.addAdErrorListener(configuration.applicationAdErrorListener);
+      }
+      adsLoader.addAdsLoadedListener(componentListener);
+      AdsRequest request;
       request = ImaUtil.getAdsRequestForAdTagDataSpec(imaFactory, adTagDataSpec);
-    } catch (IOException e) {
+      pendingAdRequestContext = new Object();
+      request.setUserRequestContext(pendingAdRequestContext);
+      if (configuration.enableContinuousPlayback != null) {
+        request.setContinuousPlayback(configuration.enableContinuousPlayback);
+      }
+      if (configuration.vastLoadTimeoutMs != TIMEOUT_UNSET) {
+        request.setVastLoadTimeout(configuration.vastLoadTimeoutMs);
+      }
+      request.setContentProgressProvider(componentListener);
+      adsBehaviour.onAllAdsRequested();
+      adsBehaviour.sendAdOpportunity();
+      if (request.getAdTagUrl() != null) {
+        adsBehaviour.provideAdTagUri(Uri.parse(request.getAdTagUrl()), adTagData -> {
+          request.setAdTagUrl(adTagData.getAdTag().toString());
+          adsLoader.requestAds(request);
+        });
+      }else {
+        adsLoader.requestAds(request);
+      }
+      return adsLoader;
+    } catch (Exception e) {
+      if (configuration.debugModeEnabled) {
+        e.printStackTrace();
+      }
       adPlaybackState = new AdPlaybackState(adsId);
       updateAdPlaybackState();
       pendingAdLoadError = AdLoadException.createForAllAds(e);
       maybeNotifyPendingAdLoadError();
-      return adsLoader;
+      return null;
     }
-    pendingAdRequestContext = new Object();
-    request.setUserRequestContext(pendingAdRequestContext);
-    if (configuration.enableContinuousPlayback != null) {
-      request.setContinuousPlayback(configuration.enableContinuousPlayback);
-    }
-    if (configuration.vastLoadTimeoutMs != TIMEOUT_UNSET) {
-      request.setVastLoadTimeout(configuration.vastLoadTimeoutMs);
-    }
-    request.setContentProgressProvider(componentListener);
-    adsBehaviour.onAllAdsRequested();
-    if (request.getAdTagUrl() != null) {
-      adsBehaviour.provideAdTagUri(Uri.parse(request.getAdTagUrl()), adTagData -> {
-        request.setAdTagUrl(adTagData.getAdTag().toString());
-        adsLoader.requestAds(request);
-      });
-    }else
-      adsLoader.requestAds(request);
-
-    return adsLoader;
   }
-
   private void maybeInitializeAdsManager(long contentPositionMs, long contentDurationMs) {
     @Nullable AdsManager adsManager = this.adsManager;
     if (!isAdsManagerInitialized && adsManager != null) {
@@ -868,6 +882,12 @@ import java.util.concurrent.TimeUnit;
         if (adEvent.getAd().getVastMediaWidth() <= 1 && adEvent.getAd().getVastMediaHeight() <= 1){
           AdPodInfo adPodInfo = adEvent.getAd().getAdPodInfo();
           adsBehaviour.handleAudioAdLoaded(adPodInfo.getPodIndex(), adPodInfo.getAdPosition() - 1);
+        }
+        break;
+      case STARTED:
+        if (!adShownTracked) {
+          adShownTracked = true;
+          adsBehaviour.adShown();
         }
         break;
       default:
@@ -1412,10 +1432,12 @@ import java.util.concurrent.TimeUnit;
       if (configuration.applicationAdErrorListener != null) {
         adsManager.removeAdErrorListener(configuration.applicationAdErrorListener);
       }
+      adsManager.removeAdErrorListener(adsBehaviour.provideBehaviourTracker());
       adsManager.removeAdEventListener(componentListener);
       if (configuration.applicationAdEventListener != null) {
         adsManager.removeAdEventListener(configuration.applicationAdEventListener);
       }
+      adsManager.removeAdEventListener(adsBehaviour.provideBehaviourTracker());
       adsManager.destroy();
       adsManager = null;
     }

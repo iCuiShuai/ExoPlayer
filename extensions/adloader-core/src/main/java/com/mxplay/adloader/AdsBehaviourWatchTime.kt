@@ -42,6 +42,13 @@ class AdsBehaviourWatchTime(durationSec: Long, private val adsBehaviour: AdsBeha
         adsBehaviour.onAllAdsRequested()
     }
 
+    override fun sendAdOpportunity() {
+        mxTrackingBehaviour.sendAdOpportunity()
+    }
+
+    override fun adShown() {
+        mxTrackingBehaviour.adShown()
+    }
 
     override fun provideBehaviourTracker(): IBehaviourTracker {
         return mxTrackingBehaviour

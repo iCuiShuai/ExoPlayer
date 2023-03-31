@@ -31,6 +31,13 @@ open class AdsBehaviourExactTime(private val adsBehaviour: AdsBehaviour, private
         adsBehaviour.onAllAdsRequested()
     }
 
+    override fun sendAdOpportunity() {
+        mxTrackingBehaviour.sendAdOpportunity()
+    }
+
+    override fun adShown() {
+        mxTrackingBehaviour.adShown()
+    }
 
     override fun getContentPositionMs(
         player: Player,
