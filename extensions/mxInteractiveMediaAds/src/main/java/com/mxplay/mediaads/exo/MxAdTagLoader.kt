@@ -758,6 +758,9 @@ internal class MxAdTagLoader(
                     fakeContentProgressOffsetMs = contentDurationMs
                 }
             }
+        } else if (!playingAd && wasPlayingAd && contentDurationMs != C.TIME_UNSET && imaAdState == IMA_AD_STATE_NONE) {
+            pendingContentPositionMs = C.TIME_UNSET
+            fakeContentProgressElapsedRealtimeMs = C.TIME_UNSET
         }
         if (configuration.debugModeEnabled) {
             Log.d(TAG, " handleTimelineOrPositionChanged $playingAd  fakeContentProgressElapsedRealtimeMs $fakeContentProgressElapsedRealtimeMs")
@@ -1024,7 +1027,8 @@ internal class MxAdTagLoader(
                 && contentDurationMs != C.TIME_UNSET && pendingContentPositionMs == C.TIME_UNSET && (getContentPeriodPositionMs(Assertions.checkNotNull(player), timeline, period)
                         + THRESHOLD_END_OF_CONTENT_MS
                         >= contentDurationMs)) {
-            sendContentComplete()
+            //Not required since we are prefetching from the internal sdk itself.
+            //sendContentComplete()
         }
     }
 
