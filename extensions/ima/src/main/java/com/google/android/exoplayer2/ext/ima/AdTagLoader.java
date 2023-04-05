@@ -749,7 +749,7 @@ import java.util.concurrent.TimeUnit;
     boolean hasContentDuration = contentDurationMs != C.TIME_UNSET;
     long contentDurationMs = hasContentDuration ? this.contentDurationMs : IMA_DURATION_UNSET;
     long contentPositionMs;
-    if (pendingContentPositionMs != C.TIME_UNSET) {
+    if (pendingContentPositionMs != C.TIME_UNSET && !sentPendingContentPositionMs) {
       sentPendingContentPositionMs = true;
       contentPositionMs = pendingContentPositionMs;
     } else if (player == null) {
@@ -1026,6 +1026,14 @@ import java.util.concurrent.TimeUnit;
           fakeContentProgressOffsetMs = contentDurationMs;
         }
       }
+    } // When the user resumes the content (does not play it from start) and once the mid roll is played, the seekTo event
+      // gets triggered from ExoPlayerImplInternal due to which playingAd becomes true. In some cases the stopAd callback
+      // gets triggered earlier making imaAdState = IMA_AD_STATE_NONE. Due to this the above if block becomes true and
+      // fakeContentProgress gets initialized because of which fakeContentProgress is sent to the internal sdk. To resolve this
+      // the below condition is placed.
+      else if (!playingAd && wasPlayingAd && contentDurationMs != C.TIME_UNSET && imaAdState == IMA_AD_STATE_NONE) {
+        pendingContentPositionMs = C.TIME_UNSET;
+        fakeContentProgressElapsedRealtimeMs = C.TIME_UNSET;
     }
   }
 
