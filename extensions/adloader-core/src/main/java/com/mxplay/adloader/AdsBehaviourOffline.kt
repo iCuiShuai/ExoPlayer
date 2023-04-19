@@ -16,6 +16,13 @@ class AdsBehaviourOffline(private val adsBehaviour: AdsBehaviour, private val mx
         adsBehaviour.onAllAdsRequested()
     }
 
+    override fun sendAdOpportunity() {
+        mxTrackingBehaviour.sendAdOpportunity()
+    }
+
+    override fun adShown() {
+        mxTrackingBehaviour.adShown()
+    }
 
     override fun getContentPositionMs(
         player: Player,

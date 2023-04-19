@@ -17,6 +17,13 @@ class AdsBehaviourMusic(private val adsBehaviour: AdsBehaviour, private val mxTr
         adsBehaviour.onAllAdsRequested()
     }
 
+    override fun sendAdOpportunity() {
+        mxTrackingBehaviour.sendAdOpportunity()
+    }
+
+    override fun adShown() {
+        mxTrackingBehaviour.adShown()
+    }
 
     override fun getContentPositionMs(
         player: Player,

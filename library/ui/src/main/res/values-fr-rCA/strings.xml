@@ -13,7 +13,7 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
   <string name="exo_controls_show">Afficher les commandes du lecteur</string>
   <string name="exo_controls_hide">Masquer les commandes du lecteur</string>
   <string name="exo_controls_seek_bar_description">Progression de la lecture</string>
@@ -28,12 +28,12 @@
   <string name="exo_controls_play_description">Lire</string>
   <string name="exo_controls_stop_description">Arrêter</string>
   <string name="exo_controls_rewind_description">Retour arrière</string>
-  <plurals name="exo_controls_rewind_by_amount_description">
+  <plurals name="exo_controls_rewind_by_amount_description" tools:ignore="MissingQuantity">
     <item quantity="one">Reculer de %d seconde</item>
     <item quantity="other">Reculer de %d secondes</item>
   </plurals>
   <string name="exo_controls_fastforward_description">Avance rapide</string>
-  <plurals name="exo_controls_fastforward_by_amount_description">
+  <plurals name="exo_controls_fastforward_by_amount_description" tools:ignore="MissingQuantity">
     <item quantity="one">Avancer rapidement de %d seconde</item>
     <item quantity="other">Avancer rapidement de %d secondes</item>
   </plurals>

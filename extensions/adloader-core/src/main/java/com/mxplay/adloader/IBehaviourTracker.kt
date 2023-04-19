@@ -17,6 +17,10 @@ interface IBehaviourTracker: AdEvent.AdEventListener, AdErrorEvent.AdErrorListen
 
         override fun onAllAdsRequested() {}
 
+        override fun sendAdOpportunity() {}
+
+        override fun adShown() {}
+
         override fun onContentPositionChanged(
             player: Player,
             timeline: Timeline,
@@ -49,6 +53,8 @@ interface IBehaviourTracker: AdEvent.AdEventListener, AdErrorEvent.AdErrorListen
     }
     fun doSetupAdsRendering(firstPlayingAdIndex : Int)
     fun onAllAdsRequested()
+    fun sendAdOpportunity()
+    fun adShown()
     fun onContentPositionChanged(
         player: Player,
         timeline: Timeline,
