@@ -111,6 +111,8 @@ public final class ImaAdsLoader
   private int lastLoadMediaAdGroupIndex = -1;
   private int lastStartRequestAdGroupIndex = -1;
 
+  private boolean adShownTracked;
+
   /** Builder for {@link ImaAdsLoader}. */
   public static final class Builder {
 
@@ -595,6 +597,7 @@ public final class ImaAdsLoader
     }
     adsLoader.requestAds(request);
     updateStartRequestTime(false);
+    adTracker.sendAdOpportunity();
   }
 
   private void releaseAdManager() {
@@ -1326,6 +1329,11 @@ public final class ImaAdsLoader
         }
         break;
       case STARTED:
+        if (!adShownTracked) {
+          adShownTracked = true;
+          adTracker.adShown();
+        }
+        break;
       case ALL_ADS_COMPLETED:
       default:
         break;

@@ -49,4 +49,7 @@ public interface IVideoAdTracker {
     }
 
     void trackEvent(@NonNull String eventName, @NonNull Map<String, String> params);
+
+    public void sendAdOpportunity();
+    public void adShown();
 }
