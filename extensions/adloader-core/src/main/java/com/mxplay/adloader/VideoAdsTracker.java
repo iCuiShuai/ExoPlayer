@@ -234,14 +234,6 @@ public abstract class VideoAdsTracker {
         result.put(AD_POD_INDEX, String.valueOf(adPodIndex));
         trackEvent(EVENT_VAST_REQUESTED, result);
     }
-
-    public void trackCompanionEvent(@NonNull String eventName, @NonNull Map<String, String> params) {
-        params.put(AD_LOADER_NAME, adLoaderName);
-        params.put(SESSION_ID, sessionId);
-        params.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
-        trackEvent(eventName, params);
-    }
-
     public void sendAdOpportunity() {
         Map<String, String> result = new HashMap<>();
         result.put(AD_LOADER_NAME, adLoaderName);

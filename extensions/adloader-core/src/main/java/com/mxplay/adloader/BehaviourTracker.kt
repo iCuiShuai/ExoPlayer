@@ -43,10 +43,6 @@ class BehaviourTracker(
         this.adPlaybackStateHost = adPlaybackStateHost
     }
 
-    override fun trackCompanionEvent(eventName: String, props: Map<String, String>) {
-        videoAdsTracker.trackCompanionEvent(eventName, props)
-    }
-
     override fun doSetupAdsRendering(firstPlayingAdIndex: Int) {
         this.firstPlayingAdIndex = firstPlayingAdIndex
     }

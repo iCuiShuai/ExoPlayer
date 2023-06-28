@@ -1,9 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <item name="tag_visibility" type="id"/>
-    <item name="expandable_overlay" type="id"/>
-    <item name="is_companion_disabled" type="id"/>
-    <item name="is_auto_expanded" type="id" />
-
 
 </resources>

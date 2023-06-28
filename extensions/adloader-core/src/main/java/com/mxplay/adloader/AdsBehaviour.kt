@@ -9,10 +9,8 @@ import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.Timeline
 import com.google.android.exoplayer2.source.ads.AdPlaybackState
-import com.mxplay.adloader.nativeCompanion.CompanionResourceProvider
 import com.mxplay.interactivemedia.api.AdEvent
 import com.mxplay.interactivemedia.api.AdPodInfo
-import com.mxplay.interactivemedia.api.MxMediaSdkConfig
 import com.mxplay.logger.ZenLogger
 
 open class AdsBehaviour private constructor(
@@ -43,10 +41,6 @@ open class AdsBehaviour private constructor(
 
     override fun registerAdErrorEventListener(adErrorListener: com.mxplay.interactivemedia.api.AdErrorEvent.AdErrorListener?){
         composedAdErrorListener.adErrorListener = adErrorListener
-    }
-
-    override fun doSetupNativeCompanion(mxMediaSdkConfig: MxMediaSdkConfig?, companionResourceProvider: CompanionResourceProvider, tracker: VideoAdsTracker) {
-        mxMediaSdkConfig?.let { composedAdEventListener.doSetupNativeCompanion(it, companionResourceProvider, tracker, this) }
     }
 
     private lateinit var adPlaybackStateHost: AdPlaybackStateHost
