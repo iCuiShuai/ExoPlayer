@@ -2430,6 +2430,7 @@ public class MatroskaExtractorMX implements Extractor {
 
       if (name != null && !TRACK_NAME_TO_ROTATION_DEGREES.containsKey(name)) {
         formatBuilder.setLabel(name);
+        formatBuilder.setTitle(name);
       }
 
       Format format =
