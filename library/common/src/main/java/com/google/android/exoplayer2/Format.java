@@ -123,6 +123,9 @@ public final class Format implements Parcelable {
     @Nullable private String id;
     @Nullable private String label;
     @Nullable private String language;
+    @Nullable private String hdlrName;
+
+    @Nullable private String title;
     @C.SelectionFlags private int selectionFlags;
     @C.RoleFlags private int roleFlags;
     private int averageBitrate;
@@ -199,6 +202,8 @@ public final class Format implements Parcelable {
       this.id = format.id;
       this.label = format.label;
       this.language = format.language;
+      this.hdlrName = format.hdlrName;
+      this.title = format.title;
       this.selectionFlags = format.selectionFlags;
       this.roleFlags = format.roleFlags;
       this.averageBitrate = format.averageBitrate;
@@ -276,6 +281,28 @@ public final class Format implements Parcelable {
      */
     public Builder setLanguage(@Nullable String language) {
       this.language = language;
+      return this;
+    }
+
+    /**
+     * Sets {@link Format#hdlrName}. The default value is {@code null}.
+     *
+     * @param hdlrName The {@link Format#hdlrName}.
+     * @return The builder.
+     */
+    public Builder setHdlrName(@Nullable String hdlrName) {
+      this.hdlrName = hdlrName;
+      return this;
+    }
+
+    /**
+     * Sets {@link Format#title}. The default value is {@code null}.
+     *
+     * @param title The {@link Format#title}.
+     * @return The builder.
+     */
+    public Builder setTitle(@Nullable String title) {
+      this.title = title;
       return this;
     }
 
@@ -611,6 +638,11 @@ public final class Format implements Parcelable {
   @Nullable public final String label;
   /** The language as an IETF BCP 47 conformant tag, or null if unknown or not applicable. */
   @Nullable public final String language;
+  /** used for extension language*/
+  @Nullable public final String hdlrName;
+
+  /** used for extension language*/
+  @Nullable public final String title;
   /** Track selection flags. */
   @C.SelectionFlags public final int selectionFlags;
   /** Track role flags. */
@@ -1185,6 +1217,8 @@ public final class Format implements Parcelable {
     id = builder.id;
     label = builder.label;
     language = Util.normalizeLanguageCode(builder.language);
+    hdlrName = builder.hdlrName;
+    title = builder.title;
     selectionFlags = builder.selectionFlags;
     roleFlags = builder.roleFlags;
     averageBitrate = builder.averageBitrate;
@@ -1234,6 +1268,8 @@ public final class Format implements Parcelable {
     id = in.readString();
     label = in.readString();
     language = in.readString();
+    hdlrName = in.readString();
+    title = in.readString();
     selectionFlags = in.readInt();
     roleFlags = in.readInt();
     averageBitrate = in.readInt();
@@ -1447,6 +1483,10 @@ public final class Format implements Parcelable {
         + bitrate
         + ", "
         + language
+        + ", "
+        + hdlrName
+        + ", "
+        + title
         + ", ["
         + width
         + ", "
@@ -1469,6 +1509,8 @@ public final class Format implements Parcelable {
       result = 31 * result + (id == null ? 0 : id.hashCode());
       result = 31 * result + (label != null ? label.hashCode() : 0);
       result = 31 * result + (language == null ? 0 : language.hashCode());
+      result = 31 * result + (hdlrName == null ? 0 : hdlrName.hashCode());
+      result = 31 * result + (title == null ? 0 : title.hashCode());
       result = 31 * result + selectionFlags;
       result = 31 * result + roleFlags;
       result = 31 * result + averageBitrate;
@@ -1545,6 +1587,8 @@ public final class Format implements Parcelable {
         && Util.areEqual(containerMimeType, other.containerMimeType)
         && Util.areEqual(sampleMimeType, other.sampleMimeType)
         && Util.areEqual(language, other.language)
+        && Util.areEqual(hdlrName, other.hdlrName)
+        && Util.areEqual(title, other.title)
         && Arrays.equals(projectionData, other.projectionData)
         && Util.areEqual(metadata, other.metadata)
         && Util.areEqual(colorInfo, other.colorInfo)
@@ -1602,6 +1646,12 @@ public final class Format implements Parcelable {
     if (format.language != null) {
       builder.append(", language=").append(format.language);
     }
+    if (format.hdlrName != null) {
+      builder.append(", hdlrName=").append(format.hdlrName);
+    }
+    if (format.title != null) {
+      builder.append(", title=").append(format.title);
+    }
     if (format.label != null) {
       builder.append(", label=").append(format.label);
     }
@@ -1620,6 +1670,8 @@ public final class Format implements Parcelable {
     dest.writeString(id);
     dest.writeString(label);
     dest.writeString(language);
+    dest.writeString(hdlrName);
+    dest.writeString(title);
     dest.writeInt(selectionFlags);
     dest.writeInt(roleFlags);
     dest.writeInt(averageBitrate);
