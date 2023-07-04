@@ -22,4 +22,5 @@ class EndCardTemplateData(
     templateId: String,
     title: String,
     type: String,
-) : TemplateData(imageCdnUrl, logo, title, description, CTA, clickThroughUrl, clickTracker, impressionTracker, adId, campaignId, campaignName, creativeId, templateId, type)
+    advertiser: String?,
+) : TemplateData(imageCdnUrl, logo, title, advertiser,description, CTA, clickThroughUrl, clickTracker, impressionTracker, adId, campaignId, campaignName, creativeId, templateId, type)

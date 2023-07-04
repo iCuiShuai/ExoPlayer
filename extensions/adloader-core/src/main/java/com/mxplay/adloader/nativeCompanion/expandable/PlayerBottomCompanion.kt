@@ -3,8 +3,6 @@ package com.mxplay.adloader.nativeCompanion.expandable
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -59,28 +57,37 @@ abstract class PlayerBottomCompanion(
     abstract fun renderOverlay() : View?
 
     override fun preload() {
-        companionView = LayoutInflater.from(context).inflate(R.layout.layout_player_bottom_native_companion, null, false) as ConstraintLayout
+        companionView = LayoutInflater.from(context).inflate(nativeLayoutId(), null, false) as ConstraintLayout
         resourceProvider.loadImage(payload.logoUrl(), companionView!!.findViewById(R.id.logo))
         companionView!!.findViewById<TextView>(R.id.title).text = payload.title
         companionView!!.findViewById<TextView>(R.id.subtitle).text = payload.description
+        companionView!!.findViewById<TextView>(R.id.advertiser)?.text = payload.advertiser
         val action = companionView!!.findViewById<TextView>(R.id.cta_button)
         bindCTA(action)
         expandHandler = companionView!!.findViewById(R.id.expand)
         templateView = renderOverlay()
         if (templateView != null){
-            expandHandler!!.visibility = View.VISIBLE
-            expandHandler!!.setOnClickListener {
-                templateView?.visibility = View.VISIBLE
+            expandHandler?.let {
+                it.visibility = View.VISIBLE
+                it.setOnClickListener {
+                    templateView?.visibility = View.VISIBLE
+                }
             }
         }else{
-            expandHandler!!.visibility = View.GONE
-            action.layoutParams = (action.layoutParams as ConstraintLayout.LayoutParams).apply {
-                this.rightMargin = context.resources.getDimensionPixelSize(R.dimen.ad_action_cta_margin)
+            if(expandHandler != null){
+                expandHandler!!.visibility = View.GONE
+                action.layoutParams = (action.layoutParams as ConstraintLayout.LayoutParams).apply {
+                    this.rightMargin = context.resources.getDimensionPixelSize(R.dimen.ad_action_cta_margin)
+                }
             }
         }
         companionState =CompanionState.PRELOADED
         companionView?.setOnClickListener { onAdClick() }
         templateView?.setOnClickListener { onAdClick() }
+    }
+
+    open fun nativeLayoutId():  Int {
+        return R.layout.layout_player_bottom_native_companion
     }
 
     override fun isAdExpanded() = templateView?.visibility == View.VISIBLE

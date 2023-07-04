@@ -4,5 +4,6 @@
     <string name="survey_ad_special_character_warning">* Please remove , from the answer</string>
     <string name="price">&#x20B9; %s</string>
     <string name="hint_contain_ad">Contain ads</string>
+    <string name="custom_cta_ad">Ad</string>
 
 </resources>
