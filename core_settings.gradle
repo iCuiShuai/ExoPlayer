@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 def rootDir = gradle.ext.exoplayerRoot
-def DEBUG_MX_VID_AD = false
+def DEBUG_MX_VID_AD = true
 
 if (DEBUG_MX_VID_AD){
     gradle.ext.debugMxVidSdk = true
