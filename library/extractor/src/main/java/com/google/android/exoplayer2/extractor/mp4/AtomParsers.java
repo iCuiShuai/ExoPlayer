@@ -274,6 +274,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableType;
     Atom.ContainerAtom mdia = checkNotNull(trak.getContainerAtomOfType(Atom.TYPE_mdia));
     int trackType =
         getTrackTypeForHdlr(parseHdlr(checkNotNull(mdia.getLeafAtomOfType(Atom.TYPE_hdlr)).data));
+    String hdlrName = getHdlrName(checkNotNull(mdia.getLeafAtomOfType(Atom.TYPE_hdlr)).data);
     if (trackType == C.TRACK_TYPE_UNKNOWN) {
       return null;
     }
@@ -302,8 +303,10 @@ import org.checkerframework.checker.nullness.compatqual.NullableType;
             tkhdData.id,
             tkhdData.rotationDegrees,
             mdhdData.second,
+            hdlrName,
             drmInitData,
             isQuickTime);
+
     @Nullable long[] editListDurations = null;
     @Nullable long[] editListMediaTimes = null;
     if (!ignoreEditLists) {
@@ -842,6 +845,25 @@ import org.checkerframework.checker.nullness.compatqual.NullableType;
     return hdlr.readInt();
   }
 
+  /**
+   * get an hdlr name.
+   *
+   * @param hdlr The hdlr atom to decode.
+   * @return The handler name.
+   */
+  private static String getHdlrName(ParsableByteArray hdlr) {
+    hdlr.setPosition(0);
+
+    int size = hdlr.readInt();
+    String name = null;
+
+    hdlr.setPosition(Atom.FULL_HEADER_SIZE + 20);
+
+    name = hdlr.readString(size - Atom.FULL_HEADER_SIZE - 20);
+
+    return name;
+  }
+
   /** Returns the track type for a given handler value. */
   private static int getTrackTypeForHdlr(int hdlr) {
     if (hdlr == TYPE_soun) {
@@ -896,6 +918,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableType;
       int trackId,
       int rotationDegrees,
       String language,
+      String hdlrName,
       @Nullable DrmInitData drmInitData,
       boolean isQuickTime)
       throws ParserException {
@@ -952,7 +975,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableType;
           || childAtomType == Atom.TYPE_wvtt || childAtomType == Atom.TYPE_stpp
           || childAtomType == Atom.TYPE_c608) {
         parseTextSampleEntry(stsd, childAtomType, childStartPosition, childAtomSize, trackId,
-            language, out);
+            language, hdlrName, out);
       } else if (childAtomType == Atom.TYPE_mett) {
         parseMetaDataSampleEntry(stsd, childAtomType, childStartPosition, trackId, out);
       } else if (childAtomType == Atom.TYPE_camm) {
@@ -974,6 +997,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableType;
       int atomSize,
       int trackId,
       String language,
+      String hdlrName,
       StsdData out) {
     parent.setPosition(position + Atom.HEADER_SIZE + StsdData.STSD_HEADER_SIZE);
 
@@ -1009,6 +1033,7 @@ import org.checkerframework.checker.nullness.compatqual.NullableType;
             .setId(trackId)
             .setSampleMimeType(mimeType)
             .setLanguage(language)
+            .setHdlrName(hdlrName)
             .setSubsampleOffsetUs(subsampleOffsetUs)
             .setInitializationData(initializationData)
             .build();
