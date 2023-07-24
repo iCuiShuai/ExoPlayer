@@ -22,6 +22,7 @@ class TableViewTemplateData(
     @SerializedName("slot")  val slot: String,
     templateId: String,
     title: String,
-    type: String
-) : TemplateData(imageCdnUrl, logo, title, description, CTA, clickThroughUrl, clickTracker, impressionTracker, adId, campaignId, campaignName, creativeId, templateId, type){
+    type: String,
+    advertiser: String?
+) : TemplateData(imageCdnUrl, logo, title, advertiser,description, CTA, clickThroughUrl, clickTracker, impressionTracker, adId, campaignId, campaignName, creativeId, templateId, type){
 }

@@ -22,6 +22,6 @@ class SurveyTemplateData(
         @SerializedName("SurveyManagementServerURL") val surveyManagementServerURL: String,
         @SerializedName("size") val size: String,
         @SerializedName("slot") val slot: String?,
-        @SerializedName("advertiser") val advertiser: String?) :
-        TemplateData(imageCdnUrl, logo, title, description, CTA, clickThroughUrl, clickTracker, impressionTracker, adId, campaignId, campaignName, creativeId, templateId, type) {
+        advertiser: String?) :
+        TemplateData(imageCdnUrl, logo, title,advertiser, description, CTA, clickThroughUrl, clickTracker, impressionTracker, adId, campaignId, campaignName, creativeId, templateId, type) {
 }

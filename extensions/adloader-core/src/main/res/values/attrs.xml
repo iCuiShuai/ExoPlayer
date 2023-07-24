@@ -22,6 +22,9 @@
         <attr name="survey_input_dialog_cta_color" format="reference" />
         <attr name="expandable_uni_cta_color" format="reference" />
         <attr name="expandable_ad_bg" format="reference" />
+        <attr name="custom_cta_ad_bg" format="reference" />
+        <attr name="ad_prefix_background" format="reference" />
+        <attr name="native_comapanion_cta_bg" format="reference" />
         <attr name="expandable_ad_subtitle_color" format="reference" />
         <attr name="expandable_ad_item_subtitle_color" format="reference"/>
         <attr name="expandable_ad_tag" format="reference" />
@@ -30,5 +33,6 @@
         <attr name="mx_font_semi_bold" format="string" />
         <attr name="mx_font_bold" format="string" />
         <attr name="mx_font_extra_bold" format="string" />
+        <attr name="mx_font_medium" format="string" />
     </declare-styleable>
 </resources>

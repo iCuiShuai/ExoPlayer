@@ -10,6 +10,7 @@ open class TemplateData(
     @SerializedName("imageCdnUrl") val imageCdnUrl: String,
     @SerializedName("logo") val logo: String?,
     @SerializedName("title") val title: String,
+    @SerializedName("advertiser") val advertiser: String? = null,
     @SerializedName("description") val description: String,
     @SerializedName("CTA") val CTA: String?,
     @SerializedName("clickThroughUrl") val clickThroughUrl: String?,
@@ -26,7 +27,7 @@ open class TemplateData(
 
 
     companion object{
-        fun stitchUrl(baseUrl : String, url : String?) : String?{
+        fun stitchUrl(baseUrl : String?, url : String?) : String?{
             if (url != null){
                 if (!URLUtil.isNetworkUrl(url)){
                     return baseUrl + url
