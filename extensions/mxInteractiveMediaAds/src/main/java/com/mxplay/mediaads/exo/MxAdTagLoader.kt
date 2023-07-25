@@ -1245,6 +1245,8 @@ internal class MxAdTagLoader(
 
         override val volume: Int
             get() = 1 //Since player don't have volume controls so always return 1
+        override val mute: Boolean
+            get() = false
 
         override fun loadAd(adMediaInfo: AdMediaInfo?, adPodInfo: AdPodInfo?) {
             try {
