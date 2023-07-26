@@ -7,6 +7,7 @@ import com.mxplay.adloader.AdsBehaviourOffline
 import com.mxplay.adloader.IAdsBehaviour
 import com.mxplay.interactivemedia.api.*
 import com.mxplay.interactivemedia.api.player.VideoAdPlayerCallback
+import com.mxplay.interactivemedia.internal.core.companion.nativeCompanion.CompanionResourceProvider
 import java.util.concurrent.ExecutorService
 
 /** Stores configuration for ad loading and playback.  */
@@ -44,6 +45,7 @@ class Configuration(builder: Builder, appId: String) {
             builder.maxMediaBitrate?.let { this.maxMediaBitrate = it }
             builder.companionAdSlots?.let { this.companionAdSlots = it.map { x -> x as CompanionAdSlot }.toMutableList()}
             builder.mxAdCustomTracker?.let { this.mxAdCustomTracker = it }
+            builder.companionResourceProvider?.let { this.companionResourceProvider = it }
             this.ppid = builder.ppid
             builder.adTagUri?.let { this.adTagUri = it.toString() }
             debugModeEnabled = builder.debugModeEnabled
@@ -73,6 +75,7 @@ class Configuration(builder: Builder, appId: String) {
         var adsBehaviour: IAdsBehaviour? = null
         var trackersConfig: TrackersConfig? = null
         var mxAdCustomTracker: IMxAdCustomTracker? = null
+        var companionResourceProvider: CompanionResourceProvider? = null
         var adTagUri: String? = null
         var initialBufferSizeForAdPlaybackMs: Int? = null
         var enableCustomTab = false
@@ -98,6 +101,8 @@ class Configuration(builder: Builder, appId: String) {
         fun adsBehaviour(adsBehaviour: IAdsBehaviour) = apply { this.adsBehaviour = adsBehaviour }
         fun trackersConfig(trackersConfig: TrackersConfig) = apply { this.trackersConfig = trackersConfig }
         fun mxAdCustomTracker(mxAdCustomTracker: IMxAdCustomTracker) = apply { this.mxAdCustomTracker = mxAdCustomTracker }
+
+        fun companionResourceProvider(companionResourceProvider: CompanionResourceProvider) = apply { this.companionResourceProvider = companionResourceProvider }
         fun adTagUri(adTagUri: String) = apply { this.adTagUri = adTagUri }
         fun initialBufferSizeForAdPlaybackMs(initialBufferSizeForAdPlaybackMs: Int) = apply { this.initialBufferSizeForAdPlaybackMs = initialBufferSizeForAdPlaybackMs}
         fun enableCustomTab(enable : Boolean) = apply { this.enableCustomTab = enable }
