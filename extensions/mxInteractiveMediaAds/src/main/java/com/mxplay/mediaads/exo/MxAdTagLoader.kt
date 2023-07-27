@@ -1243,8 +1243,8 @@ internal class MxAdTagLoader(
             throw IllegalStateException("Unexpected call to getAdProgress when using preloading")
         }
 
-        override val volume: Int
-            get() = 1 //Since player don't have volume controls so always return 1
+        override val volume: Float
+            get() = 1.0F //Since player don't have volume controls so always return 1
         override val mute: Boolean
             get() = false
 
