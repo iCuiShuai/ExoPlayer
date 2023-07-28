@@ -26,7 +26,7 @@ dependencies {
     if (gradle.ext.has('debugMxVidSdk') && gradle.ext.debugMxVidSdk){
         api project(modulePrefix + 'extension-mxMediaAdsLib-vidAdLibrary')
     }else{
-        api "com.mxplay.code:mxvideoadlib:1.2.79"
+        api "com.mxplay.code:mxvideoadlib:1.2.80"
     }
     api 'com.google.ads.interactivemedia.v3:interactivemedia:3.23.0'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
