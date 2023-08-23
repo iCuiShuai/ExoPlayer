@@ -1280,6 +1280,12 @@ internal class MxAdTagLoader(
             }
         }
 
+        override fun setPlaying(play: Boolean) {
+            super.setPlaying(play)
+           if (!play) player?.pause() else player?.play()
+
+        }
+
         override fun release() {
             // Do nothing.
         }
