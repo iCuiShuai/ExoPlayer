@@ -16,6 +16,7 @@
 package com.google.android.exoplayer2.extractor.mkv;
 
 import android.util.Log;
+import androidx.annotation.Keep;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.extractor.ExtractorInput;
 import com.google.android.exoplayer2.extractor.mp4.Mp4Extractor;
@@ -30,6 +31,7 @@ import javax.crypto.spec.SecretKeySpec;
  */
 /* package */ final class SnifferMX {
 
+  private static byte[] originalArray = new byte[] {'A', 'S', 'E', '/', 'E', 'B', 'C'};
   /**
    * The number of bytes to search for a valid header in {@link #sniff(ExtractorInput)}.
    */
@@ -127,17 +129,20 @@ import javax.crypto.spec.SecretKeySpec;
 
   static final int oneBlockSize = 16;
 
-  static public byte[] encrypt(String content) throws Exception {
-    // 创建AES秘钥
-    SecretKeySpec key = new SecretKeySpec(MXPlayer_HardCodeKey.getBytes(), "AES/ECB/NoPadding");
-    // 创建密码器
-    Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
-    // 初始化加密器
-    cipher.init(Cipher.ENCRYPT_MODE, key);
-    // 加密
-    return cipher.doFinal(content.getBytes("UTF-8"));
-  }
+  //aa ee ss  ee cc bb
+  @Keep
+  private static String e() {
+    byte[] bytes = new byte[7];
+    bytes[0] = originalArray[0];
+    bytes[1] = originalArray[2];
+    bytes[2] = originalArray[1];
+    bytes[3] = originalArray[3];
+    bytes[4] = originalArray[4];
+    bytes[5] = originalArray[6];
+    bytes[6] = originalArray[5];
 
+    return new String(bytes);
+  }
 
   static public byte[] decrypt(byte[] content, byte [] keyId) throws Exception {
 
@@ -146,9 +151,9 @@ import javax.crypto.spec.SecretKeySpec;
     int decrytSize = contentSize - paddingSize;
 
     // 创建AES秘钥
-    SecretKeySpec key = new SecretKeySpec(keyId, "AES/ECB/NoPadding");
+    SecretKeySpec key = new SecretKeySpec(keyId, e() + "/NoPadding");
     // 创建密码器
-    Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+    Cipher cipher = Cipher.getInstance(e() + "/NoPadding");
     // 初始化解密器
     cipher.init(Cipher.DECRYPT_MODE, key);
 
