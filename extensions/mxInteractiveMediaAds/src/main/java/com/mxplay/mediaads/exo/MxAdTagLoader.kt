@@ -406,7 +406,11 @@ internal class MxAdTagLoader(
         if (imaAdState != IMA_AD_STATE_NONE) {
             val adMediaInfo = Assertions.checkNotNull(imaAdMediaInfo)
             for (i in adCallbacks.indices) {
-                adCallbacks[i]!!.onError(adMediaInfo)
+                if (error.type != ExoPlaybackException.TYPE_SOURCE) {
+                    adCallbacks[i]!!.onError(adMediaInfo, AdError.AdErrorCode.MEDIA_FILE_UNSUPPORTED, "Media file unsupported")
+                } else {
+                    adCallbacks[i]!!.onError(adMediaInfo)
+                }
             }
         }
     }
