@@ -30,6 +30,7 @@ import com.google.android.exoplayer2.Timeline
 import com.google.android.exoplayer2.source.ads.AdPlaybackState
 import com.google.android.exoplayer2.source.ads.AdsLoader.AdViewProvider
 import com.google.android.exoplayer2.source.ads.AdsMediaSource.AdLoadException
+import com.google.android.exoplayer2.upstream.DataSchemeDataSource
 import com.google.android.exoplayer2.upstream.DataSpec
 import com.google.android.exoplayer2.util.Assertions
 import com.google.android.exoplayer2.util.Log
@@ -439,7 +440,17 @@ internal class MxAdTagLoader(
         adsBehaviour.sendAdOpportunity();
         if (request.adTagUrl != null) {
             adsBehaviour.provideAdTagUri(Uri.parse(request.adTagUrl)) { adTagData: AdTagData ->
-                request.adTagUrl = adTagData.adTag.toString()
+                if (DataSchemeDataSource.SCHEME_DATA == adTagData.adTag.scheme) {
+                    val dataSchemeDataSource = DataSchemeDataSource()
+                    try {
+                        dataSchemeDataSource.open(DataSpec(adTagData.adTag))
+                        request.adsResponse = Util.fromUtf8Bytes(Util.readToEnd(dataSchemeDataSource))
+                    } finally {
+                        dataSchemeDataSource.close()
+                    }
+                } else {
+                    request.adTagUrl = adTagData.adTag.toString()
+                }
                 adsLoader.requestAds(request)
             }
         } else adsLoader.requestAds(request)
