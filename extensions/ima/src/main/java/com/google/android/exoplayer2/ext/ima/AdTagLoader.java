@@ -65,6 +65,7 @@ import com.google.android.exoplayer2.source.ads.AdsLoader.EventListener;
 import com.google.android.exoplayer2.source.ads.AdsLoader.OverlayInfo;
 import com.google.android.exoplayer2.source.ads.AdsMediaSource.AdLoadException;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
+import com.google.android.exoplayer2.upstream.DataSchemeDataSource;
 import com.google.android.exoplayer2.upstream.DataSpec;
 import com.google.android.exoplayer2.util.Log;
 import com.google.android.exoplayer2.util.Util;
@@ -624,8 +625,6 @@ import java.util.concurrent.TimeUnit;
       adsLoader.addAdsLoadedListener(componentListener);
       AdsRequest request;
       request = ImaUtil.getAdsRequestForAdTagDataSpec(imaFactory, adTagDataSpec);
-      pendingAdRequestContext = new Object();
-      request.setUserRequestContext(pendingAdRequestContext);
       if (configuration.enableContinuousPlayback != null) {
         request.setContinuousPlayback(configuration.enableContinuousPlayback);
       }
@@ -637,10 +636,28 @@ import java.util.concurrent.TimeUnit;
       adsBehaviour.sendAdOpportunity();
       if (request.getAdTagUrl() != null) {
         adsBehaviour.provideAdTagUri(Uri.parse(request.getAdTagUrl()), adTagData -> {
-          request.setAdTagUrl(adTagData.getAdTag().toString());
+          if (DataSchemeDataSource.SCHEME_DATA.equals(adTagData.getAdTag().getScheme())) {
+            DataSchemeDataSource dataSchemeDataSource = new DataSchemeDataSource();
+            try {
+              dataSchemeDataSource.open(new DataSpec(adTagData.getAdTag()));
+              request.setAdsResponse(Util.fromUtf8Bytes(Util.readToEnd(dataSchemeDataSource)));
+            } catch (IOException e) {
+              if (configuration.debugModeEnabled) {
+                e.printStackTrace();
+              }
+            } finally {
+              dataSchemeDataSource.close();
+            }
+          } else {
+            request.setAdTagUrl(adTagData.getAdTag().toString());
+          }
+          pendingAdRequestContext = new Object();
+          request.setUserRequestContext(pendingAdRequestContext);
           adsLoader.requestAds(request);
         });
       }else {
+        pendingAdRequestContext = new Object();
+        request.setUserRequestContext(pendingAdRequestContext);
         adsLoader.requestAds(request);
       }
       return adsLoader;
