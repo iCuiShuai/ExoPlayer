@@ -7,32 +7,25 @@ import java.util.Map;
 
 public class AdTagData {
     private final Uri adTag;
-    private final boolean pubmaticSuccess;
-    private final long pubmaticResponseTime;
+    private final boolean success;
+    private final long responseTime;
 
 
-    public AdTagData(Uri adTag, boolean pubmaticSuccess, long pubmaticResponseTime) {
+    public AdTagData(Uri adTag, boolean success, long responseTime) {
         this.adTag = adTag;
-        this.pubmaticSuccess = pubmaticSuccess;
-        this.pubmaticResponseTime = pubmaticResponseTime;
+        this.success = success;
+        this.responseTime = responseTime;
     }
 
     public Uri getAdTag() {
         return adTag;
     }
 
-    public boolean isPubmaticSuccess() {
-        return pubmaticSuccess;
+    public boolean isSuccess() {
+        return success;
     }
 
-    public long getPubmaticResponseTime() {
-        return pubmaticResponseTime;
-    }
-
-    public Map<String, String> toParams() {
-        HashMap<String,String> hashMap = new HashMap<>();
-        hashMap.put("pubmaticResponseTime",String.valueOf(pubmaticResponseTime));
-        hashMap.put("pubmaticSuccess",String.valueOf(pubmaticSuccess));
-        return hashMap;
+    public long getResponseTime() {
+        return responseTime;
     }
 }
