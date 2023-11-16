@@ -28,6 +28,8 @@ class Configuration(builder: Builder, appId: String) {
     val mxMediaSdkConfig: MxMediaSdkConfig
     val initialBufferSizeForAdPlaybackMs: Int
     val enableCustomTab : Boolean
+    val detectObstruction : Boolean
+
 
     init {
         adUnitId = builder.adUnitId
@@ -38,6 +40,7 @@ class Configuration(builder: Builder, appId: String) {
         adsBehaviour = builder.adsBehaviour ?: AdsBehaviour(builder.vastLoadTimeoutMs
                 ?: BaseMxMediaSdkConfig.VAST_LOAD_TIMEOUT_MS, debugModeEnabled)
         enableCustomTab = builder.enableCustomTab
+        this.detectObstruction = builder.detectObstruction
         mxMediaSdkConfig = MxMediaSdkConfig.Builder(context, builder.userInfo, builder.trackersConfig).apply {
             builder.adMediaMimeTypes?.let { this.adMediaMimeTypes = it }
             builder.vastLoadTimeoutMs?.let { this.vastLoadTimeoutMs = it }
@@ -79,6 +82,7 @@ class Configuration(builder: Builder, appId: String) {
         var adTagUri: String? = null
         var initialBufferSizeForAdPlaybackMs: Int? = null
         var enableCustomTab = false
+        var detectObstruction = false
         var ppid : String? = null
 
         fun appName(appName: String) = apply { this.appName = appName }
@@ -106,6 +110,9 @@ class Configuration(builder: Builder, appId: String) {
         fun adTagUri(adTagUri: String) = apply { this.adTagUri = adTagUri }
         fun initialBufferSizeForAdPlaybackMs(initialBufferSizeForAdPlaybackMs: Int) = apply { this.initialBufferSizeForAdPlaybackMs = initialBufferSizeForAdPlaybackMs}
         fun enableCustomTab(enable : Boolean) = apply { this.enableCustomTab = enable }
+
+        fun detectObstruction(detectObstruction: Boolean) = apply { this.detectObstruction = detectObstruction }
+
         fun ppid(ppid: String): Builder = apply { this.ppid = ppid }
         fun build(appId : String): Configuration {
             return Configuration(this, appId)

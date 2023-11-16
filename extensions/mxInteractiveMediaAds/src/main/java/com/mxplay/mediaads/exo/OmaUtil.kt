@@ -31,7 +31,7 @@ class OmaUtil {
          * Creates an [AdDisplayContainer] to hold the player for video ads, a container for
          * non-linear ads, and slots for companion ads.
          */
-        fun createAdDisplayContainer(container: ViewGroup?, player: VideoAdPlayer?): AdDisplayContainer
+        fun createAdDisplayContainer(container: ViewGroup?, player: VideoAdPlayer?, detectObstruction : Boolean): AdDisplayContainer
 
         /** Creates an [AdDisplayContainer] to hold the player for audio ads.  */
         fun createAudioAdDisplayContainer(context: Context?, player: VideoAdPlayer?): AdDisplayContainer

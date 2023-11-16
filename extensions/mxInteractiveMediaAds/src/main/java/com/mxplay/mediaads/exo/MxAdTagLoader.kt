@@ -1421,7 +1421,7 @@ internal class MxAdTagLoader(
         timeline = Timeline.EMPTY
         adPlaybackState = AdPlaybackState.NONE
         adDisplayContainer = if (adViewGroup != null) {
-            omaFactory.createAdDisplayContainer(adViewGroup,  /* player= */componentListener)
+            omaFactory.createAdDisplayContainer(adViewGroup,  /* player= */componentListener, configuration.detectObstruction)
         } else {
             omaFactory.createAudioAdDisplayContainer(context,  /* player= */componentListener)
         }
