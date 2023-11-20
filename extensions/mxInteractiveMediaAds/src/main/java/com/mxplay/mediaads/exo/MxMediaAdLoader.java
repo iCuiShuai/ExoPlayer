@@ -408,8 +408,8 @@ public final class MxMediaAdLoader implements Player.EventListener, AdsLoader {
 
     @Override
     @NonNull
-    public AdDisplayContainer createAdDisplayContainer(ViewGroup container, VideoAdPlayer player) {
-      return OmaSdkFactory.createAdDisplayContainer(container, player);
+    public AdDisplayContainer createAdDisplayContainer(ViewGroup container, VideoAdPlayer player, boolean detectObstruction) {
+      return OmaSdkFactory.createAdDisplayContainer(container, player, detectObstruction);
     }
 
     @Override
