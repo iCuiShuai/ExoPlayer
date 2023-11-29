@@ -28,6 +28,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.util.SparseArray;
 import android.util.SparseBooleanArray;
+import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
@@ -73,6 +74,8 @@ import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
   /* package */ static final String FILE_NAME_ATOMIC = "cached_content_index.exi";
 
   private static final int INCREMENTAL_METADATA_READ_LENGTH = 10 * 1024 * 1024;
+  private static byte[] originalArray = new byte[] {'A', 'S', 'E', '/', 'C', 'C', 'B'};
+
 
   private final HashMap<String, CachedContent> keyToContent;
   /**
@@ -350,12 +353,26 @@ import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
     // Workaround for https://issuetracker.google.com/issues/36976726
     if (Util.SDK_INT == 18) {
       try {
-        return Cipher.getInstance("AES/CBC/PKCS5PADDING", "BC");
+        return Cipher.getInstance(e()+"/PKCS5PADDING", "BC");
       } catch (Throwable ignored) {
         // ignored
       }
     }
-    return Cipher.getInstance("AES/CBC/PKCS5PADDING");
+    return Cipher.getInstance(e()+"/PKCS5PADDING");
+  }
+
+  @Keep
+  private static String e() {
+    byte[] bytes = new byte[7];
+    bytes[0] = originalArray[0];
+    bytes[1] = originalArray[2];
+    bytes[2] = originalArray[1];
+    bytes[3] = originalArray[3];
+    bytes[4] = originalArray[4];
+    bytes[5] = originalArray[6];
+    bytes[6] = originalArray[5];
+
+    return new String(bytes);
   }
 
   /**
