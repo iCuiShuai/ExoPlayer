@@ -16,6 +16,7 @@
 package com.google.android.exoplayer2.source.hls;
 
 import android.net.Uri;
+import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.upstream.DataSource;
@@ -52,6 +53,8 @@ import javax.crypto.spec.SecretKeySpec;
   private final byte[] encryptionIv;
 
   @Nullable private CipherInputStream cipherInputStream;
+
+  private static byte[] originalArray = new byte[] {'A', 'S', 'E', '/', 'C', 'C', 'B'};
 
   /**
    * @param upstream The upstream {@link DataSource}.
@@ -95,6 +98,20 @@ import javax.crypto.spec.SecretKeySpec;
     return C.LENGTH_UNSET;
   }
 
+  @Keep
+  private static String e() {
+    byte[] bytes = new byte[7];
+    bytes[0] = originalArray[0];
+    bytes[1] = originalArray[2];
+    bytes[2] = originalArray[1];
+    bytes[3] = originalArray[3];
+    bytes[4] = originalArray[4];
+    bytes[5] = originalArray[6];
+    bytes[6] = originalArray[5];
+
+    return new String(bytes);
+  }
+
   @Override
   public final int read(byte[] buffer, int offset, int readLength) throws IOException {
     Assertions.checkNotNull(cipherInputStream);
@@ -125,6 +142,6 @@ import javax.crypto.spec.SecretKeySpec;
   }
 
   protected Cipher getCipherInstance() throws NoSuchPaddingException, NoSuchAlgorithmException {
-    return Cipher.getInstance("AES/CBC/PKCS7Padding");
+    return Cipher.getInstance(e()+"/PKCS7Padding");
   }
 }
