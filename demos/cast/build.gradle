@@ -49,6 +49,7 @@ android {
         // The demo app isn't indexed and doesn't have translations.
         disable 'GoogleAppIndexingWarning','MissingTranslation'
     }
+    namespace 'com.google.android.exoplayer2.castdemo'
 }
 
 dependencies {

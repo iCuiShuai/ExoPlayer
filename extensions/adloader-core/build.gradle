@@ -18,6 +18,7 @@ android {
     }
 
     testOptions.unitTests.includeAndroidResources = true
+    namespace 'ccom.mxplay.adloader'
 }
 
 dependencies {

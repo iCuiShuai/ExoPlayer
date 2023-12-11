@@ -15,6 +15,10 @@ apply from: "$gradle.ext.exoplayerSettingsDir/common_library_config.gradle"
 
 android.buildTypes.debug.testCoverageEnabled true
 
+android {
+    namespace 'com.google.android.exoplayer2.common'
+}
+
 dependencies {
     api ('com.google.guava:guava:' + guavaVersion) {
         // Exclude dependencies that are only used by Guava at compile time

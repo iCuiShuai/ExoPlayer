@@ -63,6 +63,7 @@ android {
             buildConfigField "boolean", "USE_DECODER_EXTENSIONS", "true"
         }
     }
+    namespace 'com.google.android.exoplayer2.demo'
 }
 
 dependencies {
