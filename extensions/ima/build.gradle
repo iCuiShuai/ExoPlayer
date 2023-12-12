@@ -22,6 +22,7 @@ android {
     sourceSets {
         androidTest.assets.srcDir '../../testdata/src/test/assets/'
     }
+    namespace 'com.google.android.exoplayer2.ext.ima'
 }
 
 dependencies {

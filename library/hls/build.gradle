@@ -21,6 +21,7 @@ android {
     }
 
     sourceSets.test.assets.srcDir '../../testdata/src/test/assets/'
+    namespace 'com.google.android.exoplayer2.source.hls'
 }
 
 dependencies {

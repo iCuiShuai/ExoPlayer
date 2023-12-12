@@ -42,6 +42,7 @@ android {
         // This demo app does not have translations.
         disable 'MissingTranslation'
     }
+    namespace 'com.google.android.exoplayer2.gldemo'
 }
 
 dependencies {

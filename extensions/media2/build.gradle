@@ -15,6 +15,10 @@ apply from: "$gradle.ext.exoplayerSettingsDir/common_library_config.gradle"
 
 android.defaultConfig.minSdkVersion 19
 
+android {
+    namespace 'com.google.android.exoplayer2.ext.media2'
+}
+
 dependencies {
     implementation project(modulePrefix + 'library-core')
     implementation 'androidx.collection:collection:' + androidxCollectionVersion
