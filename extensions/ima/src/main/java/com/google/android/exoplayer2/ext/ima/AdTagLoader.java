@@ -228,6 +228,12 @@ import java.util.concurrent.TimeUnit;
    */
   private boolean adShownTracked;
 
+  private long adBufferingStartTime;
+
+  private long totalAdBufferingTime;
+
+  private SkipAdDueToBufferingRunnable skipAdDueToBuffering;
+
   /** Creates a new ad tag loader, starting the ad request if the ad tag is valid. */
   @SuppressWarnings({"methodref.receiver.bound.invalid", "method.invocation.invalid"})
   public AdTagLoader(
@@ -271,6 +277,8 @@ import java.util.concurrent.TimeUnit;
     contentDurationMs = C.TIME_UNSET;
     timeline = Timeline.EMPTY;
     adPlaybackState = AdPlaybackState.NONE;
+    adBufferingStartTime = C.TIME_UNSET;
+    totalAdBufferingTime = 0;
     if (adViewGroup != null) {
       adDisplayContainer =
           imaFactory.createAdDisplayContainer(adViewGroup, /* player= */ componentListener);
@@ -475,6 +483,9 @@ import java.util.concurrent.TimeUnit;
     stopUpdatingAdProgress();
     imaAdInfo = null;
     pendingAdLoadError = null;
+    totalAdBufferingTime = 0;
+    adBufferingStartTime = C.TIME_UNSET;
+    handler.removeCallbacks(skipAdDueToBuffering);
     // No more ads will play once the loader is released, so mark all ad groups as skipped.
     for (int i = 0; i < adPlaybackState.adGroupCount; i++) {
       adPlaybackState = adPlaybackState.withSkippedAdGroup(i);
@@ -884,6 +895,9 @@ import java.util.concurrent.TimeUnit;
         break;
       case CONTENT_RESUME_REQUESTED:
         imaPausedContent = false;
+        totalAdBufferingTime = 0;
+        adBufferingStartTime = C.TIME_UNSET;
+        handler.removeCallbacks(skipAdDueToBuffering);
         resumeContentInternal();
         break;
       case LOG:
@@ -907,8 +921,51 @@ import java.util.concurrent.TimeUnit;
           adsBehaviour.adShown();
         }
         break;
+      case AD_PROGRESS:
+        if (configuration.totalAdBufferingThresholdMs != -1 && configuration.adBufferingThresholdMs != -1) {
+          if (adBufferingStartTime != C.TIME_UNSET) {
+            totalAdBufferingTime += (System.currentTimeMillis() - adBufferingStartTime);
+            adBufferingStartTime = C.TIME_UNSET;
+            handler.removeCallbacks(skipAdDueToBuffering);
+          }
+        }
+        break;
+      case AD_BUFFERING:
+        if (configuration.totalAdBufferingThresholdMs != -1 && configuration.adBufferingThresholdMs != -1 && adEvent.getAd() != null) {
+          adBufferingStartTime = System.currentTimeMillis();
+          long totalAdBufferingThresholdLeft = (configuration.totalAdBufferingThresholdMs - totalAdBufferingTime) > 0 ? (configuration.totalAdBufferingThresholdMs - totalAdBufferingTime) : 0;
+          long adBufferThresholdLeft = Math.min(configuration.adBufferingThresholdMs, totalAdBufferingThresholdLeft);
+          this.skipAdDueToBuffering = new SkipAdDueToBufferingRunnable(adEvent.getAd().getAdPodInfo());
+          handler.postDelayed(skipAdDueToBuffering, adBufferThresholdLeft);
+        }
+        break;
+      case COMPLETED:
+      case SKIPPED:
+        totalAdBufferingTime = 0;
+        adBufferingStartTime = C.TIME_UNSET;
+        handler.removeCallbacks(skipAdDueToBuffering);
+        break;
       default:
         break;
+    }
+  }
+
+  private class SkipAdDueToBufferingRunnable implements Runnable {
+
+    private AdPodInfo adPodInfo;
+    public SkipAdDueToBufferingRunnable(AdPodInfo adPodInfo) {
+      this.adPodInfo = adPodInfo;
+    }
+
+    @Override
+    public void run() {
+      if (adBufferingStartTime != C.TIME_UNSET) {
+        int adGroupIndex = adsBehaviour.getAdGroupIndexForAdPod(adPodInfo.getPodIndex(), adPodInfo.getTimeOffset(), player, timeline, period);
+        int adIndexInAdGroup = adPodInfo.getAdPosition() - 1;
+        adPlaybackState =
+                adPlaybackState.withSkippedAd(adGroupIndex, adIndexInAdGroup);
+        updateAdPlaybackState();
+      }
     }
   }
 
@@ -1108,7 +1165,7 @@ import java.util.concurrent.TimeUnit;
         .encodedPath(adMediaInfo.getUrl());
 
     if (configuration.initialBufferSizeForAdPlaybackMs != -1) {
-      int initialBufferSizeForAdPlaybackMs = configuration.initialBufferSizeForAdPlaybackMs;
+      int initialBufferSizeForAdPlaybackMs = getInitialBufferSizeForAdPlaybackMs(adPodInfo, adInfo);
       adUriBuilder.appendQueryParameter(INITIAL_BUFFER_FOR_AD_PLAYBACK_MS, Integer.toString(initialBufferSizeForAdPlaybackMs));
     }
 
@@ -1118,6 +1175,22 @@ import java.util.concurrent.TimeUnit;
         adPlaybackState.withAdUri(adInfo.adGroupIndex, adInfo.adIndexInAdGroup, adUri);
     adsBehaviour.onAdLoad(adGroupIndex, adIndexInAdGroup, adUri, adPodInfo.getPodIndex());
     updateAdPlaybackState();
+  }
+
+  private int getInitialBufferSizeForAdPlaybackMs(AdPodInfo adPodInfo, AdInfo adInfo) {
+    int initialBufferSizeForAdPlaybackMs = configuration.initialBufferSizeForAdPlaybackMs;
+    if (configuration.initialBufferSizeForUrgentAdPlaybackMs != -1 && configuration.thresholdForUrgentAdPlaybackMs != -1) {
+      VideoProgressUpdate videoProgressUpdate = getContentVideoProgressUpdate();
+      long currentTimeInSec = videoProgressUpdate.getCurrentTimeMs() / 1000;
+      long durationInSec = videoProgressUpdate.getDurationMs() / 1000;
+      double timeOffset = adPodInfo.getTimeOffset() == -1.0 ? durationInSec : adPodInfo.getTimeOffset();
+      boolean isAdBeforeCurrentTime = currentTimeInSec >= timeOffset;
+      boolean isAdCloseToCurrentTime = (timeOffset * 1000 - videoProgressUpdate.getCurrentTimeMs()) > 0 && (timeOffset * 1000 - videoProgressUpdate.getCurrentTimeMs()) <= configuration.thresholdForUrgentAdPlaybackMs;
+      if (adInfo.adIndexInAdGroup == 0 && (isAdBeforeCurrentTime || isAdCloseToCurrentTime)) {
+        initialBufferSizeForAdPlaybackMs = configuration.initialBufferSizeForUrgentAdPlaybackMs;
+      }
+    }
+    return initialBufferSizeForAdPlaybackMs;
   }
 
   private void playAdInternal(AdMediaInfo adMediaInfo) {

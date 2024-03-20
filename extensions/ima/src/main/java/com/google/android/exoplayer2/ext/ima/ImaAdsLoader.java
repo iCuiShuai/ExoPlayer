@@ -126,6 +126,10 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     private boolean playAdBeforeStartPosition;
     private boolean debugModeEnabled;
     private int initialBufferSizeForAdPlaybackMs = -1;
+    private int initialBufferSizeForUrgentAdPlaybackMs = -1;
+    private int thresholdForUrgentAdPlaybackMs = -1;
+    private int totalAdBufferingThresholdMs = -1;
+    private int adBufferingThresholdMs = -1;
     private ImaUtil.ImaFactory imaFactory;
     private IAdsBehaviour adsBehaviour;
 
@@ -366,6 +370,26 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
       return this;
     }
 
+    public Builder setInitialBufferSizeForUrgentAdPlaybackMs(int initialBufferSizeForUrgentAdPlaybackMs) {
+      this.initialBufferSizeForUrgentAdPlaybackMs = initialBufferSizeForUrgentAdPlaybackMs;
+      return this;
+    }
+
+    public Builder setThresholdForUrgentAdPlaybackMs(int thresholdForUrgentAdPlaybackMs) {
+      this.thresholdForUrgentAdPlaybackMs = thresholdForUrgentAdPlaybackMs;
+      return this;
+    }
+
+    public Builder setTotalAdBufferingThresholdMs(int totalAdBufferingThresholdMs) {
+      this.totalAdBufferingThresholdMs = totalAdBufferingThresholdMs;
+      return this;
+    }
+
+    public Builder setAdBufferingThresholdMs(int adBufferingThresholdMs) {
+      this.adBufferingThresholdMs = adBufferingThresholdMs;
+      return this;
+    }
+
     @VisibleForTesting
     /* package */ Builder setImaFactory(ImaUtil.ImaFactory imaFactory) {
       this.imaFactory = checkNotNull(imaFactory);
@@ -393,7 +417,11 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
               imaSdkSettings,
               adsBehaviour,
               debugModeEnabled,
-              initialBufferSizeForAdPlaybackMs),
+              initialBufferSizeForAdPlaybackMs,
+              initialBufferSizeForUrgentAdPlaybackMs,
+              thresholdForUrgentAdPlaybackMs,
+              totalAdBufferingThresholdMs,
+              adBufferingThresholdMs),
           imaFactory);
     }
   }

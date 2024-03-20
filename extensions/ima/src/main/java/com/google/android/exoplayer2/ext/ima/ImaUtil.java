@@ -104,6 +104,10 @@ import java.util.Set;
     public final IAdsBehaviour adsBehaviour;
     public final boolean debugModeEnabled;
     public final int initialBufferSizeForAdPlaybackMs;
+    public final int initialBufferSizeForUrgentAdPlaybackMs;
+    public final int thresholdForUrgentAdPlaybackMs;
+    public final int totalAdBufferingThresholdMs;
+    public  final int adBufferingThresholdMs;
 
     public Configuration(
         long adPreloadTimeoutMs,
@@ -121,7 +125,11 @@ import java.util.Set;
         @Nullable VideoAdPlayer.VideoAdPlayerCallback applicationVideoAdPlayerCallback,
         @Nullable ImaSdkSettings imaSdkSettings, @Nullable IAdsBehaviour adsBehaviour,
         boolean debugModeEnabled,
-        @Nullable int initialBufferSizeForAdPlaybackMs) {
+        @Nullable int initialBufferSizeForAdPlaybackMs,
+        @Nullable int initialBufferSizeForUrgentAdPlaybackMs,
+        @Nullable int thresholdForUrgentAdPlaybackMs,
+        @Nullable int totalAdBufferingThresholdMs,
+        @Nullable int adBufferingThresholdMs) {
       this.adPreloadTimeoutMs = adPreloadTimeoutMs;
       this.vastLoadTimeoutMs = vastLoadTimeoutMs;
       this.mediaLoadTimeoutMs = mediaLoadTimeoutMs;
@@ -139,6 +147,10 @@ import java.util.Set;
       this.adsBehaviour = adsBehaviour == null ? new AdsBehaviour(vastLoadTimeoutMs, debugModeEnabled) : adsBehaviour;
       this.debugModeEnabled = debugModeEnabled;
       this.initialBufferSizeForAdPlaybackMs = initialBufferSizeForAdPlaybackMs;
+      this.initialBufferSizeForUrgentAdPlaybackMs = initialBufferSizeForUrgentAdPlaybackMs;
+      this.thresholdForUrgentAdPlaybackMs = thresholdForUrgentAdPlaybackMs;
+      this.totalAdBufferingThresholdMs = totalAdBufferingThresholdMs;
+      this.adBufferingThresholdMs = adBufferingThresholdMs;
     }
   }
 
