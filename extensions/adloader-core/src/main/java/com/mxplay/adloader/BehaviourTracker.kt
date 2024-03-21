@@ -80,6 +80,8 @@ class BehaviourTracker(
             val creativeId = if (adEvent.ad != null) adEvent.ad.creativeId else null
             val advertiser = if (adEvent.ad != null) adEvent.ad.advertiserName else null
             val adPodInfo = if (adEvent.ad != null) adEvent.ad.adPodInfo else null
+            val adDuration : Double = if (adEvent.ad != null) adEvent.ad.duration else 0.toDouble()
+            val adVastBitrate : Int = if (adEvent.ad != null) adEvent.ad.vastMediaBitrate else 0
             val adPodIndex = adPodInfo?.podIndex ?: -1
             val adIndexInAdGroup = if (adPodInfo != null) adPodInfo.adPosition - 1 else -1
             when(adEvent.type) {
@@ -123,7 +125,7 @@ class BehaviourTracker(
                 else -> { }
             }
             if (!TextUtils.isEmpty(adEventName) && adTrackingEventsList.contains(adEventName)) {
-                videoAdsTracker.run { trackEvent(adEventName!!, buildEventParams(creativeId, advertiser, adPodIndex, adIndexInAdGroup)) }
+                videoAdsTracker.run { trackEvent(adEventName!!, buildEventParams(creativeId, advertiser, adPodIndex, adIndexInAdGroup,adDuration,adVastBitrate)) }
             }
         }
     }

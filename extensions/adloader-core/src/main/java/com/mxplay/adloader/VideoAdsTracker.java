@@ -42,6 +42,9 @@ public abstract class VideoAdsTracker {
     public static final String AD_PODS_COUNT = "adPodsCount";
     public static final String AD_POD_INDEX = "adPodIndex";
     public static final String AD_INDEX_IN_POD = "adIndexInPod";
+
+    public static final String AD_VAST_BITRATE = "adVastBitrate";
+    public static final String AD_DURATION = "adDuration";
     public static final String LOAD_MEDIA_TIME = "loadMediaTime";
     public static final String TOTAL_COST_TIME = "totalCostTime";
     public static final String AD_INDEX_IN_AD_GROUP = "adIndexInAdGroup";
@@ -120,13 +123,17 @@ public abstract class VideoAdsTracker {
         return result;
     }
 
-    public Map<String, String> buildEventParams(@Nullable String creativeId, @Nullable String advertiser, int adPodIndex, int adIndexInPod) {
+    public Map<String, String> buildEventParams(@Nullable String creativeId, @Nullable String advertiser, int adPodIndex, int adIndexInPod, double vastDuration,int vastBitrate) {
         Map<String, String> result = new HashMap<>();
         result.put(AD_LOADER_NAME, adLoaderName);
         if (creativeId != null)
             result.put(CREATIVE_ID, creativeId);
         if (advertiser != null)
             result.put(ADVERTISER, advertiser);
+        if(vastBitrate != 0)
+            result.put(AD_VAST_BITRATE,String.valueOf(vastBitrate));
+        if(vastDuration != 0)
+            result.put(AD_DURATION,String.valueOf(vastDuration));
         result.put(SESSION_ID, sessionId);
         result.put(CATEGORY, CATEGORY_DFP_ADS);
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
