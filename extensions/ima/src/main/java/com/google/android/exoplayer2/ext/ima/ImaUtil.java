@@ -108,6 +108,7 @@ import java.util.Set;
     public final int thresholdForUrgentAdPlaybackMs;
     public final int totalAdBufferingThresholdMs;
     public  final int adBufferingThresholdMs;
+    public final int adPreloadTimeMs;
 
     public Configuration(
         long adPreloadTimeoutMs,
@@ -129,7 +130,8 @@ import java.util.Set;
         @Nullable int initialBufferSizeForUrgentAdPlaybackMs,
         @Nullable int thresholdForUrgentAdPlaybackMs,
         @Nullable int totalAdBufferingThresholdMs,
-        @Nullable int adBufferingThresholdMs) {
+        @Nullable int adBufferingThresholdMs,
+        @Nullable int adPreloadTimeMs) {
       this.adPreloadTimeoutMs = adPreloadTimeoutMs;
       this.vastLoadTimeoutMs = vastLoadTimeoutMs;
       this.mediaLoadTimeoutMs = mediaLoadTimeoutMs;
@@ -151,6 +153,7 @@ import java.util.Set;
       this.thresholdForUrgentAdPlaybackMs = thresholdForUrgentAdPlaybackMs;
       this.totalAdBufferingThresholdMs = totalAdBufferingThresholdMs;
       this.adBufferingThresholdMs = adBufferingThresholdMs;
+      this.adPreloadTimeMs = adPreloadTimeMs;
     }
   }
 

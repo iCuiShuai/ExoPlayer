@@ -234,6 +234,9 @@ import java.util.concurrent.TimeUnit;
 
   private SkipAdDueToBufferingRunnable skipAdDueToBuffering;
 
+  /**  Flags for sending fakeProgress to preload ad in advance */
+  private boolean adPreloadFlag = true;
+
   /** Creates a new ad tag loader, starting the ad request if the ad tag is valid. */
   @SuppressWarnings({"methodref.receiver.bound.invalid", "method.invocation.invalid"})
   public AdTagLoader(
@@ -787,6 +790,12 @@ import java.util.concurrent.TimeUnit;
       contentPositionMs = fakeContentProgressOffsetMs + elapsedSinceEndMs;
     } else if (imaAdState == IMA_AD_STATE_NONE && !playingAd && hasContentDuration) {
       contentPositionMs = adsBehaviour.getContentPositionMs(player, timeline, period, contentDurationMs);
+      if (configuration.adPreloadTimeMs != -1) {
+        long fakeProgressForPreloadMs = contentPositionMs + configuration.adPreloadTimeMs;
+        if (adPreloadFlag && fakeProgressForPreloadMs + THRESHOLD_END_OF_CONTENT_MS < contentDurationMs){
+          contentPositionMs = fakeProgressForPreloadMs;
+        }
+      }
     } else {
       return VideoProgressUpdate.VIDEO_TIME_NOT_READY;
     }
@@ -982,6 +991,7 @@ import java.util.concurrent.TimeUnit;
       adPlaybackState = adPlaybackState.withSkippedAdGroup(imaAdInfo.adGroupIndex);
       updateAdPlaybackState();
     }
+    adPreloadFlag = true;
   }
 
   /**
@@ -1175,6 +1185,7 @@ import java.util.concurrent.TimeUnit;
         adPlaybackState.withAdUri(adInfo.adGroupIndex, adInfo.adIndexInAdGroup, adUri);
     adsBehaviour.onAdLoad(adGroupIndex, adIndexInAdGroup, adUri, adPodInfo.getPodIndex());
     updateAdPlaybackState();
+    adPreloadFlag = false;
   }
 
   private int getInitialBufferSizeForAdPlaybackMs(AdPodInfo adPodInfo, AdInfo adInfo) {

@@ -130,6 +130,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     private int thresholdForUrgentAdPlaybackMs = -1;
     private int totalAdBufferingThresholdMs = -1;
     private int adBufferingThresholdMs = -1;
+    private int adPreloadTimeMs = -1;
     private ImaUtil.ImaFactory imaFactory;
     private IAdsBehaviour adsBehaviour;
 
@@ -390,6 +391,11 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
       return this;
     }
 
+    public Builder setAdPreloadTimeMs(int adPreloadTimeMs) {
+      this.adPreloadTimeMs = adPreloadTimeMs;
+      return this;
+    }
+
     @VisibleForTesting
     /* package */ Builder setImaFactory(ImaUtil.ImaFactory imaFactory) {
       this.imaFactory = checkNotNull(imaFactory);
@@ -421,7 +427,8 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
               initialBufferSizeForUrgentAdPlaybackMs,
               thresholdForUrgentAdPlaybackMs,
               totalAdBufferingThresholdMs,
-              adBufferingThresholdMs),
+              adBufferingThresholdMs,
+              adPreloadTimeMs),
           imaFactory);
     }
   }
