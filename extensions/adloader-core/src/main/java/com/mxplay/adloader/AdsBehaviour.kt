@@ -132,7 +132,7 @@ open class AdsBehaviour private constructor(
 
     @CallSuper
     override fun onAllAdsRequested() {
-        val vastCallMaxWaitingTime = if (vastTimeOutInMs > 0) (vastTimeOutInMs + 1000).toLong() else 6000.toLong()
+        val vastCallMaxWaitingTime = if (vastTimeOutInMs > 0) (vastTimeOutInMs + 4000).toLong() else 12000.toLong()
         handler.postDelayed(vastCallWaitingRunnable, vastCallMaxWaitingTime)
     }
 
