@@ -23,12 +23,14 @@ import com.google.android.exoplayer2.util.ParsableByteArray;
 import java.io.IOException;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
-
+import androidx.annotation.Keep;
 /**
  * Utility class that peeks from the input stream in order to determine whether it appears to be
  * compatible input for this extractor.
  */
 /* package */ final class SnifferMX {
+
+  private static byte[] originalArray = new byte[] {'A', 'S', 'E', '/', 'E', 'B', 'C'};
 
   /**
    * The number of bytes to search for a valid header in {@link #sniff(ExtractorInput)}.
@@ -38,6 +40,20 @@ import javax.crypto.spec.SecretKeySpec;
 
   private final ParsableByteArray scratch;
   private int peekLength;
+
+  @Keep
+  private static String e() {
+    byte[] bytes = new byte[7];
+    bytes[0] = originalArray[0];
+    bytes[1] = originalArray[2];
+    bytes[2] = originalArray[1];
+    bytes[3] = originalArray[3];
+    bytes[4] = originalArray[4];
+    bytes[5] = originalArray[6];
+    bytes[6] = originalArray[5];
+
+    return new String(bytes);
+  }
 
   public SnifferMX() {
     scratch = new ParsableByteArray(8);
@@ -127,16 +143,6 @@ import javax.crypto.spec.SecretKeySpec;
 
   static final int oneBlockSize = 16;
 
-  static public byte[] encrypt(String content) throws Exception {
-    // 创建AES秘钥
-    SecretKeySpec key = new SecretKeySpec(MXPlayer_HardCodeKey.getBytes(), "AES/ECB/NoPadding");
-    // 创建密码器
-    Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
-    // 初始化加密器
-    cipher.init(Cipher.ENCRYPT_MODE, key);
-    // 加密
-    return cipher.doFinal(content.getBytes("UTF-8"));
-  }
 
 
   static public byte[] decrypt(byte[] content, byte [] keyId) throws Exception {
@@ -146,9 +152,9 @@ import javax.crypto.spec.SecretKeySpec;
     int decrytSize = contentSize - paddingSize;
 
     // 创建AES秘钥
-    SecretKeySpec key = new SecretKeySpec(keyId, "AES/ECB/NoPadding");
+    SecretKeySpec key = new SecretKeySpec(keyId, e() + "/NoPadding");
     // 创建密码器
-    Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+    Cipher cipher = Cipher.getInstance(e() + "/NoPadding");
     // 初始化解密器
     cipher.init(Cipher.DECRYPT_MODE, key);
 
