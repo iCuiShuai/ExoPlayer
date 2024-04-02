@@ -114,7 +114,7 @@ import java.util.concurrent.TimeUnit;
    * Threshold before the start of an ad at which IMA is expected to be able to preload the ad, in
    * milliseconds.
    */
-  private static final long THRESHOLD_AD_PRELOAD_MS = 4000;
+  private static final long THRESHOLD_AD_PRELOAD_MS = 6000;
   /** The threshold below which ad cue points are treated as matching, in microseconds. */
   private static final long THRESHOLD_AD_MATCH_US = 1000;
 
@@ -790,8 +790,8 @@ import java.util.concurrent.TimeUnit;
       contentPositionMs = fakeContentProgressOffsetMs + elapsedSinceEndMs;
     } else if (imaAdState == IMA_AD_STATE_NONE && !playingAd && hasContentDuration) {
       contentPositionMs = adsBehaviour.getContentPositionMs(player, timeline, period, contentDurationMs);
-      if (configuration.adPreloadTimeMs != -1) {
-        long fakeProgressForPreloadMs = contentPositionMs + configuration.adPreloadTimeMs;
+      if (configuration.adPlaybackConfig !=null && configuration.adPlaybackConfig.adPreloadTimeMs != -1) {
+        long fakeProgressForPreloadMs = contentPositionMs + configuration.adPlaybackConfig.adPreloadTimeMs;
         if (adPreloadFlag && fakeProgressForPreloadMs + THRESHOLD_END_OF_CONTENT_MS < contentDurationMs){
           contentPositionMs = fakeProgressForPreloadMs;
         }
@@ -931,7 +931,7 @@ import java.util.concurrent.TimeUnit;
         }
         break;
       case AD_PROGRESS:
-        if (configuration.totalAdBufferingThresholdMs != -1 && configuration.adBufferingThresholdMs != -1) {
+        if (configuration.adPlaybackConfig != null && configuration.adPlaybackConfig.totalAdBufferingThresholdMs != -1 && configuration.adPlaybackConfig.adBufferingThresholdMs != -1) {
           if (adBufferingStartTime != C.TIME_UNSET) {
             totalAdBufferingTime += (System.currentTimeMillis() - adBufferingStartTime);
             adBufferingStartTime = C.TIME_UNSET;
@@ -940,10 +940,12 @@ import java.util.concurrent.TimeUnit;
         }
         break;
       case AD_BUFFERING:
-        if (configuration.totalAdBufferingThresholdMs != -1 && configuration.adBufferingThresholdMs != -1 && adEvent.getAd() != null) {
+        if (configuration.adPlaybackConfig != null &&
+                configuration.adPlaybackConfig.totalAdBufferingThresholdMs != -1 &&
+                configuration.adPlaybackConfig.adBufferingThresholdMs != -1 && adEvent.getAd() != null) {
           adBufferingStartTime = System.currentTimeMillis();
-          long totalAdBufferingThresholdLeft = (configuration.totalAdBufferingThresholdMs - totalAdBufferingTime) > 0 ? (configuration.totalAdBufferingThresholdMs - totalAdBufferingTime) : 0;
-          long adBufferThresholdLeft = Math.min(configuration.adBufferingThresholdMs, totalAdBufferingThresholdLeft);
+          long totalAdBufferingThresholdLeft = (configuration.adPlaybackConfig.totalAdBufferingThresholdMs - totalAdBufferingTime) > 0 ? (configuration.adPlaybackConfig.totalAdBufferingThresholdMs - totalAdBufferingTime) : 0;
+          long adBufferThresholdLeft = Math.min(configuration.adPlaybackConfig.adBufferingThresholdMs, totalAdBufferingThresholdLeft);
           this.skipAdDueToBuffering = new SkipAdDueToBufferingRunnable(adEvent.getAd().getAdPodInfo());
           handler.postDelayed(skipAdDueToBuffering, adBufferThresholdLeft);
         }
@@ -1174,9 +1176,11 @@ import java.util.concurrent.TimeUnit;
     Uri.Builder adUriBuilder = new Uri.Builder()
         .encodedPath(adMediaInfo.getUrl());
 
-    if (configuration.initialBufferSizeForAdPlaybackMs != -1) {
+    if (configuration.adPlaybackConfig != null && configuration.adPlaybackConfig.initialBufferSizeForAdPlaybackMs != -1) {
       int initialBufferSizeForAdPlaybackMs = getInitialBufferSizeForAdPlaybackMs(adPodInfo, adInfo);
-      adUriBuilder.appendQueryParameter(INITIAL_BUFFER_FOR_AD_PLAYBACK_MS, Integer.toString(initialBufferSizeForAdPlaybackMs));
+      if (initialBufferSizeForAdPlaybackMs != -1) {
+        adUriBuilder.appendQueryParameter(INITIAL_BUFFER_FOR_AD_PLAYBACK_MS, Integer.toString(initialBufferSizeForAdPlaybackMs));
+      }
     }
 
     Uri adUri = Uri.parse(adUriBuilder.build().toString());
@@ -1189,19 +1193,24 @@ import java.util.concurrent.TimeUnit;
   }
 
   private int getInitialBufferSizeForAdPlaybackMs(AdPodInfo adPodInfo, AdInfo adInfo) {
-    int initialBufferSizeForAdPlaybackMs = configuration.initialBufferSizeForAdPlaybackMs;
-    if (configuration.initialBufferSizeForUrgentAdPlaybackMs != -1 && configuration.thresholdForUrgentAdPlaybackMs != -1) {
-      VideoProgressUpdate videoProgressUpdate = getContentVideoProgressUpdate();
-      long currentTimeInSec = videoProgressUpdate.getCurrentTimeMs() / 1000;
-      long durationInSec = videoProgressUpdate.getDurationMs() / 1000;
-      double timeOffset = adPodInfo.getTimeOffset() == -1.0 ? durationInSec : adPodInfo.getTimeOffset();
-      boolean isAdBeforeCurrentTime = currentTimeInSec >= timeOffset;
-      boolean isAdCloseToCurrentTime = (timeOffset * 1000 - videoProgressUpdate.getCurrentTimeMs()) > 0 && (timeOffset * 1000 - videoProgressUpdate.getCurrentTimeMs()) <= configuration.thresholdForUrgentAdPlaybackMs;
-      if (adInfo.adIndexInAdGroup == 0 && (isAdBeforeCurrentTime || isAdCloseToCurrentTime)) {
-        initialBufferSizeForAdPlaybackMs = configuration.initialBufferSizeForUrgentAdPlaybackMs;
+    if (configuration.adPlaybackConfig != null && configuration.adPlaybackConfig.initialBufferSizeForAdPlaybackMs != -1) {
+      int initialBufferSizeForAdPlaybackMs = configuration.adPlaybackConfig.initialBufferSizeForAdPlaybackMs;
+      if (configuration.adPlaybackConfig.initialBufferSizeForUrgentAdPlaybackMs != -1 && configuration.adPlaybackConfig.thresholdForUrgentAdPlaybackMs != -1) {
+        VideoProgressUpdate videoProgressUpdate = getContentVideoProgressUpdate();
+        long currentTimeInSec = videoProgressUpdate.getCurrentTimeMs() / 1000;
+        long durationInSec = videoProgressUpdate.getDurationMs() / 1000;
+        if (currentTimeInSec > 0 && durationInSec > 0) {
+          double timeOffset = adPodInfo.getTimeOffset() == -1.0 ? durationInSec : adPodInfo.getTimeOffset();
+          boolean isAdBeforeCurrentTime = currentTimeInSec >= timeOffset;
+          boolean isAdCloseToCurrentTime = (timeOffset * 1000 - videoProgressUpdate.getCurrentTimeMs()) > 0 && (timeOffset * 1000 - videoProgressUpdate.getCurrentTimeMs()) <= configuration.adPlaybackConfig.thresholdForUrgentAdPlaybackMs;
+          if (adInfo.adIndexInAdGroup == 0 && (isAdBeforeCurrentTime || isAdCloseToCurrentTime)) {
+            initialBufferSizeForAdPlaybackMs = configuration.adPlaybackConfig.initialBufferSizeForUrgentAdPlaybackMs;
+          }
+        }
       }
+      return initialBufferSizeForAdPlaybackMs;
     }
-    return initialBufferSizeForAdPlaybackMs;
+    return -1;
   }
 
   private void playAdInternal(AdMediaInfo adMediaInfo) {

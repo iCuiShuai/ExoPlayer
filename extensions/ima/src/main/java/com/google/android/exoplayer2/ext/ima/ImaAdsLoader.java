@@ -54,6 +54,7 @@ import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.Util;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.mxplay.adloader.AdPlaybackConfig;
 import com.mxplay.adloader.AdsBehaviour;
 import com.mxplay.adloader.IAdsBehaviour;
 
@@ -125,12 +126,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     private boolean focusSkipButtonWhenAvailable;
     private boolean playAdBeforeStartPosition;
     private boolean debugModeEnabled;
-    private int initialBufferSizeForAdPlaybackMs = -1;
-    private int initialBufferSizeForUrgentAdPlaybackMs = -1;
-    private int thresholdForUrgentAdPlaybackMs = -1;
-    private int totalAdBufferingThresholdMs = -1;
-    private int adBufferingThresholdMs = -1;
-    private int adPreloadTimeMs = -1;
+    private AdPlaybackConfig adPlaybackConfig;
     private ImaUtil.ImaFactory imaFactory;
     private IAdsBehaviour adsBehaviour;
 
@@ -366,33 +362,8 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
       return this;
     }
 
-    public Builder setInitialBufferSizeForAdPlaybackMs(int initialBufferSizeForAdPlaybackMs) {
-      this.initialBufferSizeForAdPlaybackMs = initialBufferSizeForAdPlaybackMs;
-      return this;
-    }
-
-    public Builder setInitialBufferSizeForUrgentAdPlaybackMs(int initialBufferSizeForUrgentAdPlaybackMs) {
-      this.initialBufferSizeForUrgentAdPlaybackMs = initialBufferSizeForUrgentAdPlaybackMs;
-      return this;
-    }
-
-    public Builder setThresholdForUrgentAdPlaybackMs(int thresholdForUrgentAdPlaybackMs) {
-      this.thresholdForUrgentAdPlaybackMs = thresholdForUrgentAdPlaybackMs;
-      return this;
-    }
-
-    public Builder setTotalAdBufferingThresholdMs(int totalAdBufferingThresholdMs) {
-      this.totalAdBufferingThresholdMs = totalAdBufferingThresholdMs;
-      return this;
-    }
-
-    public Builder setAdBufferingThresholdMs(int adBufferingThresholdMs) {
-      this.adBufferingThresholdMs = adBufferingThresholdMs;
-      return this;
-    }
-
-    public Builder setAdPreloadTimeMs(int adPreloadTimeMs) {
-      this.adPreloadTimeMs = adPreloadTimeMs;
+    public Builder setAdPlaybackConfig(AdPlaybackConfig adPlaybackConfig) {
+      this.adPlaybackConfig = adPlaybackConfig;
       return this;
     }
 
@@ -423,12 +394,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
               imaSdkSettings,
               adsBehaviour,
               debugModeEnabled,
-              initialBufferSizeForAdPlaybackMs,
-              initialBufferSizeForUrgentAdPlaybackMs,
-              thresholdForUrgentAdPlaybackMs,
-              totalAdBufferingThresholdMs,
-              adBufferingThresholdMs,
-              adPreloadTimeMs),
+              adPlaybackConfig),
           imaFactory);
     }
   }

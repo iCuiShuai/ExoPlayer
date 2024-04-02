@@ -40,6 +40,7 @@ import com.google.android.exoplayer2.source.ads.AdsLoader.OverlayInfo;
 import com.google.android.exoplayer2.upstream.DataSchemeDataSource;
 import com.google.android.exoplayer2.upstream.DataSpec;
 import com.google.android.exoplayer2.util.Util;
+import com.mxplay.adloader.AdPlaybackConfig;
 import com.mxplay.adloader.AdsBehaviour;
 import com.mxplay.adloader.AdsBehaviourExactTime;
 import com.mxplay.adloader.IAdsBehaviour;
@@ -103,12 +104,7 @@ import java.util.Set;
     @Nullable public final ImaSdkSettings imaSdkSettings;
     public final IAdsBehaviour adsBehaviour;
     public final boolean debugModeEnabled;
-    public final int initialBufferSizeForAdPlaybackMs;
-    public final int initialBufferSizeForUrgentAdPlaybackMs;
-    public final int thresholdForUrgentAdPlaybackMs;
-    public final int totalAdBufferingThresholdMs;
-    public  final int adBufferingThresholdMs;
-    public final int adPreloadTimeMs;
+    @Nullable public final AdPlaybackConfig adPlaybackConfig;
 
     public Configuration(
         long adPreloadTimeoutMs,
@@ -126,12 +122,8 @@ import java.util.Set;
         @Nullable VideoAdPlayer.VideoAdPlayerCallback applicationVideoAdPlayerCallback,
         @Nullable ImaSdkSettings imaSdkSettings, @Nullable IAdsBehaviour adsBehaviour,
         boolean debugModeEnabled,
-        @Nullable int initialBufferSizeForAdPlaybackMs,
-        @Nullable int initialBufferSizeForUrgentAdPlaybackMs,
-        @Nullable int thresholdForUrgentAdPlaybackMs,
-        @Nullable int totalAdBufferingThresholdMs,
-        @Nullable int adBufferingThresholdMs,
-        @Nullable int adPreloadTimeMs) {
+        @Nullable AdPlaybackConfig adPlaybackConfig
+        ) {
       this.adPreloadTimeoutMs = adPreloadTimeoutMs;
       this.vastLoadTimeoutMs = vastLoadTimeoutMs;
       this.mediaLoadTimeoutMs = mediaLoadTimeoutMs;
@@ -148,12 +140,8 @@ import java.util.Set;
       this.imaSdkSettings = imaSdkSettings;
       this.adsBehaviour = adsBehaviour == null ? new AdsBehaviour(vastLoadTimeoutMs, debugModeEnabled) : adsBehaviour;
       this.debugModeEnabled = debugModeEnabled;
-      this.initialBufferSizeForAdPlaybackMs = initialBufferSizeForAdPlaybackMs;
-      this.initialBufferSizeForUrgentAdPlaybackMs = initialBufferSizeForUrgentAdPlaybackMs;
-      this.thresholdForUrgentAdPlaybackMs = thresholdForUrgentAdPlaybackMs;
-      this.totalAdBufferingThresholdMs = totalAdBufferingThresholdMs;
-      this.adBufferingThresholdMs = adBufferingThresholdMs;
-      this.adPreloadTimeMs = adPreloadTimeMs;
+      this.adPlaybackConfig = adPlaybackConfig;
+
     }
   }
 
