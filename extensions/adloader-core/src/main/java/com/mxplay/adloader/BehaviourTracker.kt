@@ -28,9 +28,13 @@ class BehaviourTracker(
     private val vastReqForAdGroudIndex: HashSet<Int> = HashSet()
 
     private var lastRealStartTime = C.INDEX_UNSET.toLong()
-    private var lastStartRequestAdPodIndex = C.INDEX_UNSET
+    // adPodIndex to request time
+    private var lastStartRequestAdPod : Pair<Int, Long>? = null
+    // adPod start mapping index to start time
+    private var lastAdPodStart : Pair<Int, Long>? = null
     private var lastRequestedAdIndexInPod = C.INDEX_UNSET
     private var firstPlayingAdIndex = 0
+    private var vmapRequestTime = -1L
 
 
     companion object{
@@ -45,9 +49,15 @@ class BehaviourTracker(
 
     override fun doSetupAdsRendering(firstPlayingAdIndex: Int) {
         this.firstPlayingAdIndex = firstPlayingAdIndex
+        val nextPlayingPod = if (firstPlayingAdIndex == 0 || firstPlayingAdIndex == -1) firstPlayingAdIndex else 1
+        //Log.d("BT", "doSetupAdsRendering firstPlayingAdIndex:  $firstPlayingAdIndex : nextPlayingPod $nextPlayingPod")
+        if (!adPodIndexOpportunitySet.contains(nextPlayingPod)) {
+            onVastRequested(nextPlayingPod)
+        }
     }
 
     override fun onAllAdsRequested() {
+        vmapRequestTime = System.currentTimeMillis()
         videoAdsTracker.onAdManagerRequested(emptyMap())
     }
 
@@ -65,7 +75,9 @@ class BehaviourTracker(
     }
 
     override fun onAdsManagerLoaded(cuePoints: List<Float>?) {
-        videoAdsTracker.onAdsManagerLoaded(cuePoints?.size ?: 0)
+        val latency = if (vmapRequestTime > 0) System.currentTimeMillis() - vmapRequestTime else -1
+        videoAdsTracker.onAdsManagerLoaded(cuePoints?.size ?: 0, latency)
+        vmapRequestTime = -1
     }
 
     override fun onAdLoad(adIndexInGroup: Int, adUri: Uri, adPodIndex: Int) {
@@ -112,20 +124,36 @@ class BehaviourTracker(
                     }
                     return
                 }
+                AdEvent.AdEventType.CONTENT_PAUSE_REQUESTED -> {
+                   // Log.d("BT", "CONTENT_PAUSE_REQUESTED ${lastStartRequestAdPod?.first}")
+                    if (lastStartRequestAdPod != null){
+                        lastAdPodStart = lastStartRequestAdPod?.first!! to System.currentTimeMillis()
+                    }
+                }
                 AdEvent.AdEventType.LOADED -> {
                     if (!adPodIndexOpportunitySet.contains(adPodIndex)) {
                         onVastRequested(adPodIndex)
                     }
                     adPodIndexOpportunitySet.add(adPodIndex)
                     if (!vastReqForAdGroudIndex.contains(adPodIndex)) {
-                        videoAdsTracker.run { onVastSuccess(adPodIndex, adIndexInAdGroup) }
+                        val latency = if (lastStartRequestAdPod != null && lastStartRequestAdPod!!.first == adPodIndex && lastStartRequestAdPod!!.second > 0) System.currentTimeMillis() - lastStartRequestAdPod!!.second
+                        else -1
+                        videoAdsTracker.run { onVastSuccess(adPodIndex, adIndexInAdGroup, latency) }
                         vastReqForAdGroudIndex.add(adPodIndex);
                     }
                 }
                 else -> { }
             }
             if (!TextUtils.isEmpty(adEventName) && adTrackingEventsList.contains(adEventName)) {
-                videoAdsTracker.run { trackEvent(adEventName!!, buildEventParams(creativeId, advertiser, adPodIndex, adIndexInAdGroup,adDuration,adVastBitrate)) }
+                var latency = -1L
+                if (adEvent.type == AdEvent.AdEventType.STARTED){
+                    if (lastAdPodStart != null && adPodIndex == lastAdPodStart!!.first){
+                        latency = System.currentTimeMillis() - lastAdPodStart!!.second
+                        //Log.d("BT", "AD START $adPodIndex : $adIndexInAdGroup lastAdPodStart : ${lastAdPodStart?.first} : latency : $latency")
+                    }
+                    lastAdPodStart = null
+                }
+                videoAdsTracker.run { trackEvent(adEventName!!, buildEventParams(creativeId, advertiser, adPodIndex, adIndexInAdGroup,adDuration,adVastBitrate, latency)) }
             }
         }
     }
@@ -136,7 +164,7 @@ class BehaviourTracker(
             if (adPlaybackStateHost?.adPlaybackState == AdPlaybackState.NONE || adPlaybackStateHost?.adPlaybackState?.adGroupCount == 0){
                 videoAdsTracker.run { onAdsManagerRequestFailed(adError.errorCodeNumber, Exception(adError.message)) }
             }else{
-                videoAdsTracker.run { trackEvent(VideoAdsTracker.EVENT_ERROR, buildErrorParams(adError.errorCodeNumber, Exception(adError.message), lastStartRequestAdPodIndex, lastRequestedAdIndexInPod)) }
+                videoAdsTracker.run { trackEvent(VideoAdsTracker.EVENT_ERROR, buildErrorParams(adError.errorCodeNumber, Exception(adError.message), lastStartRequestAdPod?.first ?: C.INDEX_UNSET, lastRequestedAdIndexInPod)) }
             }
         }
     }
@@ -178,8 +206,8 @@ class BehaviourTracker(
     }
 
     fun onVastRequested(adPodIndex: Int) {
-        if (lastStartRequestAdPodIndex != adPodIndex) {
-            lastStartRequestAdPodIndex = adPodIndex
+        if (lastStartRequestAdPod == null || lastStartRequestAdPod?.first != adPodIndex) {
+            lastStartRequestAdPod = adPodIndex to System.currentTimeMillis()
             if (!adPodIndexOpportunitySet.contains(adPodIndex)) {
                 adPodIndexOpportunitySet.add(adPodIndex)
                 videoAdsTracker.onVastRequested(adPodIndex)

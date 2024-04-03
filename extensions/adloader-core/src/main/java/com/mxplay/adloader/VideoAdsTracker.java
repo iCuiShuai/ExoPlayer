@@ -50,6 +50,9 @@ public abstract class VideoAdsTracker {
     public static final String AD_INDEX_IN_AD_GROUP = "adIndexInAdGroup";
     public static final String START_TIME = "startTime";
     public static final String TIME_STAMP = "timeStamp";
+
+    public static final String PARAM_LATENCY = "latency";
+
     public static final String CATEGORY = "categoryName";
 
     public final static String AD_UNIT_ID = "adUnitId";
@@ -123,7 +126,7 @@ public abstract class VideoAdsTracker {
         return result;
     }
 
-    public Map<String, String> buildEventParams(@Nullable String creativeId, @Nullable String advertiser, int adPodIndex, int adIndexInPod, double vastDuration,int vastBitrate) {
+    public Map<String, String> buildEventParams(@Nullable String creativeId, @Nullable String advertiser, int adPodIndex, int adIndexInPod, double vastDuration, int vastBitrate, long latency) {
         Map<String, String> result = new HashMap<>();
         result.put(AD_LOADER_NAME, adLoaderName);
         if (creativeId != null)
@@ -134,6 +137,10 @@ public abstract class VideoAdsTracker {
             result.put(AD_VAST_BITRATE,String.valueOf(vastBitrate));
         if(vastDuration != 0)
             result.put(AD_DURATION,String.valueOf(vastDuration));
+
+        if (latency > 0){
+            result.put(PARAM_LATENCY, String.valueOf(latency));
+        }
         result.put(SESSION_ID, sessionId);
         result.put(CATEGORY, CATEGORY_DFP_ADS);
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
@@ -187,13 +194,16 @@ public abstract class VideoAdsTracker {
         trackEvent(EVENT_VMAP_REQUESTED, result);
     }
 
-    public void onAdsManagerLoaded(int podsCount) {
+    public void onAdsManagerLoaded(int podsCount, long latency) {
         Map<String, String> result = new HashMap<>();
         result.put(AD_LOADER_NAME, adLoaderName);
         result.put(SESSION_ID, sessionId);
         result.put(CATEGORY, CATEGORY_DFP_ADS);
         result.put(AD_PODS_COUNT, String.valueOf(podsCount));
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
+        if (latency > 0){
+            result.put(PARAM_LATENCY, String.valueOf(latency));
+        }
         trackEvent(EVENT_VMAP_SUCCESS, result);
     }
 
@@ -208,13 +218,16 @@ public abstract class VideoAdsTracker {
         trackEvent(EVENT_VMAP_FAIL, result);
     }
     
-    public void onVastSuccess(int adPodIndex, int adIndexInPod){
+    public void onVastSuccess(int adPodIndex, int adIndexInPod, long latency){
         Map<String, String> result = new HashMap<>();
         result.put(AD_LOADER_NAME, adLoaderName);
         result.put(SESSION_ID, sessionId);
         result.put(CATEGORY, CATEGORY_DFP_ADS);
         result.put(AD_POD_INDEX, String.valueOf(adPodIndex));
         result.put(AD_INDEX_IN_POD, String.valueOf(adIndexInPod));
+        if (latency > 0){
+            result.put(PARAM_LATENCY, String.valueOf(latency));
+        }
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
         trackEvent(EVENT_VAST_SUCCESS, result);
     }
@@ -223,9 +236,9 @@ public abstract class VideoAdsTracker {
         Map<String, String> result = new HashMap<>();
         result.put(AD_LOADER_NAME, adLoaderName);
         if (creativeId != null)
-        result.put(CREATIVE_ID, creativeId);
+            result.put(CREATIVE_ID, creativeId);
         if (advertiser != null)
-        result.put(ADVERTISER, advertiser);
+            result.put(ADVERTISER, advertiser);
         result.put(SESSION_ID, sessionId);
         result.put(CATEGORY, CATEGORY_DFP_ADS);
         result.put(TIME_STAMP,String.valueOf(System.currentTimeMillis()));
