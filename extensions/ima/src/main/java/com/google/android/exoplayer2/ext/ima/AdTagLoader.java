@@ -790,8 +790,8 @@ import java.util.concurrent.TimeUnit;
       contentPositionMs = fakeContentProgressOffsetMs + elapsedSinceEndMs;
     } else if (imaAdState == IMA_AD_STATE_NONE && !playingAd && hasContentDuration) {
       contentPositionMs = adsBehaviour.getContentPositionMs(player, timeline, period, contentDurationMs);
-      if (configuration.adPlaybackConfig !=null && configuration.adPlaybackConfig.adPreloadTimeMs != -1) {
-        long fakeProgressForPreloadMs = contentPositionMs + configuration.adPlaybackConfig.adPreloadTimeMs;
+      if (configuration.adPlaybackConfig !=null && configuration.adPlaybackConfig.adLoadTimeShiftMs != -1) {
+        long fakeProgressForPreloadMs = contentPositionMs + configuration.adPlaybackConfig.adLoadTimeShiftMs;
         if (adPreloadFlag && fakeProgressForPreloadMs + THRESHOLD_END_OF_CONTENT_MS < contentDurationMs){
           contentPositionMs = fakeProgressForPreloadMs;
         }

@@ -9,20 +9,20 @@ public final class AdPlaybackConfig {
     public final int thresholdForUrgentAdPlaybackMs;
     public final int totalAdBufferingThresholdMs;
     public  final int adBufferingThresholdMs;
-    public final int adPreloadTimeMs;
+    public final int adLoadTimeShiftMs;
 
     public AdPlaybackConfig(int initialBufferSizeForAdPlaybackMs,
                             int initialBufferSizeForUrgentAdPlaybackMs,
                             int thresholdForUrgentAdPlaybackMs,
                             int totalAdBufferingThresholdMs,
                             int adBufferingThresholdMs,
-                            int adPreloadTimeMs) {
+                            int adLoadTimeShiftMs) {
         this.initialBufferSizeForAdPlaybackMs = initialBufferSizeForAdPlaybackMs;
         this.initialBufferSizeForUrgentAdPlaybackMs = initialBufferSizeForUrgentAdPlaybackMs;
         this.thresholdForUrgentAdPlaybackMs = thresholdForUrgentAdPlaybackMs;
         this.totalAdBufferingThresholdMs = totalAdBufferingThresholdMs;
         this.adBufferingThresholdMs = adBufferingThresholdMs;
-        this.adPreloadTimeMs = adPreloadTimeMs;
+        this.adLoadTimeShiftMs = adLoadTimeShiftMs;
 
     }
 
@@ -33,7 +33,7 @@ public final class AdPlaybackConfig {
         private int thresholdForUrgentAdPlaybackMs = -1;
         private int totalAdBufferingThresholdMs = -1;
         private int adBufferingThresholdMs = -1;
-        private int adPreloadTimeMs = -1;
+        private int adLoadTimeShiftMs = -1;
 
         public Builder setInitialBufferSizeForAdPlaybackMs(int initialBufferSizeForAdPlaybackMs) {
             this.initialBufferSizeForAdPlaybackMs = initialBufferSizeForAdPlaybackMs;
@@ -60,8 +60,8 @@ public final class AdPlaybackConfig {
             return this;
         }
 
-        public Builder setAdPreloadTimeMs(int adPreloadTimeMs) {
-            this.adPreloadTimeMs = adPreloadTimeMs;
+        public Builder setAdLoadTimeShiftMs(int adLoadTimeShiftMs) {
+            this.adLoadTimeShiftMs = adLoadTimeShiftMs;
             return this;
         }
 
@@ -72,7 +72,7 @@ public final class AdPlaybackConfig {
                     thresholdForUrgentAdPlaybackMs,
                     totalAdBufferingThresholdMs,
                     adBufferingThresholdMs,
-                    adPreloadTimeMs);
+                    adLoadTimeShiftMs);
         }
 
     }
