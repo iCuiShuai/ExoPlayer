@@ -54,6 +54,7 @@ import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.Util;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.mxplay.adloader.AdPlaybackConfig;
 import com.mxplay.adloader.AdsBehaviour;
 import com.mxplay.adloader.IAdsBehaviour;
 
@@ -125,7 +126,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
     private boolean focusSkipButtonWhenAvailable;
     private boolean playAdBeforeStartPosition;
     private boolean debugModeEnabled;
-    private int initialBufferSizeForAdPlaybackMs = -1;
+    private AdPlaybackConfig adPlaybackConfig;
     private ImaUtil.ImaFactory imaFactory;
     private IAdsBehaviour adsBehaviour;
 
@@ -361,8 +362,8 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
       return this;
     }
 
-    public Builder setInitialBufferSizeForAdPlaybackMs(int initialBufferSizeForAdPlaybackMs) {
-      this.initialBufferSizeForAdPlaybackMs = initialBufferSizeForAdPlaybackMs;
+    public Builder setAdPlaybackConfig(AdPlaybackConfig adPlaybackConfig) {
+      this.adPlaybackConfig = adPlaybackConfig;
       return this;
     }
 
@@ -393,7 +394,7 @@ public final class ImaAdsLoader implements Player.EventListener, AdsLoader {
               imaSdkSettings,
               adsBehaviour,
               debugModeEnabled,
-              initialBufferSizeForAdPlaybackMs),
+              adPlaybackConfig),
           imaFactory);
     }
   }
